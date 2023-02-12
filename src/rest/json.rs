@@ -1,3 +1,4 @@
+use crate::rest::error_response::ErrorResponse;
 use async_trait::async_trait;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{FromRequest, MatchedPath};
@@ -5,7 +6,6 @@ use axum::http::{Request, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::RequestPartsExt;
 use serde::Serialize;
-use serde_json::{json, Value};
 
 // https://docs.rs/axum/0.6.4/axum/extract/index.html#customizing-extractor-responses
 
@@ -18,7 +18,7 @@ where
     S: Send + Sync,
     B: Send + 'static,
 {
-    type Rejection = (StatusCode, axum::Json<Value>);
+    type Rejection = (StatusCode, axum::Json<ErrorResponse>);
 
     async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
         let (mut parts, body) = req.into_parts();
@@ -34,10 +34,12 @@ where
         match axum::Json::<T>::from_request(req, state).await {
             Ok(value) => Ok(Self(value.0)),
             Err(rejection) => {
-                let payload = json!({
-                    "message": rejection.to_string(),
-                    "path": path,
-                });
+                let mut payload =
+                    ErrorResponse::new("CANNOT_DESERIALIZE_JSON", &rejection.to_string());
+                if let Some(path) = path {
+                    payload = payload.with_data("path", &path);
+                }
+
                 let code = match rejection {
                     JsonRejection::JsonDataError(_) => StatusCode::UNPROCESSABLE_ENTITY,
                     JsonRejection::JsonSyntaxError(_) => StatusCode::BAD_REQUEST,

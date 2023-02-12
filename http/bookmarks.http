@@ -2,7 +2,7 @@
 GET http://localhost:3000/bookmarks
 
 ### Get one bookmark
-GET http://localhost:3000/bookmarks/3
+GET http://localhost:3000/bookmarks/1
 
 ### Create bookmark
 POST http://localhost:3000/bookmarks
@@ -13,7 +13,7 @@ content-type: application/json
   "description": "Rust docs"
 }
 
-### Create bookmark
+### Create bookmark without description
 POST http://localhost:3000/bookmarks
 content-type: application/json
 
@@ -22,13 +22,13 @@ content-type: application/json
 }
 
 ### Update bookmark
-PUT http://localhost:3000/bookmarks/3
+PUT http://localhost:3000/bookmarks/1
 content-type: application/json
 
 {
-  "url": "https://docs.rs",
-  "description": "Rust docs"
+  "url": "https://gogole.com",
+  "description": "Google search engine"
 }
 
 ### Delete bookmark
-DELETE http://localhost:3000/bookmarks/3
+DELETE http://localhost:3000/bookmarks/2
