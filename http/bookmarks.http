@@ -1,0 +1,34 @@
+### Get all bookmarks
+GET http://localhost:3000/bookmarks
+
+### Get one bookmark
+GET http://localhost:3000/bookmarks/3
+
+### Create bookmark
+POST http://localhost:3000/bookmarks
+content-type: application/json
+
+{
+  "url": "https://docs.rs",
+  "description": "Rust docs"
+}
+
+### Create bookmark
+POST http://localhost:3000/bookmarks
+content-type: application/json
+
+{
+  "url": "https://docs.rs"
+}
+
+### Update bookmark
+PUT http://localhost:3000/bookmarks/3
+content-type: application/json
+
+{
+  "url": "https://docs.rs",
+  "description": "Rust docs"
+}
+
+### Delete bookmark
+DELETE http://localhost:3000/bookmarks/3
