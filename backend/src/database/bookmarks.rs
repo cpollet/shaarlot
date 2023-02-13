@@ -21,10 +21,12 @@ impl Mutation {
     pub async fn create_bookmark(
         db: &DatabaseConnection,
         url: String,
+        title: Option<String>,
         description: Option<String>,
     ) -> Result<Model, DbErr> {
         ActiveModel {
             url: Set(url),
+            title: Set(title),
             description: Set(description),
             ..Default::default()
         }
@@ -37,6 +39,7 @@ impl Mutation {
         db: &DatabaseConnection,
         id: i32,
         url: String,
+        title: Option<String>,
         description: Option<String>,
     ) -> Result<Option<Model>, DbErr> {
         let model = Entity::find_by_id(id)
@@ -45,6 +48,7 @@ impl Mutation {
             .map(|e| Into::<ActiveModel>::into(e));
         if let Some(mut model) = model {
             model.url = Set(url);
+            model.title = Set(title);
             model.description = Set(description);
             Ok(Some(model.update(db).await?))
         } else {

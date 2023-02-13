@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 pub struct BookmarkResponse {
     id: i32,
     url: String,
+    title: Option<String>,
     description: Option<String>,
     tags: Vec<String>,
 }
@@ -22,12 +23,14 @@ pub struct BookmarkResponse {
 #[derive(Deserialize)]
 pub struct CreateBookmarkRequest {
     url: String,
+    title: Option<String>,
     description: Option<String>,
 }
 
 #[derive(Deserialize)]
 pub struct UpdateBookmarkRequest {
     url: String,
+    title: Option<String>,
     description: Option<String>,
 }
 
@@ -60,6 +63,7 @@ async fn get_bookmarks(
             .map(|m| BookmarkResponse {
                 id: m.id,
                 url: m.url,
+                title: m.title,
                 description: m.description,
                 tags: vec![],
             })
@@ -89,6 +93,7 @@ async fn get_bookmark(
             Json(BookmarkResponse {
                 id: m.id,
                 url: m.url,
+                title: m.title,
                 description: m.description,
                 tags: vec![],
             })
@@ -109,28 +114,34 @@ async fn create_bookmark(
     Extension(database): Extension<DatabaseConnection>,
     Json(bookmark): Json<CreateBookmarkRequest>,
 ) -> Result<(StatusCode, Json<BookmarkResponse>), (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Mutation::create_bookmark(&database, bookmark.url, bookmark.description)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(
-                    "CANNOT_WRITE_TO_DATABASE",
-                    "Cannot save bookmark to database",
-                )),
-            )
-        })
-        .map(|m| {
-            (
-                StatusCode::CREATED,
-                Json(BookmarkResponse {
-                    id: m.id,
-                    url: m.url,
-                    description: m.description,
-                    tags: vec![],
-                }),
-            )
-        })
+    database::bookmarks::Mutation::create_bookmark(
+        &database,
+        bookmark.url,
+        bookmark.title,
+        bookmark.description,
+    )
+    .await
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(
+                "CANNOT_WRITE_TO_DATABASE",
+                "Cannot save bookmark to database",
+            )),
+        )
+    })
+    .map(|m| {
+        (
+            StatusCode::CREATED,
+            Json(BookmarkResponse {
+                id: m.id,
+                url: m.url,
+                title: m.title,
+                description: m.description,
+                tags: vec![],
+            }),
+        )
+    })
 }
 
 async fn update_bookmark(
@@ -142,6 +153,7 @@ async fn update_bookmark(
         &database,
         bookmark_id,
         bookmark.url,
+        bookmark.title,
         bookmark.description,
     )
     .await
@@ -158,6 +170,7 @@ async fn update_bookmark(
         Json(BookmarkResponse {
             id: bookmark_id,
             url: m.url,
+            title: m.title,
             description: m.description,
             tags: vec![],
         })
