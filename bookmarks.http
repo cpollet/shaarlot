@@ -2,7 +2,7 @@
 GET http://localhost:3000/bookmarks
 
 ### Get one bookmark
-GET http://localhost:3000/bookmarks/1
+GET http://localhost:3000/bookmarks/4
 
 ### Create bookmark
 POST http://localhost:3000/bookmarks

@@ -1,7 +1,5 @@
-use crate::rest::router;
-
-mod database;
-mod rest;
+use backend::database;
+use backend::rest::router;
 
 #[tokio::main]
 async fn main() {
