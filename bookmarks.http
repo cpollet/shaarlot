@@ -1,11 +1,11 @@
 ### Get all bookmarks
-GET http://localhost:3000/bookmarks
+GET http://localhost:3000/api/bookmarks
 
 ### Get one bookmark
-GET http://localhost:3000/bookmarks/1
+GET http://localhost:3000/api/bookmarks/1
 
 ### Create bookmark
-POST http://localhost:3000/bookmarks
+POST http://localhost:3000/api/bookmarks
 content-type: application/json
 
 {
@@ -15,7 +15,7 @@ content-type: application/json
 }
 
 ### Create bookmark minimal
-POST http://localhost:3000/bookmarks
+POST http://localhost:3000/api/bookmarks
 content-type: application/json
 
 {
@@ -23,7 +23,7 @@ content-type: application/json
 }
 
 ### Update bookmark
-PUT http://localhost:3000/bookmarks/2
+PUT http://localhost:3000/api/bookmarks/2
 content-type: application/json
 
 {
@@ -33,4 +33,4 @@ content-type: application/json
 }
 
 ### Delete bookmark
-DELETE http://localhost:3000/bookmarks/2
+DELETE http://localhost:3000/api/bookmarks/2

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if docker ps -a | grep rbm-postgres; then
   docker start rbm-postgres

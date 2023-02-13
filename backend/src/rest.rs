@@ -36,11 +36,11 @@ pub struct UpdateBookmarkRequest {
 
 pub fn router(database: DatabaseConnection) -> Router {
     Router::new()
-        .route("/bookmarks", get(get_bookmarks))
-        .route("/bookmarks", post(create_bookmark))
-        .route("/bookmarks/:id", get(get_bookmark))
-        .route("/bookmarks/:id", delete(delete_bookmark))
-        .route("/bookmarks/:id", put(update_bookmark))
+        .route("/api/bookmarks", get(get_bookmarks))
+        .route("/api/bookmarks", post(create_bookmark))
+        .route("/api/bookmarks/:id", get(get_bookmark))
+        .route("/api/bookmarks/:id", delete(delete_bookmark))
+        .route("/api/bookmarks/:id", put(update_bookmark))
         .layer(Extension(database))
 }
 
