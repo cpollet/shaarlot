@@ -45,7 +45,7 @@ impl Mutation {
         let model = Entity::find_by_id(id)
             .one(db)
             .await?
-            .map(|e| Into::<ActiveModel>::into(e));
+            .map(Into::<ActiveModel>::into);
         if let Some(mut model) = model {
             model.url = Set(url);
             model.title = Set(title);
