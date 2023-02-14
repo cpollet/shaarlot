@@ -300,6 +300,7 @@ dependencies = [
  "async-trait",
  "axum",
  "entity",
+ "rest-api",
  "sea-orm",
  "serde",
  "serde_json",
@@ -743,6 +744,7 @@ name = "frontend"
 version = "0.1.0"
 dependencies = [
  "gloo-net",
+ "rest-api",
  "yew",
 ]
 
@@ -1788,6 +1790,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "79af64b4b6362ffba04eef3a4e10829718a4896dac19daa741851c86781edf95"
 dependencies = [
  "bytecheck",
+]
+
+[[package]]
+name = "rest-api"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

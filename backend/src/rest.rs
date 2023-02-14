@@ -8,39 +8,16 @@ use axum::extract::Path;
 use axum::http::StatusCode;
 use axum::routing::{delete, get, post, put};
 use axum::{Extension, Router};
+use rest_api::*;
 use sea_orm::DatabaseConnection;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize)]
-pub struct BookmarkResponse {
-    id: i32,
-    url: String,
-    title: Option<String>,
-    description: Option<String>,
-    tags: Vec<String>,
-}
-
-#[derive(Deserialize)]
-pub struct CreateBookmarkRequest {
-    url: String,
-    title: Option<String>,
-    description: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct UpdateBookmarkRequest {
-    url: String,
-    title: Option<String>,
-    description: Option<String>,
-}
 
 pub fn router(database: DatabaseConnection) -> Router {
     Router::new()
-        .route("/api/bookmarks", get(get_bookmarks))
-        .route("/api/bookmarks", post(create_bookmark))
-        .route("/api/bookmarks/:id", get(get_bookmark))
-        .route("/api/bookmarks/:id", delete(delete_bookmark))
-        .route("/api/bookmarks/:id", put(update_bookmark))
+        .route(URL_BOOKMARKS, get(get_bookmarks))
+        .route(URL_BOOKMARKS, post(create_bookmark))
+        .route(URL_BOOKMARK, get(get_bookmark))
+        .route(URL_BOOKMARK, delete(delete_bookmark))
+        .route(URL_BOOKMARK, put(update_bookmark))
         .layer(Extension(database))
 }
 
