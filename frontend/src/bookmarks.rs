@@ -13,7 +13,7 @@ pub fn bookmarks(props: &BookmarksProps) -> Html {
         <ul>
         {
             props.bookmarks.as_slice().into_iter().map(|b| html! {
-                <Bookmark ..b.clone() />
+                <Bookmark key={b.id} ..b.clone() />
             }).collect::<Html>()
         }
         </ul>
