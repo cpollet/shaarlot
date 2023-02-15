@@ -1,17 +1,10 @@
 use std::rc::Rc;
-use yew::html::IntoPropValue;
 use yew::prelude::*;
 use crate::bookmark::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct BookmarksProps {
     pub bookmarks: Rc<Vec<BookmarkProps>>,
-}
-
-impl IntoPropValue<Rc<Vec<BookmarkProps>>> for BookmarksProps {
-    fn into_prop_value(self) -> Rc<Vec<BookmarkProps>> {
-        self.bookmarks.clone()
-    }
 }
 
 #[function_component(Bookmarks)]
@@ -24,5 +17,13 @@ pub fn bookmarks(props: &BookmarksProps) -> Html {
             }).collect::<Html>()
         }
         </ul>
+    }
+}
+
+#[function_component(BookmarksHOC)]
+pub fn bookmarks_hoc() -> Html {
+    let bookmarks = use_context::<BookmarksProps>().expect("no ctx found");
+    html! {
+        <Bookmarks ..bookmarks />
     }
 }

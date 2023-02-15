@@ -4,6 +4,7 @@ mod bookmarks_provider;
 
 use yew::prelude::*;
 use crate::bookmarks_provider::BookmarksProvider;
+use crate::bookmarks::BookmarksHOC;
 
 fn main() {
     yew::Renderer::<App>::new().render();
@@ -12,6 +13,8 @@ fn main() {
 #[function_component(App)]
 fn app() -> Html {
     html! {
-        <BookmarksProvider />
+        <BookmarksProvider>
+            <BookmarksHOC />
+        </BookmarksProvider>
     }
 }

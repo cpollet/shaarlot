@@ -4,10 +4,15 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use rest_api::{BookmarkResponse, URL_BOOKMARKS};
 use crate::bookmark::BookmarkProps;
-use crate::bookmarks::{Bookmarks, BookmarksProps};
+use crate::bookmarks::{BookmarksProps};
+
+#[derive(Properties, PartialEq)]
+pub struct BookmarksProviderProps {
+    pub children: Children
+}
 
 #[function_component(BookmarksProvider)]
-pub fn bookmarks_provider() -> Html {
+pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
     let bookmarks = use_state(|| None);
 
     {
@@ -47,7 +52,9 @@ pub fn bookmarks_provider() -> Html {
 
     match bookmarks.as_ref() {
         Some(Ok(bookmarks)) => html! {
-            <Bookmarks bookmarks={(*bookmarks).clone()} />
+            <ContextProvider<BookmarksProps> context={(*bookmarks).clone()}>
+                { props.children.clone() }
+            </ContextProvider<BookmarksProps>>
         },
         Some(Err(err)) => html! {
             <div>{err}</div>
