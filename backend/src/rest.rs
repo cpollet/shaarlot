@@ -1,31 +1,36 @@
 mod error_response;
 mod json;
 
-use crate::database;
 use crate::rest::error_response::ErrorResponse;
 use crate::rest::json::Json;
-use axum::extract::Path;
-use axum::http::StatusCode;
+use crate::{database, AppState};
+use axum::body::Body;
+use axum::extract::{Path, Query, State};
+use axum::http::{header, Response, StatusCode};
+use axum::response::IntoResponse;
 use axum::routing::{delete, get, post, put};
-use axum::{Extension, Router};
+use axum::Router;
+use qrcode_generator::QrCodeEcc;
 use rest_api::*;
-use sea_orm::DatabaseConnection;
+use std::collections::HashMap;
+use std::str::FromStr;
 
-pub fn router(database: DatabaseConnection) -> Router {
+pub fn router(state: AppState) -> Router {
     Router::new()
         .route(URL_BOOKMARKS, get(get_bookmarks))
         .route(URL_BOOKMARKS, post(create_bookmark))
         .route(URL_BOOKMARK, get(get_bookmark))
         .route(URL_BOOKMARK, delete(delete_bookmark))
         .route(URL_BOOKMARK, put(update_bookmark))
-        .layer(Extension(database))
+        .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
+        .with_state(state)
 }
 
 async fn get_bookmarks(
-    Extension(database): Extension<DatabaseConnection>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<BookmarkResponse>>, (StatusCode, Json<ErrorResponse>)> {
     Ok(Json(
-        database::bookmarks::Query::find_all(&database)
+        database::bookmarks::Query::find_all(&state.database)
             .await
             .map_err(|_| {
                 (
@@ -49,10 +54,10 @@ async fn get_bookmarks(
 }
 
 async fn get_bookmark(
-    Extension(database): Extension<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
 ) -> Result<Json<BookmarkResponse>, (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Query::find_by_id(&database, bookmark_id)
+    database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
         .await
         .map_err(|_| {
             (
@@ -87,12 +92,47 @@ async fn get_bookmark(
         ))
 }
 
+async fn get_bookmark_qrcode(
+    State(state): State<AppState>,
+    Path(bookmark_id): Path<i32>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let size = params
+        .get("size")
+        .map_or(Ok(128), |s| u32::from_str(s))
+        .map_err(|e| {
+            log::info!("{}", e);
+            StatusCode::BAD_REQUEST
+        })?;
+
+    let model = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+        .await
+        .map_err(|e| {
+            log::error!("{}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or(StatusCode::NOT_FOUND)?;
+
+    let bytes =
+        qrcode_generator::to_png_to_vec(model.url.as_bytes(), QrCodeEcc::Low, size as usize)
+            .map_err(|e| {
+                log::error!("{}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "image/x-png")
+        .body(Body::from(bytes))
+        .unwrap())
+}
+
 async fn create_bookmark(
-    Extension(database): Extension<DatabaseConnection>,
+    State(state): State<AppState>,
     Json(bookmark): Json<CreateBookmarkRequest>,
 ) -> Result<(StatusCode, Json<BookmarkResponse>), (StatusCode, Json<ErrorResponse>)> {
     database::bookmarks::Mutation::create_bookmark(
-        &database,
+        &state.database,
         bookmark.url,
         bookmark.title,
         bookmark.description,
@@ -122,12 +162,12 @@ async fn create_bookmark(
 }
 
 async fn update_bookmark(
-    Extension(database): Extension<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
     Json(bookmark): Json<UpdateBookmarkRequest>,
 ) -> Result<Json<BookmarkResponse>, (StatusCode, Json<ErrorResponse>)> {
     database::bookmarks::Mutation::update_bookmark(
-        &database,
+        &state.database,
         bookmark_id,
         bookmark.url,
         bookmark.title,
@@ -165,10 +205,10 @@ async fn update_bookmark(
 }
 
 async fn delete_bookmark(
-    Extension(database): Extension<DatabaseConnection>,
+    State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Mutation::delete_bookmark(&database, bookmark_id)
+    database::bookmarks::Mutation::delete_bookmark(&state.database, bookmark_id)
         .await
         .map_err(|_| {
             (
