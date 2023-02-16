@@ -1,6 +1,6 @@
+use crate::bookmark::*;
 use std::rc::Rc;
 use yew::prelude::*;
-use crate::bookmark::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct BookmarksProps {

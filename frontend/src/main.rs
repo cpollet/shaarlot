@@ -2,9 +2,9 @@ mod bookmark;
 mod bookmarks;
 mod bookmarks_provider;
 
-use yew::prelude::*;
-use crate::bookmarks_provider::BookmarksProvider;
 use crate::bookmarks::BookmarksHOC;
+use crate::bookmarks_provider::BookmarksProvider;
+use yew::prelude::*;
 
 fn main() {
     yew::Renderer::<App>::new().render();

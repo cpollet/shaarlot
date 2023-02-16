@@ -1,6 +1,5 @@
-use yew::prelude::*;
 use rest_api::BookmarkResponse;
-
+use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct BookmarkProps {
@@ -15,8 +14,8 @@ impl From<BookmarkResponse> for BookmarkProps {
         BookmarkProps {
             id: value.id,
             url: AttrValue::from(value.url),
-            title: value.title.map(|v|AttrValue::from(v)),
-            description: value.description.map(|v|AttrValue::from(v)),
+            title: value.title.map(|v| AttrValue::from(v)),
+            description: value.description.map(|v| AttrValue::from(v)),
         }
     }
 }

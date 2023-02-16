@@ -1,14 +1,14 @@
-use std::rc::Rc;
+use crate::bookmark::BookmarkProps;
+use crate::bookmarks::BookmarksProps;
 use gloo_net::http::Request;
+use rest_api::{BookmarkResponse, URL_BOOKMARKS};
+use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use rest_api::{BookmarkResponse, URL_BOOKMARKS};
-use crate::bookmark::BookmarkProps;
-use crate::bookmarks::{BookmarksProps};
 
 #[derive(Properties, PartialEq)]
 pub struct BookmarksProviderProps {
-    pub children: Children
+    pub children: Children,
 }
 
 #[function_component(BookmarksProvider)]
@@ -20,7 +20,7 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
         use_effect(move || {
             if bookmarks.is_none() {
                 spawn_local(async move {
-                    bookmarks.set(Some (match Request::get(URL_BOOKMARKS).send().await {
+                    bookmarks.set(Some(match Request::get(URL_BOOKMARKS).send().await {
                         Err(_) => Err(format!("Error fetching data")),
                         Ok(resp) => {
                             if !resp.ok() {
@@ -33,13 +33,15 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
                                 resp.json::<Vec<BookmarkResponse>>()
                                     .await
                                     .map_err(|err| err.to_string())
-                                    .map(|elements|
+                                    .map(|elements| {
                                         elements
                                             .into_iter()
                                             .map(BookmarkProps::from)
                                             .collect::<Vec<BookmarkProps>>()
-                                    )
-                                    .map(|bookmarks| BookmarksProps { bookmarks: Rc::new(bookmarks) })
+                                    })
+                                    .map(|bookmarks| BookmarksProps {
+                                        bookmarks: Rc::new(bookmarks),
+                                    })
                             }
                         }
                     }))
@@ -61,6 +63,6 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
         },
         None => html! {
             <div>{"No data"}</div>
-        }
+        },
     }
 }

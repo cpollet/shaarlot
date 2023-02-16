@@ -1,8 +1,8 @@
-use std::env;
 use axum_extra::routing::SpaRouter;
 use backend::database;
 use backend::rest::router;
 use sea_orm_migration::MigratorTrait;
+use std::env;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 
