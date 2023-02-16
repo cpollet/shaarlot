@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # source: https://robert.kra.hn/posts/2022-04-03_rust-web-wasm/
 
 set -euo pipefail

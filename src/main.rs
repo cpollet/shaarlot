@@ -1,3 +1,4 @@
+use std::env;
 use axum_extra::routing::SpaRouter;
 use backend::database;
 use backend::rest::router;
@@ -7,16 +8,19 @@ use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() {
-    let database = database::connect().await;
+    env::set_var("RUST_LOG", format!("debug,hyper=info,mio=info"));
+
+    let database_host = env::var("DATABASE_HOST").unwrap_or("localhost".to_owned());
+
+    let database = database::connect(&database_host).await;
 
     migration::Migrator::up(&database, None)
         .await
         .expect("Could not migrate database");
 
-    std::env::set_var("RUST_LOG", format!("debug,hyper=info,mio=info"));
     tracing_subscriber::fmt::init();
 
-    log::info!("listening on http://localhost:3000");
+    log::info!("listening on http://0.0.0.0:3000");
 
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(
