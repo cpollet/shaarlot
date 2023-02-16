@@ -24,17 +24,17 @@ impl From<BookmarkResponse> for BookmarkProps {
 #[function_component(Bookmark)]
 pub fn bookmark(props: &BookmarkProps) -> Html {
     html! {
-        <li>
-            <div>
+        <li class="bookmark">
+            <div class="bookmark__title">
                 <a href={props.url.clone()}>
                     {props.title.clone().unwrap_or_else(|| props.url.clone())}
                 </a>
             </div>
-            <div>
-                <div>
+            <div class="bookmark__description">
+                <div class="bookmark__tags-list">
                 {"tag\u{00a0}·\u{00a0}other_tag"}
                 </div>
-                <div>
+                <div class="bookmark__actions">
                     <a href="#">{"edit"}</a>
                     {"\u{00a0}|\u{00a0}"}
                     <a href="#">{"delete"}</a>
@@ -47,7 +47,7 @@ pub fn bookmark(props: &BookmarkProps) -> Html {
                         <img src="https://fakeimg.pl/20x20/" />
                     </a>
                 </div>
-                <div>
+                <div class="bookmark__link">
                     <a href={props.url.clone()}>
                         {props.url.clone()}
                     </a>

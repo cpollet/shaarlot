@@ -10,7 +10,7 @@ pub struct BookmarksProps {
 #[function_component(Bookmarks)]
 pub fn bookmarks(props: &BookmarksProps) -> Html {
     html! {
-        <ul>
+        <ul class="bookmarks">
         {
             props.bookmarks.as_slice().into_iter().map(|b| html! {
                 <Bookmark key={b.id} ..b.clone() />

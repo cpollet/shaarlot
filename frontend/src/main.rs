@@ -13,8 +13,10 @@ fn main() {
 #[function_component(App)]
 fn app() -> Html {
     html! {
-        <BookmarksProvider>
-            <BookmarksHOC />
-        </BookmarksProvider>
+        <div class="view">
+            <BookmarksProvider>
+                <BookmarksHOC />
+            </BookmarksProvider>
+        </div>
     }
 }

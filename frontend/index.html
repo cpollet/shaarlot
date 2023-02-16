@@ -7,11 +7,73 @@
         body {
             font-family: "Helvetica", sans-serif;
             font-size: 16px;
-            background-color: #333;
-            color: #eee;
+            background-color: #d0d0d0;
+            /*color: black;*/
+            display: flex;
+            justify-content: center;
         }
-        a, a:visited {
-            color: #eee;
+
+        a {
+            color: black;
+            text-decoration: none;
+        }
+
+        .view {
+            width: 1600px;
+        }
+
+        .bookmarks {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+
+        .bookmark {
+            margin-bottom: 10px;
+            box-shadow: 1px 1px 3px #797979;
+            background: #f5f5f5;
+        }
+
+        .bookmark__title {
+            font-weight: bold;
+            /*background-color: #f5f5f5;*/
+            padding: 0.5em;
+        }
+
+        .bookmark__description {
+            background: #ddd;
+        }
+
+        .bookmark__title a {
+            color: darkgreen;
+        }
+
+        .bookmark__tags-list {
+            font-size: 80%;
+            padding: 0.5em;
+        }
+
+        .bookmark__actions {
+            font-size: 80%;
+            padding: 0.5em;
+            display: inline-block;
+            width: 50%;
+            box-sizing: border-box;
+            vertical-align: middle;
+        }
+
+        .bookmark__actions img {
+            vertical-align: bottom;
+        }
+
+        .bookmark__link {
+            font-size: 80%;
+            padding: 0.5em;
+            display: inline-block;
+            width: 50%;
+            box-sizing: border-box;
+            text-align: right;
         }
     </style>
 </head>
