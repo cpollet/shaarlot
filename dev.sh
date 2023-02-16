@@ -8,5 +8,5 @@ IFS=$'\n\t'
 ./postgres.sh
 
 (trap 'kill 0' SIGINT; \
- bash -c 'cd frontend; trunk serve --open --proxy-backend=http://localhost:3000/api/' & \
+ bash -c 'cd frontend; trunk serve --open --address 0.0.0.0 --proxy-backend=http://localhost:3000/api/' & \
  bash -c 'cargo watch -- cargo run')
