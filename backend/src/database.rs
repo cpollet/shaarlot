@@ -1,6 +1,6 @@
 pub mod bookmarks;
 
-use sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
 
 pub struct Configuration {
     pub host: String,
@@ -10,8 +10,8 @@ pub struct Configuration {
     pub database: String,
 }
 
-pub async fn connect(configuration: &Configuration) -> DatabaseConnection {
-    let connect_options = ConnectOptions::new(format!(
+pub async fn connect(configuration: &Configuration) -> Result<DatabaseConnection, DbErr> {
+    let mut connect_options = ConnectOptions::new(format!(
         "postgres://{}:{}@{}:{}/{}",
         configuration.username,
         configuration.password,
@@ -19,7 +19,7 @@ pub async fn connect(configuration: &Configuration) -> DatabaseConnection {
         configuration.port,
         configuration.database,
     ));
-    Database::connect(connect_options)
-        .await
-        .expect("Cannot open connection to database")
+    connect_options.sqlx_logging_level(log::LevelFilter::Debug);
+
+    Database::connect(connect_options).await
 }

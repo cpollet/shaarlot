@@ -7,11 +7,10 @@ RBM_BUILD_ONLY="${RBM_BUILD_ONLY:-}"
 
 [ -z "${RBM_BUILD_ONLY}" ] && ./postgres.sh
 
-pushd frontend
-# note: when using SpaRouter this needs to be "trunk build --public-url /"
-trunk build
-popd
-
 cargo build --release
 
-[ -z "${RBM_BUILD_ONLY}" ] && cargo run --release
+pushd frontend
+trunk build --public-url /assets --dist ../target/release/wasm --release
+popd
+
+[ -z "${RBM_BUILD_ONLY}" ] && HTTP_PORT=8000 ROOT_PATH=target/release/wasm cargo run --release

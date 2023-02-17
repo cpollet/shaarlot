@@ -18,6 +18,7 @@ use webpage::{Webpage, WebpageOptions};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
+        .route("/health", get(health))
         .route(URL_BOOKMARKS, get(get_bookmarks))
         .route(URL_BOOKMARKS, post(create_bookmark))
         .route(URL_BOOKMARK, get(get_bookmark))
@@ -26,6 +27,10 @@ pub fn router(state: AppState) -> Router {
         .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
         .route(URL_URLS, get(get_url))
         .with_state(state)
+}
+
+async fn health() -> impl IntoResponse {
+    "OK"
 }
 
 async fn get_bookmarks(
@@ -237,7 +242,13 @@ async fn delete_bookmark(
 async fn get_url(
     Path(url): Path<String>,
 ) -> Result<Json<UrlResponse>, (StatusCode, Json<ErrorResponse>)> {
-    let webpage = Webpage::from_url(&url, WebpageOptions::default()).map_err(|_| {
+    log::info!("Fetching metadata about {}", &url);
+
+    let mut options = WebpageOptions::default();
+    options.allow_insecure = true;
+
+    let webpage = Webpage::from_url(&url, options).map_err(|e| {
+        log::error!("Error while fetching metadata about {}: {}", &url, e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse::new(

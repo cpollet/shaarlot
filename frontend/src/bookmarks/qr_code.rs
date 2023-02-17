@@ -38,7 +38,7 @@ pub fn qr_code(props: &Props) -> Html {
 
     html! {
         <>
-            <img {onclick} class="bookmark__icon" src="/assets/qrcode_16.png" />
+            <img {onclick} class="bookmark__icon" src="/assets/static/qrcode_16.png" />
             if state.overlay_open {
                 <QrCodeOverlay
                     id={props.id}

@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
-COPY rbm /usr/local/bin/
-COPY dist /usr/local/bin/dist/
+COPY target/rbm /usr/local/bin/
+COPY target/webroot /usr/local/bin/webroot
 
 EXPOSE 3000
 

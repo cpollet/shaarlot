@@ -4,16 +4,19 @@
 
 RBM_BUILD_ONLY=1 ./prod.sh
 
-cp target/release/rbm docker/rbm
-cp -r dist docker/
+rm -r docker/target; mkdir docker/target
+cp target/release/rbm docker/target/rbm
+cp -r target/release/wasm docker/target/webroot
 
 pushd docker
-docker build -t rbm .
+docker rmi cpollet/rbm
+docker build -t cpollet/rbm .
 popd
 
 docker run --rm \
   --name rbm \
   -e DATABASE_HOST=rbm-postgres \
-  -p 3000:3000 \
+  -e HTTP_PORT=8001 \
+  -p 8001:8001 \
   --network rbm \
-  rbm
+  cpollet/rbm
