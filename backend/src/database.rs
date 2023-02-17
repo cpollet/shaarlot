@@ -2,10 +2,22 @@ pub mod bookmarks;
 
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
-pub async fn connect(database_host: &str) -> DatabaseConnection {
+pub struct Configuration {
+    pub host: String,
+    pub port: String,
+    pub username: String,
+    pub password: String,
+    pub database: String,
+}
+
+pub async fn connect(configuration: &Configuration) -> DatabaseConnection {
     let connect_options = ConnectOptions::new(format!(
-        "postgres://postgres:password@{}:5432/postgres",
-        database_host
+        "postgres://{}:{}@{}:{}/{}",
+        configuration.username,
+        configuration.password,
+        configuration.host,
+        configuration.port,
+        configuration.database,
     ));
     Database::connect(connect_options)
         .await
