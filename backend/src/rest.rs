@@ -14,6 +14,7 @@ use qrcode_generator::QrCodeEcc;
 use rest_api::*;
 use std::collections::HashMap;
 use std::str::FromStr;
+use webpage::{Webpage, WebpageOptions};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -23,6 +24,7 @@ pub fn router(state: AppState) -> Router {
         .route(URL_BOOKMARK, delete(delete_bookmark))
         .route(URL_BOOKMARK, put(update_bookmark))
         .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
+        .route(URL_URLS, get(get_url))
         .with_state(state)
 }
 
@@ -230,4 +232,24 @@ async fn delete_bookmark(
                 .with_data("id", &format!("{}", bookmark_id)),
             ),
         ))
+}
+
+async fn get_url(
+    Path(url): Path<String>,
+) -> Result<Json<UrlResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let webpage = Webpage::from_url(&url, WebpageOptions::default()).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorResponse::new(
+                "CANNOT_FETCH_DATA",
+                "Cannot fetch remote URL data",
+            )),
+        )
+    })?;
+
+    Ok(Json(UrlResponse {
+        url: webpage.http.url,
+        title: webpage.html.title,
+        description: webpage.html.description,
+    }))
 }

@@ -21,11 +21,11 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
             if bookmarks.is_none() {
                 spawn_local(async move {
                     bookmarks.set(Some(match Request::get(URL_BOOKMARKS).send().await {
-                        Err(_) => Err(format!("Error fetching data")),
+                        Err(_) => Err("Error fetching data".to_string()),
                         Ok(resp) => {
                             if !resp.ok() {
                                 Err(format!(
-                                    "Error fetching data {} ({})",
+                                    "Error fetching data: {} ({})",
                                     resp.status(),
                                     resp.status_text()
                                 ))

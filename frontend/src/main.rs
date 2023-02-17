@@ -1,8 +1,10 @@
 mod bookmarks;
+mod create_bookmark;
 mod menu;
 
-use crate::bookmarks::BookmarksHOC;
 use crate::bookmarks::bookmarks_provider::BookmarksProvider;
+use crate::bookmarks::BookmarksHOC;
+use crate::create_bookmark::CreateBookmark;
 use crate::menu::Menu;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -48,9 +50,7 @@ fn switch(route: Route) -> Html {
             </BookmarksProvider>
         },
         Route::AddBookmark => {
-            html! {
-                {"todo: add bookmark"}
-            }
+            html! { <CreateBookmark /> }
         }
         Route::TagCloud => {
             html! {

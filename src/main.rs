@@ -33,7 +33,7 @@ async fn main() {
         .await
         .expect("Could not migrate database");
 
-    env::set_var("RUST_LOG", "debug,hyper=info,mio=info");
+    env::set_var("RUST_LOG", "info");
     tracing_subscriber::fmt::init();
 
     log::info!("listening on http://{}:{}", http_host, http_port);
