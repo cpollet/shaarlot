@@ -8,3 +8,4 @@ publish = false
 rest-api = { path = "../rest-api" }
 gloo-net = "0.2.6"
 yew = { version = "0.20.0", features = ["csr"] }
+yew-router = "0.17.0"
