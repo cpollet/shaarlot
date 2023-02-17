@@ -1,4 +1,5 @@
-use rest_api::{BookmarkResponse, URL_BOOKMARK_QRCODE};
+use crate::qr_code::QrCode;
+use rest_api::BookmarkResponse;
 use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
@@ -42,9 +43,7 @@ pub fn bookmark(props: &BookmarkProps) -> Html {
                     {"\u{00a0}|\u{00a0}"}
                     <a href="#">{"permalink"}</a>
                     {"\u{00a0}|\u{00a0}"}
-                    <a href={URL_BOOKMARK_QRCODE.replace(":id", &props.id.to_string())}>
-                        <img src="/assets/qrcode_16.png" />
-                    </a>
+                    <QrCode id={props.id} />
                 </div>
                 <div class="bookmark__link">
                     <a href={props.url.clone()}>

@@ -1,6 +1,8 @@
 mod bookmark;
 mod bookmarks;
 mod bookmarks_provider;
+mod qr_code;
+mod qr_code_overlay;
 
 use crate::bookmarks::BookmarksHOC;
 use crate::bookmarks_provider::BookmarksProvider;

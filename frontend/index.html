@@ -20,7 +20,7 @@
         }
 
         .view {
-            width: 1600px;
+            width: 1200px;
         }
 
         .bookmarks {
@@ -64,7 +64,8 @@
             vertical-align: middle;
         }
 
-        .bookmark__actions img {
+        .bookmarks__qrcode-icon {
+            cursor: pointer;
             vertical-align: bottom;
         }
 
@@ -75,6 +76,27 @@
             width: 50%;
             box-sizing: border-box;
             text-align: right;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .overlay__content--center-middle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .qrcode__legend {
+            color: white;
+            text-align: center;
         }
     </style>
 </head>

@@ -99,7 +99,7 @@ async fn get_bookmark_qrcode(
 ) -> Result<impl IntoResponse, StatusCode> {
     let size = params
         .get("size")
-        .map_or(Ok(128), |s| u32::from_str(s))
+        .map_or(Ok(256), |s| u32::from_str(s))
         .map_err(|e| {
             log::info!("{}", e);
             StatusCode::BAD_REQUEST
