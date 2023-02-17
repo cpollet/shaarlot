@@ -1,4 +1,4 @@
-use crate::qr_code_overlay::QrCodeOverlay;
+use crate::bookmarks::qr_code_overlay::QrCodeOverlay;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]

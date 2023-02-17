@@ -1,7 +1,7 @@
+use crate::Route;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
 use yew_router::Routable;
-use crate::Route;
 
 #[function_component(Menu)]
 pub fn menu() -> Html {

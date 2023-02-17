@@ -1,4 +1,4 @@
-use crate::qr_code::QrCode;
+use crate::bookmarks::qr_code::QrCode;
 use rest_api::BookmarkResponse;
 use yew::prelude::*;
 

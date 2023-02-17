@@ -1,4 +1,4 @@
-use crate::bookmark::BookmarkProps;
+use crate::bookmarks::bookmark::BookmarkProps;
 use crate::bookmarks::BookmarksProps;
 use gloo_net::http::Request;
 use rest_api::{BookmarkResponse, URL_BOOKMARKS};

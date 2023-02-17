@@ -1,12 +1,8 @@
-mod bookmark;
 mod bookmarks;
-mod bookmarks_provider;
-mod qr_code;
-mod qr_code_overlay;
 mod menu;
 
 use crate::bookmarks::BookmarksHOC;
-use crate::bookmarks_provider::BookmarksProvider;
+use crate::bookmarks::bookmarks_provider::BookmarksProvider;
 use crate::menu::Menu;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -29,7 +25,7 @@ enum Route {
     Tools,
     #[not_found]
     #[at("/404")]
-    NotFound
+    NotFound,
 }
 
 #[function_component(App)]
@@ -44,7 +40,7 @@ fn app() -> Html {
     }
 }
 
-fn switch(route:Route) ->Html {
+fn switch(route: Route) -> Html {
     match route {
         Route::Index | Route::Bookmarks => html! {
             <BookmarksProvider>
@@ -55,21 +51,21 @@ fn switch(route:Route) ->Html {
             html! {
                 {"todo: add bookmark"}
             }
-        },
+        }
         Route::TagCloud => {
             html! {
                 {"todo: tag cloud"}
             }
-        },
+        }
         Route::Tools => {
             html! {
                 {"todo: tools"}
             }
-        },
+        }
         Route::NotFound => {
             html! {
                 <h1>{"404 Not Found"}</h1>
             }
-        },
+        }
     }
 }
