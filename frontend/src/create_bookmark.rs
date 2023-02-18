@@ -1,3 +1,4 @@
+use crate::Route;
 use gloo_net::http::Request;
 use rest_api::{CreateBookmarkRequest, UrlResponse, URL_BOOKMARKS, URL_URLS};
 use urlencoding::encode;
@@ -5,7 +6,6 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
-use crate::Route;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Step {
@@ -67,7 +67,7 @@ pub fn create_bookmark() -> Html {
                         let mut new_state = (*state).clone();
                         new_state.step = Step::Details;
                         if let Ok(info) = info {
-                            new_state.url =AttrValue::from(info.url);
+                            new_state.url = AttrValue::from(info.url);
                             new_state.title = AttrValue::from(info.title.unwrap_or("".to_string()));
                             new_state.description =
                                 AttrValue::from(info.description.unwrap_or("".to_string()))

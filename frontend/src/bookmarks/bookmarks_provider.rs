@@ -1,5 +1,5 @@
-use crate::bookmarks::bookmark::BookmarkProps;
-use crate::bookmarks::BookmarksProps;
+use crate::bookmarks::Props as BookmarksProps;
+use crate::data::Bookmark;
 use gloo_net::http::Request;
 use rest_api::{BookmarkResponse, URL_BOOKMARKS};
 use std::rc::Rc;
@@ -7,12 +7,12 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct BookmarksProviderProps {
+pub struct Props {
     pub children: Children,
 }
 
 #[function_component(BookmarksProvider)]
-pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
+pub fn bookmarks_provider(props: &Props) -> Html {
     let bookmarks = use_state(|| None);
 
     {
@@ -20,7 +20,7 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
         use_effect(move || {
             if bookmarks.is_none() {
                 spawn_local(async move {
-                    bookmarks.set(Some(match Request::get(URL_BOOKMARKS).send().await {
+                    let v = match Request::get(URL_BOOKMARKS).send().await {
                         Err(_) => Err("Error fetching data".to_string()),
                         Ok(resp) => {
                             if !resp.ok() {
@@ -36,15 +36,16 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
                                     .map(|elements| {
                                         elements
                                             .into_iter()
-                                            .map(BookmarkProps::from)
-                                            .collect::<Vec<BookmarkProps>>()
+                                            .map(Bookmark::from)
+                                            .collect::<Vec<Bookmark>>()
                                     })
                                     .map(|bookmarks| BookmarksProps {
                                         bookmarks: Rc::new(bookmarks),
                                     })
                             }
                         }
-                    }))
+                    };
+                    bookmarks.set(Some(v))
                 });
             }
 
@@ -56,7 +57,7 @@ pub fn bookmarks_provider(props: &BookmarksProviderProps) -> Html {
         Some(Ok(bookmarks)) => html! {
             <ContextProvider<BookmarksProps> context={(*bookmarks).clone()}>
                 { props.children.clone() }
-            </ContextProvider<BookmarksProps>>
+            </ContextProvider<BookmarksProps >>
         },
         Some(Err(err)) => html! {
             <div>{err}</div>

@@ -2,13 +2,13 @@ use rest_api::URL_BOOKMARK_QRCODE;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct QrCodeOverlayProps {
+pub struct Props {
     pub id: i32,
     pub onclick: Callback<()>,
 }
 
 #[function_component(QrCodeOverlay)]
-pub fn qr_code_overlay(props: &QrCodeOverlayProps) -> Html {
+pub fn qr_code_overlay(props: &Props) -> Html {
     let onclick = {
         let callback = props.onclick.clone();
         Callback::from(move |_| {

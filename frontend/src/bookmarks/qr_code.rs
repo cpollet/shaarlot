@@ -2,15 +2,15 @@ use crate::bookmarks::qr_code_overlay::QrCodeOverlay;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct QrCodeProps {
+pub struct Props {
     pub id: i32,
 }
 
-struct QrCodeState {
+struct State {
     overlay_open: bool,
 }
 
-impl Default for QrCodeState {
+impl Default for State {
     fn default() -> Self {
         Self {
             overlay_open: false,
@@ -19,18 +19,18 @@ impl Default for QrCodeState {
 }
 
 #[function_component(QrCode)]
-pub fn qr_code(props: &QrCodeProps) -> Html {
-    let state = use_state(|| QrCodeState::default());
+pub fn qr_code(props: &Props) -> Html {
+    let state = use_state(|| State::default());
 
     let onclick = {
         let state = state.clone();
-        Callback::from(move |_| state.set(QrCodeState { overlay_open: true }))
+        Callback::from(move |_| state.set(State { overlay_open: true }))
     };
 
     let close = {
         let state = state.clone();
         Callback::from(move |_| {
-            state.set(QrCodeState {
+            state.set(State {
                 overlay_open: false,
             })
         })
@@ -38,7 +38,7 @@ pub fn qr_code(props: &QrCodeProps) -> Html {
 
     html! {
         <>
-            <img {onclick} class="bookmarks__qrcode-icon" src="/assets/qrcode_16.png" />
+            <img {onclick} class="bookmark__icon" src="/assets/qrcode_16.png" />
             if state.overlay_open {
                 <QrCodeOverlay
                     id={props.id}
