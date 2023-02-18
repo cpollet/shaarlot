@@ -27,6 +27,8 @@ async fn main() {
         .init();
 
     log::info!("Starting ...");
+    log::info!("Commit      {} ({}); dirty: {}", env!("VERGEN_GIT_SHA_SHORT"), env!("VERGEN_GIT_BRANCH"), env!("GIT_DIRTY"));
+    log::info!("Build date  {}", env!("SOURCE_TIMESTAMP"));
 
     let http_host = env::var("HTTP_HOST").unwrap_or("0.0.0.0".to_owned());
     let http_port = env::var("HTTP_PORT").unwrap_or("3000".to_owned());
