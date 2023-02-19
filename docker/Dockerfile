@@ -5,8 +5,7 @@ RUN apt-get update ; \
     apt-get clean ; \
     rm -rf /var/lib/apt/lists/*
 
-COPY target/rbm /usr/local/bin/
-COPY target/webroot /usr/local/bin/webroot
+COPY target /usr/local/bin/
 
 EXPOSE 3000
 
