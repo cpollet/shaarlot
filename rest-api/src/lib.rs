@@ -14,6 +14,7 @@ pub struct BookmarkResponse {
     pub description: Option<String>,
     pub tags: Vec<String>,
     pub creation_date: DateTime<Utc>,
+    pub update_date: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize, Deserialize)]

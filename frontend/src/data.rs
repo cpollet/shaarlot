@@ -9,6 +9,20 @@ pub struct Bookmark {
     pub title: Option<AttrValue>,
     pub description: Option<AttrValue>,
     pub creation_date: DateTime<Local>,
+    pub update_date: Option<DateTime<Local>>,
+}
+
+impl Default for Bookmark {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            url: AttrValue::from(""),
+            title: None,
+            description: None,
+            creation_date: DateTime::default(),
+            update_date: None,
+        }
+    }
 }
 
 impl From<BookmarkResponse> for Bookmark {
@@ -19,6 +33,7 @@ impl From<BookmarkResponse> for Bookmark {
             title: value.title.map(|v| AttrValue::from(v)),
             description: value.description.map(|v| AttrValue::from(v)),
             creation_date: DateTime::from(value.creation_date),
+            update_date: value.update_date.map(|d|DateTime::from(d)),
         }
     }
 }

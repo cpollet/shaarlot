@@ -4,7 +4,7 @@ use crate::data::Bookmark as BookmarkData;
 use std::rc::Rc;
 use yew::prelude::*;
 
-mod bookmark;
+pub mod bookmark;
 pub mod bookmarks_provider;
 mod qr_code;
 mod qr_code_overlay;
@@ -65,7 +65,7 @@ pub fn bookmarks(props: &Props) -> Html {
             <ul class="bookmarks">
             {
                 props.bookmarks.as_slice().into_iter().map(|b| html! {
-                    <Bookmark key={b.id} bookmark={b.clone()} />
+                    <Bookmark key={b.id} bookmark={Rc::new(b.clone())} />
                 }).collect::<Html>()
             }
             </ul>

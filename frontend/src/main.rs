@@ -13,6 +13,7 @@ use crate::create_bookmark::CreateBookmark;
 use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
+use crate::bookmarks::bookmark::BookmarkHOC;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -30,6 +31,9 @@ pub enum Route {
 
     #[at("/bookmarks/~add")]
     AddBookmark,
+
+    #[at("/bookmarks/:id")]
+    ViewBookmark { id: i32 },
 
     #[at("/bookmarks/:id/~delete")]
     DeleteBookmark { id: i32 },
@@ -71,6 +75,13 @@ fn switch(route: Route) -> Html {
         }
         Route::AddBookmark => {
             html! { <CreateBookmark /> }
+        }
+        Route::ViewBookmark {id} => {
+            html! {
+                <BookmarkProvider {id}>
+                    <BookmarkHOC />
+                </BookmarkProvider>
+            }
         }
         Route::DeleteBookmark { id } => {
             html! {

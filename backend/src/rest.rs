@@ -75,6 +75,7 @@ async fn get_bookmarks(
                 description: m.description,
                 tags: vec![],
                 creation_date: m.creation_date.with_timezone(&Utc),
+                update_date: m.update_date.map(|d|d.with_timezone(&Utc)),
             })
             .collect(),
     ))
@@ -106,6 +107,7 @@ async fn get_bookmark(
                 description: m.description,
                 tags: vec![],
                 creation_date: m.creation_date.with_timezone(&Utc),
+                update_date: m.update_date.map(|d|d.with_timezone(&Utc)),
             })
         })
         .ok_or((
@@ -185,6 +187,7 @@ async fn create_bookmark(
                 description: m.description,
                 tags: vec![],
                 creation_date: m.creation_date.with_timezone(&Utc),
+                update_date: m.update_date.map(|d|d.with_timezone(&Utc)),
             }),
         )
     })
@@ -220,6 +223,7 @@ async fn update_bookmark(
             description: m.description,
             tags: vec![],
             creation_date: m.creation_date.with_timezone(&Utc),
+            update_date: m.update_date.map(|d|d.with_timezone(&Utc)),
         })
     })
     .ok_or((

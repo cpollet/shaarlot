@@ -1,6 +1,5 @@
 use crate::data::Bookmark;
 use crate::Route;
-use chrono::DateTime;
 use gloo_net::http::Request;
 use rest_api::{CreateBookmarkRequest, UrlResponse, URL_BOOKMARKS, URL_URLS};
 use urlencoding::encode;
@@ -25,13 +24,7 @@ impl Default for State {
     fn default() -> Self {
         Self {
             step: Step::Init,
-            bookmark: Bookmark {
-                id: 0,
-                url: AttrValue::from(""),
-                title: None,
-                description: None,
-                creation_date: DateTime::default(),
-            },
+            bookmark: Bookmark::default(),
         }
     }
 }

@@ -26,19 +26,21 @@ It is started with `./docker.sh` The URL to use is http://localhost:8001.
 | `HTTP_PORT`         | `3000`      | the HTTP port to listen to                      |
 | `HTTP_HOST`         | `0.0.0.0`   | the HTTP address to bind to                     |
 | `ROOT_PATH`         | `./webroot` | the root folder of static files                 |
-| `ASSETS_URL`        | `/assets`   | the root url under wihich `ROOT_PATH` is served | 
+| `ASSETS_URL`        | `/assets`   | the root url under which `ROOT_PATH` is served | 
 
 ## Planned features
-* [ ] CRUD functionnality on links
-* [ ] Tags on links
-* [ ] Tag cloud
-* [ ] Search
-* [ ] Markdown support in links description
-* [ ] Export & Import links (inlc. from shaarli)
-* [ ] Dead links detection & report
+* [x] CRUD functionality on links
+* [x] Permalinks
 * [ ] Authentication
-* [ ] Permalinks
+* [ ] Private links
+* [ ] Read it later flags
+* [ ] Tags on links
 * [ ] Pagination
+* [ ] Search & filtering
+* [ ] Tag cloud
+* [ ] Private links sharing
+* [ ] Markdown support in links description
+* [ ] Export & Import links (incl. from Shaarli)
+* [ ] Dead links detection & report
 * [ ] URL cleanup (utm_source=, fb=)
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
-* [ ] Read it later flags
