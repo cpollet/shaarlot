@@ -14,3 +14,4 @@ yew-router = "0.17.0"
 web-sys = { version = "0.3.61", features = ["Event", "EventTarget", "InputEvent", "HtmlInputElement"] }
 urlencoding = "2.1.2"
 chrono = {version = "0.4.23", features = ["serde"] }
+gloo-console = "0.2.3"
