@@ -25,6 +25,15 @@ pub fn edit_bookmark(props: &Props) -> Html {
     });
     let navigator = use_navigator().unwrap();
 
+    let url_input_ref= use_node_ref();
+
+    {
+        let url_input_ref=url_input_ref.clone();
+        use_effect(move || {
+            let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+        });
+    }
+
     let onsubmit = {
         let state = state.clone();
         let navigator = navigator.clone();
@@ -101,6 +110,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                 <p>{"URL"}</p>
                 <p>
                     <input
+                        ref={url_input_ref}
                         class="edit-bookmark__url-input"
                         type="text"
                         value={state.bookmark.url.clone()}

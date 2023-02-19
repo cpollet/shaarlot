@@ -33,6 +33,24 @@ impl Default for State {
 pub fn create_bookmark() -> Html {
     let state = use_state(|| State::default());
     let navigator = use_navigator().unwrap();
+    let url_input_ref = use_node_ref();
+    let title_input_ref = use_node_ref();
+
+    {
+        let url_input_ref = url_input_ref.clone();
+        let title_input_ref = title_input_ref.clone();
+        let step = state.step;
+        use_effect(move || {
+            match step {
+                Step::Init => {
+                    let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                }
+                Step::Details => {
+                    let _ = title_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                }
+            }
+        })
+    }
 
     let onsubmit = {
         let state = state.clone();
@@ -140,6 +158,7 @@ pub fn create_bookmark() -> Html {
                 <p>{"URL"}</p>
                 <p>
                     <input
+                        ref={url_input_ref}
                         class="create-bookmark__url-input"
                         type="text"
                         value={state.bookmark.url.clone()}
@@ -150,6 +169,7 @@ pub fn create_bookmark() -> Html {
                 <p>{"Title"}</p>
                 <p>
                     <input
+                        ref={title_input_ref}
                         class="create-bookmark__title-input"
                         type="text"
                         value={state.bookmark.title.clone()}
