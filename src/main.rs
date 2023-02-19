@@ -1,3 +1,5 @@
+use axum::response::IntoResponse;
+use axum::routing::get;
 use axum_extra::routing::SpaRouter;
 use backend::database::Configuration;
 use backend::rest::router;
@@ -78,10 +80,21 @@ async fn main() {
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
             router(AppState { database })
+                .route("/health", get(health))
                 .merge(SpaRouter::new(&assets_url, static_files_path))
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
                 .into_make_service(),
         )
         .await
         .unwrap();
+}
+
+async fn health() -> impl IntoResponse {
+    format!(
+        "OK; commit:{}; branch:{}; dirty:{}; build_date:{}",
+        env!("VERGEN_GIT_SHA_SHORT"),
+        env!("VERGEN_GIT_BRANCH"),
+        env!("GIT_DIRTY"),
+        env!("SOURCE_TIMESTAMP")
+    )
 }

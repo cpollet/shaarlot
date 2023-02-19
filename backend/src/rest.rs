@@ -18,7 +18,6 @@ use webpage::{Webpage, WebpageOptions};
 
 pub fn router(state: AppState) -> Router {
     Router::new()
-        .route("/health", get(health))
         .route(URL_BOOKMARKS, get(get_bookmarks))
         .route(URL_BOOKMARKS, post(create_bookmark))
         .route(URL_BOOKMARK, get(get_bookmark))
@@ -27,10 +26,6 @@ pub fn router(state: AppState) -> Router {
         .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
         .route(URL_URLS, get(get_url))
         .with_state(state)
-}
-
-async fn health() -> impl IntoResponse {
-    "OK"
 }
 
 async fn get_bookmarks(
