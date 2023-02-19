@@ -8,6 +8,7 @@ use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::thread::sleep;
 use std::time::Duration;
+use tokio::signal;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 use tracing::Level;
@@ -85,6 +86,7 @@ async fn main() {
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
                 .into_make_service(),
         )
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
 }
@@ -97,4 +99,30 @@ async fn health() -> impl IntoResponse {
         env!("GIT_DIRTY"),
         env!("SOURCE_TIMESTAMP")
     )
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+        let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+        let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    log::info!("signal received, starting graceful shutdown");
 }

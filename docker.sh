@@ -13,7 +13,7 @@ docker rmi cpollet/rbm
 docker build -t cpollet/rbm .
 popd
 
-docker run --init --rm \
+docker run --rm \
   --name rbm \
   -e DATABASE_HOST=rbm-postgres \
   -e HTTP_PORT=8001 \
