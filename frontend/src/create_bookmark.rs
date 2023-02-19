@@ -1,3 +1,4 @@
+use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::{CreateBookmarkRequest, UrlResponse, URL_BOOKMARKS, URL_URLS};
@@ -16,18 +17,19 @@ enum Step {
 #[derive(Clone, PartialEq)]
 struct State {
     step: Step,
-    url: AttrValue,
-    title: AttrValue,
-    description: AttrValue,
+    bookmark: Bookmark,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
             step: Step::Init,
-            url: AttrValue::from(""),
-            title: AttrValue::from(""),
-            description: AttrValue::from(""),
+            bookmark: Bookmark {
+                id: 0,
+                url: AttrValue::from(""),
+                title: None,
+                description: None,
+            },
         }
     }
 }
@@ -45,7 +47,8 @@ pub fn create_bookmark() -> Html {
                 Step::Init => {
                     let state = state.clone();
                     spawn_local(async move {
-                        let url = URL_URLS.replace(":url", encode(state.url.as_str()).as_ref());
+                        let url =
+                            URL_URLS.replace(":url", encode(state.bookmark.url.as_str()).as_ref());
                         let info = match Request::get(&url).send().await {
                             Err(_) => Err("Error fetching data".to_string()),
                             Ok(resp) => {
@@ -67,25 +70,21 @@ pub fn create_bookmark() -> Html {
                         let mut new_state = (*state).clone();
                         new_state.step = Step::Details;
                         if let Ok(info) = info {
-                            new_state.url = AttrValue::from(info.url);
-                            new_state.title = AttrValue::from(info.title.unwrap_or("".to_string()));
-                            new_state.description =
-                                AttrValue::from(info.description.unwrap_or("".to_string()))
+                            new_state.bookmark.url = AttrValue::from(info.url);
+                            new_state.bookmark.title = info.title.map(|v| AttrValue::from(v));
+                            new_state.bookmark.description =
+                                info.description.map(|v| AttrValue::from(v))
                         }
                         state.set(new_state);
                     });
                 }
                 Step::Details => {
-                    let bookmark = CreateBookmarkRequest {
-                        url: state.url.to_string(),
-                        title: Some(state.title.to_string()),
-                        description: Some(state.description.to_string()),
-                    };
                     let navigator = navigator.clone();
+                    let bookmark = state.bookmark.clone();
                     spawn_local(async move {
                         // TODO finish this
                         let _todo = Request::post(URL_BOOKMARKS)
-                            .json(&bookmark)
+                            .json(&CreateBookmarkRequest::from(&bookmark))
                             .expect("could not set json")
                             .send()
                             .await;
@@ -102,25 +101,39 @@ pub fn create_bookmark() -> Html {
             let input: HtmlInputElement = e.target_unchecked_into();
             let mut new_state = (*state).clone();
             new_state.step = Step::Init;
-            new_state.url = AttrValue::from(input.value());
+            new_state.bookmark.url = AttrValue::from(input.value());
             state.set(new_state);
         })
     };
     let oninput_title = {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
+            let value = e
+                .target_unchecked_into::<HtmlInputElement>()
+                .value()
+                .to_string();
             let mut new_state = (*state).clone();
-            new_state.title = AttrValue::from(input.value());
+            if value.is_empty() {
+                new_state.bookmark.title = None;
+            } else {
+                new_state.bookmark.title = Some(AttrValue::from(value));
+            }
             state.set(new_state);
         })
     };
     let oninput_description = {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
+            let value = e
+                .target_unchecked_into::<HtmlInputElement>()
+                .value()
+                .to_string();
             let mut new_state = (*state).clone();
-            new_state.description = AttrValue::from(input.value());
+            if value.is_empty() {
+                new_state.bookmark.description = None;
+            } else {
+                new_state.bookmark.description = Some(AttrValue::from(value));
+            }
             state.set(new_state);
         })
     };
@@ -134,7 +147,7 @@ pub fn create_bookmark() -> Html {
                     <input
                         class="create-bookmark__url-input"
                         type="text"
-                        value={state.url.clone()}
+                        value={state.bookmark.url.clone()}
                         oninput={oninput_url}
                     />
                 </p>
@@ -144,7 +157,7 @@ pub fn create_bookmark() -> Html {
                     <input
                         class="create-bookmark__title-input"
                         type="text"
-                        value={state.title.clone()}
+                        value={state.bookmark.title.clone()}
                         oninput={oninput_title}
                     />
                 </p>
@@ -152,7 +165,7 @@ pub fn create_bookmark() -> Html {
                 <p>
                     <textarea
                         class="create-bookmark__description-input"
-                        value={state.description.clone()}
+                        value={state.bookmark.description.clone()}
                         oninput={oninput_description}
                     />
                 </p>

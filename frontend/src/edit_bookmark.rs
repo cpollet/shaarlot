@@ -14,9 +14,7 @@ pub struct Props {
 
 #[derive(Clone, PartialEq)]
 struct State {
-    url: AttrValue,
-    title: AttrValue,
-    description: AttrValue,
+    bookmark: Bookmark,
 }
 
 #[function_component(EditBookmark)]
@@ -33,11 +31,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                     let res = fetch_bookmark(props.id).await;
                     // todo implement a 500 page
                     if let Ok(bookmark) = res {
-                        state.set(Some(State {
-                            url: bookmark.url,
-                            title: bookmark.title.unwrap_or(AttrValue::from("")),
-                            description: bookmark.description.unwrap_or(AttrValue::from("")),
-                        }))
+                        state.set(Some(State { bookmark }))
                     }
                 });
             }
@@ -53,16 +47,11 @@ pub fn edit_bookmark(props: &Props) -> Html {
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
             if let Some(state) = (*state).clone() {
-                let bookmark = UpdateBookmarkRequest {
-                    url: state.url.to_string(),
-                    title: Some(state.title.to_string()),
-                    description: Some(state.description.to_string()),
-                };
                 let navigator = navigator.clone();
                 spawn_local(async move {
                     // TODO finish this
                     let _todo = Request::put(&URL_BOOKMARK.replace(":id", &props.id.to_string()))
-                        .json(&bookmark)
+                        .json(&UpdateBookmarkRequest::from(&state.bookmark))
                         .expect("could not set json")
                         .send()
                         .await;
@@ -84,8 +73,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
         Callback::from(move |e: InputEvent| {
             if let Some(mut new_state) = (*state).clone() {
                 let input: HtmlInputElement = e.target_unchecked_into();
-                // let mut new_state = (*state).clone();
-                new_state.url = AttrValue::from(input.value());
+                new_state.bookmark.url = AttrValue::from(input.value());
                 state.set(Some(new_state));
             }
         })
@@ -94,8 +82,15 @@ pub fn edit_bookmark(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
             if let Some(mut new_state) = (*state).clone() {
-                let input: HtmlInputElement = e.target_unchecked_into();
-                new_state.title = AttrValue::from(input.value());
+                let value = e
+                    .target_unchecked_into::<HtmlInputElement>()
+                    .value()
+                    .to_string();
+                if value.is_empty() {
+                    new_state.bookmark.title = None
+                } else {
+                    new_state.bookmark.title = Some(AttrValue::from(value))
+                }
                 state.set(Some(new_state));
             }
         })
@@ -104,8 +99,15 @@ pub fn edit_bookmark(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
             if let Some(mut new_state) = (*state).clone() {
-                let input: HtmlInputElement = e.target_unchecked_into();
-                new_state.description = AttrValue::from(input.value());
+                let value = e
+                    .target_unchecked_into::<HtmlInputElement>()
+                    .value()
+                    .to_string();
+                if value.is_empty() {
+                    new_state.bookmark.description = None
+                } else {
+                    new_state.bookmark.description = Some(AttrValue::from(value))
+                }
                 state.set(Some(new_state));
             }
         })
@@ -121,7 +123,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                         <input
                             class="edit-bookmark__url-input"
                             type="text"
-                            value={state.url.clone()}
+                            value={state.bookmark.url.clone()}
                             oninput={oninput_url}
                         />
                     </p>
@@ -130,7 +132,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                         <input
                             class="edit-bookmark__title-input"
                             type="text"
-                            value={state.title.clone()}
+                            value={state.bookmark.title.clone()}
                             oninput={oninput_title}
                         />
                     </p>
@@ -138,7 +140,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                     <p>
                         <textarea
                             class="edit-bookmark__description-input"
-                            value={state.description.clone()}
+                            value={state.bookmark.description.clone()}
                             oninput={oninput_description}
                         />
                     </p>

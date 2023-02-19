@@ -1,4 +1,4 @@
-use rest_api::BookmarkResponse;
+use rest_api::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]
@@ -16,6 +16,26 @@ impl From<BookmarkResponse> for Bookmark {
             url: AttrValue::from(value.url),
             title: value.title.map(|v| AttrValue::from(v)),
             description: value.description.map(|v| AttrValue::from(v)),
+        }
+    }
+}
+
+impl From<&Bookmark> for UpdateBookmarkRequest {
+    fn from(bookmark: &Bookmark) -> Self {
+        UpdateBookmarkRequest {
+            url: bookmark.url.to_string(),
+            title: bookmark.title.as_ref().map(|v| v.to_string()),
+            description: bookmark.description.as_ref().map(|v| v.to_string()),
+        }
+    }
+}
+
+impl From<&Bookmark> for CreateBookmarkRequest {
+    fn from(bookmark: &Bookmark) -> Self {
+        Self {
+            url: bookmark.url.to_string(),
+            title: bookmark.title.as_ref().map(|v| v.to_string()),
+            description: bookmark.description.as_ref().map(|v| v.to_string()),
         }
     }
 }
