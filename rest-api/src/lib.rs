@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 pub const URL_BOOKMARKS: &str = "/api/bookmarks";
@@ -12,6 +13,7 @@ pub struct BookmarkResponse {
     pub title: Option<String>,
     pub description: Option<String>,
     pub tags: Vec<String>,
+    pub creation_date: DateTime<Utc>,
 }
 
 #[derive(Serialize, Deserialize)]

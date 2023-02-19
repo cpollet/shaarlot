@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use rest_api::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
 use yew::prelude::*;
 
@@ -7,6 +8,7 @@ pub struct Bookmark {
     pub url: AttrValue,
     pub title: Option<AttrValue>,
     pub description: Option<AttrValue>,
+    pub creation_date: DateTime<Local>,
 }
 
 impl From<BookmarkResponse> for Bookmark {
@@ -16,6 +18,7 @@ impl From<BookmarkResponse> for Bookmark {
             url: AttrValue::from(value.url),
             title: value.title.map(|v| AttrValue::from(v)),
             description: value.description.map(|v| AttrValue::from(v)),
+            creation_date: DateTime::from(value.creation_date),
         }
     }
 }

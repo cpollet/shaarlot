@@ -1,6 +1,7 @@
 mod error_response;
 mod json;
 
+use crate::database::bookmarks::SortOrder;
 use crate::rest::error_response::ErrorResponse;
 use crate::rest::json::Json;
 use crate::{database, AppState};
@@ -10,8 +11,11 @@ use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{delete, get, post, put};
 use axum::Router;
+use chrono::Utc;
 use qrcode_generator::QrCodeEcc;
+use rest_api::BookmarkResponse;
 use rest_api::*;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
 use webpage::{Webpage, WebpageOptions};
@@ -28,11 +32,31 @@ pub fn router(state: AppState) -> Router {
         .with_state(state)
 }
 
+#[derive(Deserialize)]
+struct GetBookmarksQueryParams {
+    order: Option<String>,
+}
+
 async fn get_bookmarks(
+    Query(query): Query<GetBookmarksQueryParams>,
     State(state): State<AppState>,
 ) -> Result<Json<Vec<BookmarkResponse>>, (StatusCode, Json<ErrorResponse>)> {
+    let order = query
+        .order
+        .map(|v| SortOrder::try_from(v.as_str()))
+        .unwrap_or(Ok(SortOrder::CreationDateDesc))
+        .map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                Json(ErrorResponse::new(
+                    "INVALID_PARAMETER",
+                    "Unsupported value provided for the 'sort' query parameter",
+                )),
+            )
+        })?;
+
     Ok(Json(
-        database::bookmarks::Query::find_all(&state.database)
+        database::bookmarks::Query::find_all_order_by(&state.database, order)
             .await
             .map_err(|_| {
                 (
@@ -50,6 +74,7 @@ async fn get_bookmarks(
                 title: m.title,
                 description: m.description,
                 tags: vec![],
+                creation_date: m.creation_date.with_timezone(&Utc),
             })
             .collect(),
     ))
@@ -80,6 +105,7 @@ async fn get_bookmark(
                 title: m.title,
                 description: m.description,
                 tags: vec![],
+                creation_date: m.creation_date.with_timezone(&Utc),
             })
         })
         .ok_or((
@@ -158,6 +184,7 @@ async fn create_bookmark(
                 title: m.title,
                 description: m.description,
                 tags: vec![],
+                creation_date: m.creation_date.with_timezone(&Utc),
             }),
         )
     })
@@ -192,6 +219,7 @@ async fn update_bookmark(
             title: m.title,
             description: m.description,
             tags: vec![],
+            creation_date: m.creation_date.with_timezone(&Utc),
         })
     })
     .ok_or((

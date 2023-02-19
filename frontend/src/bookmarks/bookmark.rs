@@ -64,7 +64,7 @@ pub fn bookmark(props: &Props) -> Html {
                         {"delete"}
                     </a>
                     {"\u{00a0}|\u{00a0}"}
-                    {"2023-02-15 21:37"}
+                    {props.bookmark.creation_date.format("%h %e, %Y at %T %Z")}
                     {"\u{00a0}|\u{00a0}"}
                     <a href="#">{"permalink"}</a>
                     {"\u{00a0}|\u{00a0}"}

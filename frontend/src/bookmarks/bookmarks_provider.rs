@@ -20,7 +20,11 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         use_effect(move || {
             if bookmarks.is_none() {
                 spawn_local(async move {
-                    let v = match Request::get(URL_BOOKMARKS).send().await {
+                    let v = match Request::get(URL_BOOKMARKS)
+                        .query([("order", "creation_date:desc")])
+                        .send()
+                        .await
+                    {
                         Err(_) => Err("Error fetching data".to_string()),
                         Ok(resp) => {
                             if !resp.ok() {

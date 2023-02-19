@@ -311,6 +311,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "axum",
+ "chrono",
  "entity",
  "log",
  "qrcode-generator",
@@ -856,6 +857,7 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "gloo-net",
  "rest-api",
  "urlencoding",
@@ -2290,6 +2292,7 @@ dependencies = [
 name = "rest-api"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "serde",
 ]
 
