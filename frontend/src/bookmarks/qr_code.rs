@@ -42,7 +42,7 @@ pub fn qr_code(props: &Props) -> Html {
     html! {
         <>
             <a
-                class="material-icons-outlined md-18"
+                class="material-icons-outlined md-16"
                 {onclick}
                 href="#"
             >

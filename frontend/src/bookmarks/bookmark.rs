@@ -49,7 +49,7 @@ pub fn bookmark(props: &Props) -> Html {
                 </div>
                 <div class="bookmark__actions">
                     <a
-                        class="material-icons-outlined md-18 blue"
+                        class="material-icons-outlined md-16 blue"
                         onclick={onclick_edit}
                         href={Route::EditBookmark {id: props.bookmark.id}.to_path()}
                     >
@@ -57,7 +57,7 @@ pub fn bookmark(props: &Props) -> Html {
                     </a>
                     {"\u{00a0}|\u{00a0}"}
                     <a
-                        class="material-icons-outlined md-18 red"
+                        class="material-icons-outlined md-16 red"
                         onclick={onclick_delete}
                         href={Route::DeleteBookmark {id: props.bookmark.id}.to_path()}
                     >
