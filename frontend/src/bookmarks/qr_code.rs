@@ -24,7 +24,10 @@ pub fn qr_code(props: &Props) -> Html {
 
     let onclick = {
         let state = state.clone();
-        Callback::from(move |_| state.set(State { overlay_open: true }))
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            state.set(State { overlay_open: true })
+        })
     };
 
     let close = {
@@ -38,7 +41,13 @@ pub fn qr_code(props: &Props) -> Html {
 
     html! {
         <>
-            <img {onclick} class="bookmark__icon" src="/assets/static/qrcode_16.png" />
+            <a
+                class="material-icons-outlined md-18"
+                {onclick}
+                href="#"
+            >
+                {"qr_code"}
+            </a>
             if state.overlay_open {
                 <QrCodeOverlay
                     id={props.id}

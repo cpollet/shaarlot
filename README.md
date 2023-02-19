@@ -3,7 +3,7 @@
 ## Running
 ### Development mode
 In this mode, both the front-end and back-end changes are compiled whenever the sources files are saved.
-It is with `./dev.sh`. The URL to use is http://localhost:3000.
+It is with `./dev.sh`. The URL to use is http://localhost:8080.
 
 ### Production mode
 In this mode, both the front-end and the back-end are compiled with `--release`.
