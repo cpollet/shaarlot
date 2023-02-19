@@ -115,6 +115,15 @@ pub fn create_bookmark() -> Html {
             state.set(new_state);
         })
     };
+    let oninput_description = {
+        let state = state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut new_state = (*state).clone();
+            new_state.description = AttrValue::from(input.value());
+            state.set(new_state);
+        })
+    };
 
     html! {
         <div class="create-bookmark">
@@ -141,7 +150,11 @@ pub fn create_bookmark() -> Html {
                 </p>
                 <p>{"Description"}</p>
                 <p>
-                    <textarea class="create-bookmark__description-input" value={state.description.clone()} />
+                    <textarea
+                        class="create-bookmark__description-input"
+                        value={state.description.clone()}
+                        oninput={oninput_description}
+                    />
                 </p>
                 }
                 <p><button class="create-bookmark__submit">{"Add bookmark"}</button></p>
