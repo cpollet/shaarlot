@@ -2,12 +2,14 @@ mod bookmarks;
 mod create_bookmark;
 mod data;
 mod delete_bookmark;
+mod edit_bookmark;
 mod menu;
 
 use crate::bookmarks::bookmarks_provider::BookmarksProvider;
 use crate::bookmarks::BookmarksHOC;
 use crate::create_bookmark::CreateBookmark;
 use crate::delete_bookmark::DeleteBookmark;
+use crate::edit_bookmark::EditBookmark;
 use crate::menu::Menu;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -17,7 +19,7 @@ fn main() {
 }
 
 #[derive(Clone, Routable, PartialEq)]
-enum Route {
+pub enum Route {
     #[at("/")]
     Index,
 
@@ -29,6 +31,9 @@ enum Route {
 
     #[at("/bookmarks/:id/~delete")]
     DeleteBookmark { id: i32 },
+
+    #[at("/bookmarks/:id/~edit")]
+    EditBookmark { id: i32 },
 
     #[at("/tags")]
     TagCloud,
@@ -55,17 +60,24 @@ fn app() -> Html {
 
 fn switch(route: Route) -> Html {
     match route {
-        Route::Index | Route::Bookmarks => html! {
-            <BookmarksProvider>
-                <BookmarksHOC />
-            </BookmarksProvider>
-        },
+        Route::Index | Route::Bookmarks => {
+            html! {
+                <BookmarksProvider>
+                    <BookmarksHOC />
+                </BookmarksProvider>
+            }
+        }
         Route::AddBookmark => {
             html! { <CreateBookmark /> }
         }
         Route::DeleteBookmark { id } => {
             html! {
                 <DeleteBookmark {id} />
+            }
+        }
+        Route::EditBookmark { id } => {
+            html! {
+                <EditBookmark {id} />
             }
         }
         Route::TagCloud => {

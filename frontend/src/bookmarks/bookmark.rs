@@ -3,6 +3,7 @@ use crate::data::Bookmark as BookmarkData;
 use crate::Route;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
+use yew_router::Routable;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
@@ -24,6 +25,17 @@ pub fn bookmark(props: &Props) -> Html {
         })
     };
 
+    let onclick_edit = {
+        let navigator = navigator.clone();
+        let props = props.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            navigator.push(&Route::EditBookmark {
+                id: props.bookmark.id,
+            });
+        })
+    };
+
     html! {
         <li class="bookmark">
             <div class="bookmark__title">
@@ -36,12 +48,18 @@ pub fn bookmark(props: &Props) -> Html {
                 {"tag\u{00a0}·\u{00a0}other_tag"}
                 </div>
                 <div class="bookmark__actions">
-                    <a href="#">{"edit"}</a>
+                    <a
+                        class="material-icons-outlined md-18 blue"
+                        onclick={onclick_edit}
+                        href={Route::EditBookmark {id: props.bookmark.id}.to_path()}
+                    >
+                        {"edit"}
+                    </a>
                     {"\u{00a0}|\u{00a0}"}
                     <a
                         class="material-icons-outlined md-18 red"
                         onclick={onclick_delete}
-                        href={format!("/bookmarks/{}/~delete", props.bookmark.id)}
+                        href={Route::DeleteBookmark {id: props.bookmark.id}.to_path()}
                     >
                         {"delete"}
                     </a>

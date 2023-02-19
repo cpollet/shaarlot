@@ -1,11 +1,11 @@
-use std::env;
-use std::thread::sleep;
-use std::time::Duration;
 use axum_extra::routing::SpaRouter;
 use backend::database::Configuration;
 use backend::rest::router;
 use backend::{database, AppState};
 use sea_orm_migration::MigratorTrait;
+use std::env;
+use std::thread::sleep;
+use std::time::Duration;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 use tracing::Level;
@@ -27,7 +27,12 @@ async fn main() {
         .init();
 
     log::info!("Starting ...");
-    log::info!("Commit      {} ({}); dirty: {}", env!("VERGEN_GIT_SHA_SHORT"), env!("VERGEN_GIT_BRANCH"), env!("GIT_DIRTY"));
+    log::info!(
+        "Commit      {} ({}); dirty: {}",
+        env!("VERGEN_GIT_SHA_SHORT"),
+        env!("VERGEN_GIT_BRANCH"),
+        env!("GIT_DIRTY")
+    );
     log::info!("Build date  {}", env!("SOURCE_TIMESTAMP"));
 
     let http_host = env::var("HTTP_HOST").unwrap_or("0.0.0.0".to_owned());
@@ -49,7 +54,12 @@ async fn main() {
             database: database_name.clone(),
         };
         loop {
-            log::info!("Connecting to database {} @ {}:{}...", database_name,database_host,database_port );
+            log::info!(
+                "Connecting to database {} @ {}:{}...",
+                database_name,
+                database_host,
+                database_port
+            );
             if let Ok(connection) = database::connect(&config).await {
                 break connection;
             }

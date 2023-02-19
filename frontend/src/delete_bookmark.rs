@@ -67,9 +67,9 @@ pub fn delete_bookmark(props: &Props) -> Html {
                     <>
                         <p><a href={s.bookmark.url.clone()}>{s.bookmark.title.clone()}</a></p>
                         <p>
-                            <button onclick={onclick_no} class="delete-bookmark__submit--safe">{"No"}</button>
+                            <button type="button" onclick={onclick_no} class="delete-bookmark__submit--safe">{"Cancel"}</button>
                             {" "}
-                            <button onclick={onclick_yes} class="delete-bookmark__submit--danger">{"Yes, delete"}</button>
+                            <button type="button" onclick={onclick_yes} class="delete-bookmark__submit--danger">{"Delete"}</button>
                         </p>
                     </>
                 }

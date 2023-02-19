@@ -118,6 +118,7 @@
         }
 
         .create-bookmark,
+        .edit-bookmark,
         .delete-bookmark {
             padding: 1em;
             width: 30%;
@@ -126,13 +127,18 @@
             text-align: center;
         }
 
-        .create-bookmark__title {
+        .create-bookmark__title,
+        .edit-bookmark__title,
+        .delete-bookmark__title {
             color: darkgreen;
         }
 
         .create-bookmark__url-input,
         .create-bookmark__title-input,
-        .create-bookmark__description-input {
+        .create-bookmark__description-input,
+        .edit-bookmark__url-input,
+        .edit-bookmark__title-input,
+        .edit-bookmark__description-input {
             border: solid 1px #d8d8d8;
             border-radius: 2px;
             background: #eee;
@@ -143,11 +149,13 @@
             box-sizing: border-box;
         }
 
-        .create-bookmark__description-input {
+        .create-bookmark__description-input,
+        .edit-bookmark__description-input {
             height: 100px;
         }
 
         .create-bookmark__submit,
+        .edit-bookmark__submit--safe,
         .delete-bookmark__submit--safe {
             border: 0;
             box-shadow: 1px 1px 1px #d8d8d8,-1px -1px 6px #d8d8d8,-1px 1px 2px #d8d8d8,1px -1px 2px #d8d8d8;
@@ -169,11 +177,23 @@
             color: #f5f5f5;
             font-size: 1.2em;
         }
+
+        .edit-bookmark__submit--action {
+            border: 0;
+            box-shadow: 1px 1px 1px #d8d8d8,-1px -1px 6px #d8d8d8,-1px 1px 2px #d8d8d8,1px -1px 2px #d8d8d8;
+            background: darkblue;
+            min-width: 200px;
+            height: 35px;
+            vertical-align: center;
+            color: #f5f5f5;
+            font-size: 1.2em;
+        }
     </style>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Round"/>
     <style>
         .material-icons-outlined { vertical-align: bottom; }
         .material-icons-outlined.red { color: darkred; }
+        .material-icons-outlined.blue { color: darkblue; }
         .material-icons-outlined.md-18 { font-size: 18px; }
         .material-icons-outlined.md-24 { font-size: 24px; }
         .material-icons-outlined.md-36 { font-size: 36px; }
