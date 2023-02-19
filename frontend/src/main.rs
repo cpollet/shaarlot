@@ -1,3 +1,4 @@
+mod bookmark_provider;
 mod bookmarks;
 mod create_bookmark;
 mod data;
@@ -5,11 +6,12 @@ mod delete_bookmark;
 mod edit_bookmark;
 mod menu;
 
+use crate::bookmark_provider::BookmarkProvider;
 use crate::bookmarks::bookmarks_provider::BookmarksProvider;
 use crate::bookmarks::BookmarksHOC;
 use crate::create_bookmark::CreateBookmark;
-use crate::delete_bookmark::DeleteBookmark;
-use crate::edit_bookmark::EditBookmark;
+use crate::delete_bookmark::DeleteBookmarkHOC;
+use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -72,12 +74,16 @@ fn switch(route: Route) -> Html {
         }
         Route::DeleteBookmark { id } => {
             html! {
-                <DeleteBookmark {id} />
+                <BookmarkProvider {id}>
+                    <DeleteBookmarkHOC />
+                </BookmarkProvider>
             }
         }
         Route::EditBookmark { id } => {
             html! {
-                <EditBookmark {id} />
+                <BookmarkProvider {id}>
+                    <EditBookmarkHOC />
+                </BookmarkProvider>
             }
         }
         Route::TagCloud => {
