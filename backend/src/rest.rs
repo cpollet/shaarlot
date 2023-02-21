@@ -18,6 +18,12 @@ use rest_api::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
+use log::log;
+use oauth2::basic::{BasicClient, BasicTokenResponse};
+use oauth2::{AuthorizationCode, AuthUrl, ClientId, ClientSecret, CsrfToken, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenUrl};
+use oauth2::reqwest::{async_http_client, http_client};
+use sea_orm::strum::Display;
+use uuid::Uuid;
 use webpage::{Webpage, WebpageOptions};
 
 pub fn router(state: AppState) -> Router {
@@ -29,6 +35,8 @@ pub fn router(state: AppState) -> Router {
         .route(URL_BOOKMARK, put(update_bookmark))
         .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
         .route(URL_URLS, get(get_url))
+        .route("/api/login", post(post_login))
+        .route("/api/oauth/callback", get(oauth_callback))
         .with_state(state)
 }
 
@@ -290,4 +298,43 @@ async fn get_url(
         title: webpage.html.title,
         description: webpage.html.description,
     }))
+}
+
+async fn post_login(State(state): State<AppState>) -> (StatusCode, Json<LoginResponse>) {
+    let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+
+    let (auth_url, csrf_token) = state.oauth_client
+        .authorize_url(CsrfToken::new_random)
+        .add_scope(Scope::new("read:user".to_string()))
+        .add_scope(Scope::new("user:email".to_string()))
+        .set_pkce_challenge(pkce_challenge)
+        .url();
+
+    log::info!("csrf: {}", csrf_token.secret());
+
+    state.cache.insert(csrf_token.secret().to_string(), pkce_verifier.secret().to_string()).await;
+
+    (StatusCode::CREATED, Json(LoginResponse{ url: auth_url.to_string() }))
+}
+
+#[derive(Deserialize)]
+struct OAuthCallbackParams {
+    code: String,
+    state: String,
+}
+
+async fn oauth_callback(
+    State(state):State<AppState>,
+    Query(query): Query<OAuthCallbackParams>,
+) -> Result<Json<BasicTokenResponse>, (StatusCode, Json<ErrorResponse>)>{
+    let pkce_verifier = state.cache.get(&query.state)
+        .map(|s| PkceCodeVerifier::new(s))
+        .ok_or((StatusCode::BAD_REQUEST, Json(ErrorResponse::new("INVALID_PARAMETERS", "Invalid parameters"))))?;
+
+    let token = state.oauth_client.exchange_code(AuthorizationCode::new(query.code))
+        .set_pkce_verifier(pkce_verifier)
+        .request_async(async_http_client).await.unwrap();
+
+
+    Ok(Json(token))
 }

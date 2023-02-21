@@ -8,6 +8,9 @@ use sea_orm_migration::MigratorTrait;
 use std::env;
 use std::thread::sleep;
 use std::time::Duration;
+use moka::future::Cache;
+use oauth2::basic::BasicClient;
+use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl};
 use tokio::signal;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
@@ -47,6 +50,7 @@ async fn main() {
     let database_name = env::var("DATABASE_NAME").unwrap_or("postgres".to_owned());
     let static_files_path = env::var("ROOT_PATH").unwrap_or("./webroot".to_owned());
     let assets_url = env::var("ASSETS_URL").unwrap_or("/assets".to_owned());
+    let oauth_client_secret = env::var("OAUTH_CLIENT_SECRET").unwrap().to_owned();
 
     let database = {
         let config = Configuration {
@@ -78,9 +82,17 @@ async fn main() {
     log::info!("Serving {} under {}", static_files_path, assets_url);
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
+    let oauth_client =  BasicClient::new(
+        ClientId::new("655a6dc436a2754814ba".to_string()),
+    Some(ClientSecret::new(oauth_client_secret)),
+    AuthUrl::new("https://github.com/login/oauth/authorize".to_string()).unwrap(),
+    Some(TokenUrl::new("https://github.com/login/oauth/access_token".to_string()).unwrap())
+    );
+    let cache = Cache::new(100);
+
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
-            router(AppState { database })
+            router(AppState { database, oauth_client, cache })
                 .route("/health", get(health))
                 .merge(SpaRouter::new(&assets_url, static_files_path))
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))

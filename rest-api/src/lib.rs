@@ -37,3 +37,8 @@ pub struct UrlResponse {
     pub title: Option<String>,
     pub description: Option<String>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub url : String,
+}
