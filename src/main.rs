@@ -1,10 +1,15 @@
+use argon2::password_hash::rand_core::{OsRng, RngCore};
 use axum::response::IntoResponse;
 use axum::routing::get;
+use axum::Router;
 use axum_extra::routing::SpaRouter;
+use axum_sessions::async_session::MemoryStore;
+use axum_sessions::{PersistencePolicy, SessionLayer};
 use backend::database::Configuration;
 use backend::rest::router;
 use backend::{database, AppState};
 use sea_orm_migration::MigratorTrait;
+use secrecy::{ExposeSecret, SecretVec};
 use std::env;
 use std::thread::sleep;
 use std::time::Duration;
@@ -75,14 +80,33 @@ async fn main() {
         .await
         .expect("Could not migrate database");
 
+    let mut cookie_secret = [0u8; 64];
+    OsRng::default().fill_bytes(&mut cookie_secret);
+    let cookie_secret = SecretVec::new(cookie_secret.into());
+
+    let configuration = backend::rest::Configuration {
+        cookie_secret,
+        session_store: MemoryStore::new(),
+    };
+
     log::info!("Serving {} under {}", static_files_path, assets_url);
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
-            router(AppState { database })
+            router(&configuration, AppState { database })
+                .merge(
+                    Router::new()
+                        .merge(SpaRouter::new(&assets_url, static_files_path))
+                        .layer(
+                            SessionLayer::new(
+                                configuration.session_store.clone(),
+                                configuration.cookie_secret.expose_secret().as_slice(),
+                            )
+                            .with_persistence_policy(PersistencePolicy::Always),
+                        ),
+                )
                 .route("/health", get(health))
-                .merge(SpaRouter::new(&assets_url, static_files_path))
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
                 .into_make_service(),
         )

@@ -33,7 +33,7 @@ impl From<BookmarkResponse> for Bookmark {
             title: value.title.map(|v| AttrValue::from(v)),
             description: value.description.map(|v| AttrValue::from(v)),
             creation_date: DateTime::from(value.creation_date),
-            update_date: value.update_date.map(|d|DateTime::from(d)),
+            update_date: value.update_date.map(|d| DateTime::from(d)),
         }
     }
 }

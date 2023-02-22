@@ -40,14 +40,12 @@ pub fn create_bookmark() -> Html {
         let url_input_ref = url_input_ref.clone();
         let title_input_ref = title_input_ref.clone();
         let step = state.step;
-        use_effect(move || {
-            match step {
-                Step::Init => {
-                    let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
-                }
-                Step::Details => {
-                    let _ = title_input_ref.cast::<HtmlInputElement>().unwrap().focus();
-                }
+        use_effect(move || match step {
+            Step::Init => {
+                let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+            }
+            Step::Details => {
+                let _ = title_input_ref.cast::<HtmlInputElement>().unwrap().focus();
             }
         })
     }

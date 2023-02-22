@@ -8,8 +8,6 @@ use sea_orm::{
     TryIntoModel,
 };
 
-pub struct Query;
-
 pub enum SortOrder {
     CreationDateDesc,
     CreationDateAsc,
@@ -35,6 +33,8 @@ impl TryFrom<&str> for SortOrder {
         }
     }
 }
+
+pub struct Query;
 
 impl Query {
     pub async fn find_all(db: &DatabaseConnection) -> Result<Vec<Model>, DbErr> {

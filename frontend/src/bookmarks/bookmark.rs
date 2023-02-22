@@ -1,8 +1,8 @@
-use std::rc::Rc;
-use chrono::{DateTime, Local};
 use crate::bookmarks::qr_code::QrCode;
 use crate::data::Bookmark as BookmarkData;
 use crate::Route;
+use chrono::{DateTime, Local};
+use std::rc::Rc;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
 use yew_router::Routable;
@@ -41,7 +41,7 @@ pub fn bookmark(props: &Props) -> Html {
     let onclick_permalink = {
         let navigator = navigator.clone();
         let props = props.clone();
-        Callback::from(move |e:MouseEvent| {
+        Callback::from(move |e: MouseEvent| {
             e.prevent_default();
             navigator.push(&Route::ViewBookmark {
                 id: props.bookmark.id,
@@ -104,13 +104,13 @@ pub fn bookmark(props: &Props) -> Html {
 
 fn display_date(bookmark: &BookmarkData) -> Html {
     fn display(date: &DateTime<Local>) -> String {
-            date.format("%h %e, %Y at %T %Z").to_string()
+        date.format("%h %e, %Y at %T %Z").to_string()
     }
     match bookmark.update_date {
         None => {
             html! {
-              display(&bookmark.creation_date)
-                }
+            display(&bookmark.creation_date)
+              }
         }
         Some(date) => {
             html! {
@@ -125,9 +125,9 @@ fn display_date(bookmark: &BookmarkData) -> Html {
 #[function_component(BookmarkHOC)]
 pub fn bookmark_hoc() -> Html {
     let bookmark = use_context::<Rc<BookmarkData>>().expect("no ctx found");
-    let navigator =use_navigator().unwrap();
+    let navigator = use_navigator().unwrap();
 
-    let onclick = Callback::from(move |e:MouseEvent| {
+    let onclick = Callback::from(move |e: MouseEvent| {
         e.prevent_default();
         navigator.push(&Route::Bookmarks);
     });

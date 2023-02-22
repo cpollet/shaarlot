@@ -25,10 +25,10 @@ pub fn edit_bookmark(props: &Props) -> Html {
     });
     let navigator = use_navigator().unwrap();
 
-    let url_input_ref= use_node_ref();
+    let url_input_ref = use_node_ref();
 
     {
-        let url_input_ref=url_input_ref.clone();
+        let url_input_ref = url_input_ref.clone();
         use_effect(move || {
             let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
         });

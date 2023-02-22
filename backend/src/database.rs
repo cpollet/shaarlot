@@ -1,4 +1,5 @@
 pub mod bookmarks;
+pub mod users;
 
 use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
 

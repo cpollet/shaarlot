@@ -40,3 +40,27 @@ DELETE http://localhost:3000/api/bookmarks/1
 
 ### Get URL info
 GET http://localhost:3000/api/urls/http%3A%2F%2Fdocs.rs
+
+### Create user
+POST http://localhost:3000/api/users
+content-type: application/json
+
+{
+  "username": "cpollet",
+  "password": "password"
+}
+
+### Create session
+POST http://localhost:3000/api/sessions
+content-type: application/json
+
+{
+  "username": "cpollet",
+  "password": "password"
+}
+
+### Get session user id
+GET http://localhost:3000/api/sessions/current
+
+### Destroy session
+DELETE http://localhost:3000/api/sessions/current

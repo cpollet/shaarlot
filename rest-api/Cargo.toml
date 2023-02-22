@@ -8,4 +8,5 @@ publish = false
 
 [dependencies]
 chrono = "0.4.23"
+secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }

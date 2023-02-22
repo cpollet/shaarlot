@@ -3,3 +3,4 @@
 pub mod prelude;
 
 pub mod bookmark;
+pub mod user;

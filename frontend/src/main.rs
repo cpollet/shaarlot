@@ -7,13 +7,13 @@ mod edit_bookmark;
 mod menu;
 
 use crate::bookmark_provider::BookmarkProvider;
+use crate::bookmarks::bookmark::BookmarkHOC;
 use crate::bookmarks::bookmarks_provider::BookmarksProvider;
 use crate::bookmarks::BookmarksHOC;
 use crate::create_bookmark::CreateBookmark;
 use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
-use crate::bookmarks::bookmark::BookmarkHOC;
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -76,7 +76,7 @@ fn switch(route: Route) -> Html {
         Route::AddBookmark => {
             html! { <CreateBookmark /> }
         }
-        Route::ViewBookmark {id} => {
+        Route::ViewBookmark { id } => {
             html! {
                 <BookmarkProvider {id}>
                     <BookmarkHOC />
