@@ -30,7 +30,7 @@ pub fn bookmark_provider(props: &Props) -> Html {
                 });
             }
 
-            || {}
+            || {} // todo check why this is useful and add it to other use_effects if needed
         });
     }
 

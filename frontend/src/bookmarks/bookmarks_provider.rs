@@ -58,6 +58,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
     {
         let state = state.clone();
         use_effect(move || {
+            // todo check why it calls the endpoint twice!
             if state.context.is_none() {
                 let state = state.clone();
                 spawn_local(async move {

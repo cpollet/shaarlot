@@ -78,3 +78,8 @@ pub struct CreateSessionRequest {
     pub username: String,
     pub password: Secret<RestPassword>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct SessionResponse {
+    pub username: String,
+}

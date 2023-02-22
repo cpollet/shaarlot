@@ -1047,6 +1047,7 @@ dependencies = [
  "gloo-console",
  "gloo-net",
  "rest-api",
+ "secrecy",
  "urlencoding",
  "web-sys",
  "yew",
