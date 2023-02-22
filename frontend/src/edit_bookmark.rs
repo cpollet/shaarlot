@@ -15,12 +15,14 @@ pub struct Props {
 
 #[derive(Clone, PartialEq)]
 struct State {
+    focused: bool,
     bookmark: Bookmark,
 }
 
 #[function_component(EditBookmark)]
 pub fn edit_bookmark(props: &Props) -> Html {
     let state = use_state(|| State {
+        focused: false,
         bookmark: (*props.bookmark).clone(),
     });
     let navigator = use_navigator().unwrap();
@@ -29,8 +31,14 @@ pub fn edit_bookmark(props: &Props) -> Html {
 
     {
         let url_input_ref = url_input_ref.clone();
+        let state = state.clone();
         use_effect(move || {
-            let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+            if !state.focused {
+                let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                let mut new_state = (*state).clone();
+                new_state.focused = true;
+                state.set(new_state);
+            }
         });
     }
 

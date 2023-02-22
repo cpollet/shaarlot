@@ -16,6 +16,7 @@ enum Step {
 
 #[derive(Clone, PartialEq)]
 struct State {
+    focused: bool,
     step: Step,
     bookmark: Bookmark,
 }
@@ -23,6 +24,7 @@ struct State {
 impl Default for State {
     fn default() -> Self {
         Self {
+            focused: false,
             step: Step::Init,
             bookmark: Bookmark::default(),
         }
@@ -39,13 +41,23 @@ pub fn create_bookmark() -> Html {
     {
         let url_input_ref = url_input_ref.clone();
         let title_input_ref = title_input_ref.clone();
-        let step = state.step;
-        use_effect(move || match step {
+        let state = state.clone();
+        use_effect(move || match state.step {
             Step::Init => {
-                let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                if !state.focused {
+                    let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                    let mut new_state = (*state).clone();
+                    new_state.focused = true;
+                    state.set(new_state);
+                }
             }
             Step::Details => {
-                let _ = title_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                if !state.focused {
+                    let _ = title_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+                    let mut new_state = (*state).clone();
+                    new_state.focused = true;
+                    state.set(new_state);
+                }
             }
         })
     }
@@ -80,6 +92,7 @@ pub fn create_bookmark() -> Html {
 
                         let mut new_state = (*state).clone();
                         new_state.step = Step::Details;
+                        new_state.focused = false;
                         if let Ok(info) = info {
                             new_state.bookmark.url = AttrValue::from(info.url);
                             new_state.bookmark.title = info.title.map(|v| AttrValue::from(v));
