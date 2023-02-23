@@ -18,7 +18,10 @@ use axum::routing::{delete, get, post, put};
 use axum::Router;
 use axum_sessions::async_session::SessionStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
-use rest_api::*;
+use rest_api::authentication::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
+use rest_api::authentication::URL_USERS;
+use rest_api::bookmarks::{URL_BOOKMARK, URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
+use rest_api::urls::{UrlResponse, URL_URLS};
 use secrecy::{ExposeSecret, SecretVec};
 use webpage::{Webpage, WebpageOptions};
 

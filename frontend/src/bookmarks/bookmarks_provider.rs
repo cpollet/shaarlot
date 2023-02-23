@@ -1,7 +1,7 @@
 use crate::bookmarks::Props as BookmarksContext;
 use crate::data::Bookmark;
 use gloo_net::http::Request;
-use rest_api::{BookmarkResponse, URL_BOOKMARKS};
+use rest_api::bookmarks::{BookmarkResponse, URL_BOOKMARKS};
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;

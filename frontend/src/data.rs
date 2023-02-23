@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local};
-use rest_api::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
+use rest_api::bookmarks::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]

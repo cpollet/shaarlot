@@ -1,6 +1,6 @@
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::URL_SESSIONS_CURRENT;
+use rest_api::authentication::sessions::URL_SESSIONS_CURRENT;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;

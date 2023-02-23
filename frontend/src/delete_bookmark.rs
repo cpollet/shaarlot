@@ -1,7 +1,7 @@
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::URL_BOOKMARK;
+use rest_api::bookmarks::URL_BOOKMARK;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;

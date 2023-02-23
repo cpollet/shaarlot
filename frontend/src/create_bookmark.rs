@@ -1,7 +1,8 @@
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::{CreateBookmarkRequest, UrlResponse, URL_BOOKMARKS, URL_URLS};
+use rest_api::bookmarks::{CreateBookmarkRequest, URL_BOOKMARKS};
+use rest_api::urls::{UrlResponse, URL_URLS};
 use urlencoding::encode;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;

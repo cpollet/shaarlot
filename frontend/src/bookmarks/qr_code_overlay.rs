@@ -1,4 +1,4 @@
-use rest_api::URL_BOOKMARK_QRCODE;
+use rest_api::bookmarks::URL_BOOKMARK_QRCODE;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]

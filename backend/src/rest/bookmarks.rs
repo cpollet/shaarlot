@@ -9,7 +9,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use chrono::Utc;
 use qrcode_generator::QrCodeEcc;
-use rest_api::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
+use rest_api::bookmarks::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;

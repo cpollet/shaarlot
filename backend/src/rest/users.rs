@@ -6,7 +6,7 @@ use argon2::{Argon2, PasswordHasher};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
-use rest_api::{CreateUserRequest, UserResponse};
+use rest_api::authentication::{CreateUserRequest, UserResponse};
 use secrecy::ExposeSecret;
 
 pub async fn create_user(

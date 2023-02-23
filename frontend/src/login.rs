@@ -1,6 +1,7 @@
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::{CreateSessionRequest, RestPassword, URL_SESSIONS};
+use rest_api::authentication::sessions::{CreateSessionRequest, URL_SESSIONS};
+use rest_api::authentication::RestPassword;
 use secrecy::Secret;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;

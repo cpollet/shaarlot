@@ -19,7 +19,7 @@ use crate::menu::Menu;
 use gloo_net::http::Request;
 use login::Login;
 use logout::Logout;
-use rest_api::{SessionResponse, URL_SESSIONS_CURRENT};
+use rest_api::authentication::sessions::{SessionResponse, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
