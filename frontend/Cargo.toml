@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-rest-api = { path = "../rest-api" }
+rest-api = { path = "../rest-api", features=["client"] }
 gloo-net = "0.2.6"
 yew = { version = "0.20.0", features = ["csr"] }
 yew-router = "0.17.0"
@@ -16,3 +16,4 @@ urlencoding = "2.1.2"
 chrono = {version = "0.4.23", features = ["serde"] }
 gloo-console = "0.2.3"
 secrecy = { version = "0.8.0", features = ["serde"] }
+yew-hooks = "0.2.0"

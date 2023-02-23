@@ -1,4 +1,3 @@
-use crate::rest::error_response::ErrorResponse;
 use crate::session::{UserInfo, SESSION_KEY_USER_INFO};
 use crate::{database, AppState};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
@@ -6,7 +5,9 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use axum_sessions::extractors::{ReadableSession, WritableSession};
-use rest_api::authentication::sessions::{CreateSessionRequest, SessionResponse};
+use rest_api::authentication::sessions::{
+    CreateSessionRequest, CreateSessionResponseCode, SessionResponse,
+};
 use secrecy::ExposeSecret;
 
 const DEFAULT_HASH: &str ="$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
@@ -28,45 +29,25 @@ pub async fn create_session(
     mut session: WritableSession,
     State(state): State<AppState>,
     Json(user): Json<CreateSessionRequest>,
-) -> Result<(StatusCode, Json<SessionResponse>), (StatusCode, Json<ErrorResponse>)> {
+) -> Result<(StatusCode, Json<SessionResponse>), CreateSessionResponseCode> {
     let argon2 = Argon2::default();
 
     let db_user = database::users::Query::find_by_username(&state.database, &user.username)
         .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(
-                    "CANNOT_READ_FROM_DATABASE",
-                    &format!("Cannot read user '{}' from database", user.username),
-                )),
-            )
-        })?
+        .map_err(|_| CreateSessionResponseCode::ServerError)?
         .ok_or({
             // compute a dummy hash to prevent timing attacks
             let hash = PasswordHash::new(DEFAULT_HASH).unwrap();
             let _ = argon2.verify_password(user.password.expose_secret().into(), &hash);
-            (
-                StatusCode::NOT_FOUND,
-                Json(ErrorResponse::new("NOT_FOUND", "User not found")),
-            )
+            CreateSessionResponseCode::InvalidCredentials
         })?;
 
-    let password_hash = PasswordHash::new(&db_user.password).map_err(|_| {
-        (
-            StatusCode::NOT_FOUND,
-            Json(ErrorResponse::new("NOT_FOUND", "User not found")),
-        )
-    })?;
+    let password_hash = PasswordHash::new(&db_user.password)
+        .map_err(|_| CreateSessionResponseCode::InvalidCredentials)?;
 
     argon2
         .verify_password(user.password.expose_secret().into(), &password_hash)
-        .map_err(|_| {
-            (
-                StatusCode::NOT_FOUND,
-                Json(ErrorResponse::new("NOT_FOUND", "User not found")),
-            )
-        })?;
+        .map_err(|_| CreateSessionResponseCode::InvalidCredentials)?;
 
     session
         .insert(
@@ -76,18 +57,10 @@ pub async fn create_session(
                 username: db_user.username,
             },
         )
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(
-                    "CANNOT_CREATE_SESSION",
-                    "Cannot create session",
-                )),
-            )
-        })?;
+        .map_err(|_| CreateSessionResponseCode::ServerError)?;
 
     Ok((
-        StatusCode::CREATED,
+        StatusCode::from( CreateSessionResponseCode::Success),
         Json(SessionResponse {
             username: user.username,
         }),

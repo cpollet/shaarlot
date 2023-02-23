@@ -147,7 +147,8 @@
 
         .create-bookmark,
         .edit-bookmark,
-        .delete-bookmark {
+        .delete-bookmark,
+        .login {
             padding: 1em;
             width: 30%;
             box-shadow: 1px 1px 3px #797979;
@@ -157,8 +158,13 @@
 
         .create-bookmark__title,
         .edit-bookmark__title,
-        .delete-bookmark__title {
+        .delete-bookmark__title,
+        .login__title {
             color: darkgreen;
+        }
+
+        .login__error {
+            color: darkred;
         }
 
         .create-bookmark__url-input,
@@ -166,7 +172,9 @@
         .create-bookmark__description-input,
         .edit-bookmark__url-input,
         .edit-bookmark__title-input,
-        .edit-bookmark__description-input {
+        .edit-bookmark__description-input,
+        .login__username-input,
+        .login__password-input {
             border: solid 1px #d8d8d8;
             border-radius: 2px;
             background: #eee;
@@ -206,10 +214,22 @@
             font-size: 1.2em;
         }
 
-        .edit-bookmark__submit--action {
+        .edit-bookmark__submit--action,
+        .login__submit--action {
             border: 0;
             box-shadow: 1px 1px 1px #d8d8d8,-1px -1px 6px #d8d8d8,-1px 1px 2px #d8d8d8,1px -1px 2px #d8d8d8;
             background: darkblue;
+            min-width: 200px;
+            height: 35px;
+            vertical-align: center;
+            color: #f5f5f5;
+            font-size: 1.2em;
+        }
+
+        .login__submit--disabled {
+            border: 0;
+            box-shadow: 1px 1px 1px #d8d8d8,-1px -1px 6px #d8d8d8,-1px 1px 2px #d8d8d8,1px -1px 2px #d8d8d8;
+            background: dimgray;
             min-width: 200px;
             height: 35px;
             vertical-align: center;

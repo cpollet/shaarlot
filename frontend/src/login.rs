@@ -1,11 +1,14 @@
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::authentication::sessions::{CreateSessionRequest, URL_SESSIONS};
+use rest_api::authentication::sessions::{
+    CreateSessionRequest, CreateSessionResponseCode, URL_SESSIONS,
+};
 use rest_api::authentication::RestPassword;
 use secrecy::Secret;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -15,17 +18,19 @@ pub struct Props {
 
 #[derive(Clone)]
 struct State {
-    focused: bool,
     username: AttrValue,
     password: AttrValue,
+    invalid_credentials: bool,
+    in_progress: bool,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
-            focused: false,
             username: AttrValue::default(),
             password: AttrValue::default(),
+            invalid_credentials: false,
+            in_progress: false,
         }
     }
 }
@@ -38,14 +43,9 @@ pub fn login(props: &Props) -> Html {
 
     {
         let url_input_ref = username_input_ref.clone();
-        let state = state.clone();
-        use_effect(move || {
-            if !state.focused {
+        use_effect_once(move || {
                 let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
-                let mut new_state = (*state).clone();
-                new_state.focused = true;
-                state.set(new_state);
-            }
+            ||()
         });
     }
 
@@ -55,11 +55,19 @@ pub fn login(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
+            if state.in_progress {
+                return;
+            }
+
             let props = props.clone();
             let navigator = navigator.clone();
             let state = state.clone();
+            {
+                let mut new_state = (*state).clone();
+                new_state.in_progress = true;
+                state.set(new_state);
+            }
             spawn_local(async move {
-                // TODO finish this (error cases)
                 let result = Request::post(&URL_SESSIONS)
                     .json(&CreateSessionRequest {
                         username: state.username.to_string(),
@@ -69,13 +77,24 @@ pub fn login(props: &Props) -> Html {
                     .send()
                     .await;
 
-                if let Ok(response) = result {
-                    if response.ok() {
+                let mut new_state = (*state).clone();
+                new_state.in_progress = false;
+
+                match result
+                    .map(|r| CreateSessionResponseCode::from(r))
+                    .unwrap_or(CreateSessionResponseCode::Other)
+                {
+                    CreateSessionResponseCode::Success => {
                         props.onlogin.emit(state.username.clone());
+                        navigator.push(&Route::Index);
                     }
+                    CreateSessionResponseCode::InvalidCredentials => {
+                        new_state.invalid_credentials = true;
+                    }
+                    _ => {}
                 }
 
-                navigator.push(&Route::Index);
+                state.set(new_state);
             })
         })
     };
@@ -100,13 +119,20 @@ pub fn login(props: &Props) -> Html {
     };
 
     html! {
-        <div class="edit-bookmark">
-            <h1 class="edit-bookmark__title">{"Login"}</h1>
+        <div class="login">
+            <h1 class="login__title">{"Login"}</h1>
+            { if state.invalid_credentials {
+                html! {
+                    <div class="login__error">
+                        {"Invalid credentials"}
+                    </div>
+                }
+            }else{html!{<></>}}}
             <form {onsubmit}>
                 <p>
                     <input
                         ref={username_input_ref}
-                        class="edit-bookmark__url-input"
+                        class="login__username-input"
                         type="text"
                         placeholder="username"
                         value={state.username.clone()}
@@ -115,7 +141,7 @@ pub fn login(props: &Props) -> Html {
                 </p>
                 <p>
                     <input
-                        class="edit-bookmark__title-input"
+                        class="login__password-input"
                         type="password"
                         placeholder="password"
                         value={state.password.clone()}
@@ -123,7 +149,12 @@ pub fn login(props: &Props) -> Html {
                     />
                 </p>
                 <p>
-                    <button type="submit" class="edit-bookmark__submit--action">{"Login"}</button>
+                    <button type="submit" class={match state.in_progress {
+                        true => "login__submit--disabled".to_string(),
+                        false => "login__submit--action".to_string(),
+                    }}>
+                        {"Login"}
+                    </button>
                 </p>
             </form>
         </div>

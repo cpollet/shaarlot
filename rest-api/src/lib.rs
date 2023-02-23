@@ -86,9 +86,61 @@ pub mod authentication {
 
     pub mod sessions {
         use super::*;
+        use http::StatusCode;
 
         pub const URL_SESSIONS: &str = "/api/sessions";
         pub const URL_SESSIONS_CURRENT: &str = "/api/sessions/current";
+
+        pub enum CreateSessionResponseCode {
+            Success,
+            InvalidCredentials,
+            Other,
+            ServerError,
+        }
+
+        #[cfg(feature = "server")]
+        impl From<CreateSessionResponseCode> for StatusCode {
+            fn from(value: CreateSessionResponseCode) -> Self {
+                match value {
+                    CreateSessionResponseCode::Success => StatusCode::CREATED,
+                    CreateSessionResponseCode::InvalidCredentials => StatusCode::NOT_FOUND,
+                    CreateSessionResponseCode::Other => StatusCode::BAD_REQUEST,
+                    CreateSessionResponseCode::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
+                }
+            }
+        }
+
+        #[cfg(feature = "server")]
+        impl axum::response::IntoResponse for CreateSessionResponseCode {
+            fn into_response(self) -> axum::response::Response {
+                StatusCode::from(self).into_response()
+            }
+        }
+
+        #[cfg(feature="client")]
+        impl TryFrom<StatusCode> for CreateSessionResponseCode {
+            type Error = ();
+
+            fn try_from(value: StatusCode) -> Result<Self, Self::Error> {
+                match value {
+                    StatusCode::CREATED => Ok(CreateSessionResponseCode::Success),
+                    StatusCode::NOT_FOUND => Ok(CreateSessionResponseCode::InvalidCredentials),
+                    StatusCode::BAD_REQUEST => Ok(CreateSessionResponseCode::Other),
+                    StatusCode::INTERNAL_SERVER_ERROR => Ok(CreateSessionResponseCode::ServerError),
+                    _ => Err(()),
+                }
+            }
+        }
+
+        #[cfg(feature="client")]
+        impl From<gloo_net::http::Response> for CreateSessionResponseCode {
+            fn from(value: gloo_net::http::Response) -> Self {
+                StatusCode::from_u16(value.status())
+                    .map_err(|_| ())
+                    .and_then(StatusCode::try_into)
+                    .unwrap_or(CreateSessionResponseCode::Other)
+            }
+        }
 
         #[derive(Serialize, Deserialize)]
         pub struct CreateSessionRequest {
