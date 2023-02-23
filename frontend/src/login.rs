@@ -44,8 +44,8 @@ pub fn login(props: &Props) -> Html {
     {
         let url_input_ref = username_input_ref.clone();
         use_effect_once(move || {
-                let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
-            ||()
+            let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+            || ()
         });
     }
 
@@ -121,13 +121,14 @@ pub fn login(props: &Props) -> Html {
     html! {
         <div class="login">
             <h1 class="login__title">{"Login"}</h1>
-            { if state.invalid_credentials {
-                html! {
+            { match state.invalid_credentials {
+                true => html! {
                     <div class="login__error">
                         {"Invalid credentials"}
                     </div>
-                }
-            }else{html!{<></>}}}
+                },
+                false => html!{ <></> }
+            }}
             <form {onsubmit}>
                 <p>
                     <input

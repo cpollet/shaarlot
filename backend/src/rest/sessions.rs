@@ -60,7 +60,7 @@ pub async fn create_session(
         .map_err(|_| CreateSessionResponseCode::ServerError)?;
 
     Ok((
-        StatusCode::from( CreateSessionResponseCode::Success),
+        StatusCode::from(CreateSessionResponseCode::Success),
         Json(SessionResponse {
             username: user.username,
         }),

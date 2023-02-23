@@ -18,6 +18,8 @@ enum Step {
 #[derive(Clone, PartialEq)]
 struct State {
     focused: bool,
+    in_progress: bool,
+    has_error: bool,
     step: Step,
     bookmark: Bookmark,
 }
@@ -26,6 +28,8 @@ impl Default for State {
     fn default() -> Self {
         Self {
             focused: false,
+            in_progress: false,
+            has_error: false,
             step: Step::Init,
             bookmark: Bookmark::default(),
         }
@@ -34,7 +38,7 @@ impl Default for State {
 
 #[function_component(CreateBookmark)]
 pub fn create_bookmark() -> Html {
-    let state = use_state(|| State::default());
+    let state = use_state(State::default);
     let navigator = use_navigator().unwrap();
     let url_input_ref = use_node_ref();
     let title_input_ref = use_node_ref();
@@ -67,34 +71,41 @@ pub fn create_bookmark() -> Html {
         let state = state.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
+            if state.in_progress {
+                return;
+            }
+            {
+                let mut new_state = (*state).clone();
+                new_state.in_progress = true;
+                state.set(new_state);
+            }
             match state.step {
                 Step::Init => {
                     let state = state.clone();
                     spawn_local(async move {
                         let url =
                             URL_URLS.replace(":url", encode(state.bookmark.url.as_str()).as_ref());
+
                         let info = match Request::get(&url).send().await {
-                            Err(_) => Err("Error fetching data".to_string()),
-                            Ok(resp) => {
-                                if !resp.ok() {
-                                    Err(format!(
-                                        "Error fetching data: {} ({})",
-                                        resp.status(),
-                                        resp.status_text()
-                                    ))
-                                } else {
-                                    match resp.json::<UrlResponse>().await {
-                                        Ok(url) => Ok(url),
-                                        Err(err) => Err(err.to_string()),
+                            Ok(response) => {
+                                if response.ok() {
+                                    match response.json::<UrlResponse>().await {
+                                        Ok(url) => Some(url),
+                                        Err(_) => None,
                                     }
+                                } else {
+                                    None
                                 }
                             }
+                            Err(_) => None,
                         };
 
                         let mut new_state = (*state).clone();
                         new_state.step = Step::Details;
                         new_state.focused = false;
-                        if let Ok(info) = info {
+                        new_state.in_progress = false;
+
+                        if let Some(info) = info {
                             new_state.bookmark.url = AttrValue::from(info.url);
                             new_state.bookmark.title = info.title.map(|v| AttrValue::from(v));
                             new_state.bookmark.description =
@@ -105,15 +116,22 @@ pub fn create_bookmark() -> Html {
                 }
                 Step::Details => {
                     let navigator = navigator.clone();
-                    let bookmark = state.bookmark.clone();
+                    let state = state.clone();
                     spawn_local(async move {
-                        // TODO finish this
-                        let _todo = Request::post(URL_BOOKMARKS)
-                            .json(&CreateBookmarkRequest::from(&bookmark))
+                        match Request::post(URL_BOOKMARKS)
+                            .json(&CreateBookmarkRequest::from(&state.bookmark))
                             .expect("could not set json")
                             .send()
-                            .await;
-                        navigator.push(&Route::Bookmarks);
+                            .await
+                        {
+                            Ok(response) if response.ok() => navigator.push(&Route::Bookmarks),
+                            _ => {
+                                let mut new_state = (*state).clone();
+                                new_state.in_progress = false;
+                                new_state.has_error = true;
+                                state.set(new_state);
+                            }
+                        }
                     });
                 }
             }
@@ -166,6 +184,16 @@ pub fn create_bookmark() -> Html {
     html! {
         <div class="create-bookmark">
             <h1 class="create-bookmark__title">{"Create bookmark"}</h1>
+            { match state.has_error {
+                true => html! {
+                    <div class="create-bookmark__error">
+                        {"Failed to create bookmark"}
+                    </div>
+                },
+                false => html! {
+                    <></>
+                }
+            }}
             <form {onsubmit}>
                 <p>{"URL"}</p>
                 <p>
@@ -197,7 +225,14 @@ pub fn create_bookmark() -> Html {
                     />
                 </p>
                 }
-                <p><button class="create-bookmark__submit">{"Add bookmark"}</button></p>
+                <p>
+                    <button class={match state.in_progress {
+                        true => "create-bookmark--disabled".to_string(),
+                        false => "create-bookmark__submit".to_string(),
+                    }}>
+                        {"Add bookmark"}
+                    </button>
+                </p>
             </form>
         </div>
     }

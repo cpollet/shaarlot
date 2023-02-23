@@ -117,7 +117,7 @@ pub mod authentication {
             }
         }
 
-        #[cfg(feature="client")]
+        #[cfg(feature = "client")]
         impl TryFrom<StatusCode> for CreateSessionResponseCode {
             type Error = ();
 
@@ -132,7 +132,7 @@ pub mod authentication {
             }
         }
 
-        #[cfg(feature="client")]
+        #[cfg(feature = "client")]
         impl From<gloo_net::http::Response> for CreateSessionResponseCode {
             fn from(value: gloo_net::http::Response) -> Self {
                 StatusCode::from_u16(value.status())

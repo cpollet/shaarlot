@@ -126,7 +126,10 @@ fn app() -> Html {
                         }
                     }
                     Route::AddBookmark => {
-                        html! { <CreateBookmark /> }
+                        // todo prevent display when not logged
+                        html! {
+                            <CreateBookmark />
+                        }
                     }
                     Route::ViewBookmark { id } => {
                         html! {
@@ -136,6 +139,7 @@ fn app() -> Html {
                         }
                     }
                     Route::DeleteBookmark { id } => {
+                        // todo prevent display when not logged
                         html! {
                             <BookmarkProvider {id}>
                                 <DeleteBookmarkHOC />
@@ -143,6 +147,7 @@ fn app() -> Html {
                         }
                     }
                     Route::EditBookmark { id } => {
+                        // todo prevent display when not logged
                         html! {
                             <BookmarkProvider {id}>
                                 <EditBookmarkHOC />
@@ -155,6 +160,7 @@ fn app() -> Html {
                         }
                     }
                     Route::Tools => {
+                        // todo prevent display when not logged
                         html! {
                             {"todo: tools"}
                         }

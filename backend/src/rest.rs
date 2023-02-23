@@ -5,7 +5,6 @@ mod sessions;
 mod users;
 
 use crate::rest::bookmarks::*;
-use crate::rest::error_response::ErrorResponse;
 use crate::rest::json::Json;
 use crate::rest::sessions::*;
 use crate::rest::users::*;
@@ -95,9 +94,7 @@ where
         .with_state(state)
 }
 
-async fn get_url(
-    Path(url): Path<String>,
-) -> Result<Json<UrlResponse>, (StatusCode, Json<ErrorResponse>)> {
+async fn get_url(Path(url): Path<String>) -> Result<Json<UrlResponse>, StatusCode> {
     log::info!("Fetching metadata about {}", &url);
 
     let mut options = WebpageOptions::default();
@@ -105,13 +102,7 @@ async fn get_url(
 
     let webpage = Webpage::from_url(&url, options).map_err(|e| {
         log::error!("Error while fetching metadata about {}: {}", &url, e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(
-                "CANNOT_FETCH_DATA",
-                "Cannot fetch remote URL data",
-            )),
-        )
+        StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
     Ok(Json(UrlResponse {
