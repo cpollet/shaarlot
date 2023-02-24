@@ -4,6 +4,10 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+rustup target add wasm32-unknown-unknown
+cargo install cargo-watch
+cargo install trunk
+
 ./postgres.sh
 
 mkdir -p target/debug/wasm
