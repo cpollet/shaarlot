@@ -119,11 +119,11 @@ pub fn login(props: &Props) -> Html {
     };
 
     html! {
-        <div class="login">
-            <h1 class="login__title">{"Login"}</h1>
+        <div class="centered-box">
+            <h1 class="centered-box__title">{"Login"}</h1>
             { match state.invalid_credentials {
                 true => html! {
-                    <div class="login__error">
+                    <div class="centered-box__error">
                         {"Invalid credentials"}
                     </div>
                 },
@@ -133,7 +133,6 @@ pub fn login(props: &Props) -> Html {
                 <p>
                     <input
                         ref={username_input_ref}
-                        class="login__username-input"
                         type="text"
                         placeholder="username"
                         value={state.username.clone()}
@@ -142,7 +141,6 @@ pub fn login(props: &Props) -> Html {
                 </p>
                 <p>
                     <input
-                        class="login__password-input"
                         type="password"
                         placeholder="password"
                         value={state.password.clone()}
@@ -151,8 +149,8 @@ pub fn login(props: &Props) -> Html {
                 </p>
                 <p>
                     <button type="submit" class={match state.in_progress {
-                        true => "login__submit--disabled".to_string(),
-                        false => "login__submit--action".to_string(),
+                        true => "button--disabled".to_string(),
+                        false => "button--action".to_string(),
                     }}>
                         {"Login"}
                     </button>

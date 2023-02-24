@@ -112,14 +112,13 @@ pub fn edit_bookmark(props: &Props) -> Html {
     };
 
     html! {
-        <div class="edit-bookmark">
-            <h1 class="edit-bookmark__title">{"Edit bookmark"}</h1>
+        <div class="centered-box">
+            <h1 class="centered-box__title">{"Edit bookmark"}</h1>
             <form {onsubmit}>
                 <p>{"URL"}</p>
                 <p>
                     <input
                         ref={url_input_ref}
-                        class="edit-bookmark__url-input"
                         type="text"
                         value={state.bookmark.url.clone()}
                         oninput={oninput_url}
@@ -128,7 +127,6 @@ pub fn edit_bookmark(props: &Props) -> Html {
                 <p>{"Title"}</p>
                 <p>
                     <input
-                        class="edit-bookmark__title-input"
                         type="text"
                         value={state.bookmark.title.clone()}
                         oninput={oninput_title}
@@ -137,15 +135,14 @@ pub fn edit_bookmark(props: &Props) -> Html {
                 <p>{"Description"}</p>
                 <p>
                     <textarea
-                        class="edit-bookmark__description-input"
                         value={state.bookmark.description.clone()}
                         oninput={oninput_description}
                     />
                 </p>
                 <p>
-                    <button type="button" onclick={onclick_cancel} class="edit-bookmark__submit--safe">{"Cancel"}</button>
+                    <button type="button" onclick={onclick_cancel} class="button--safe">{"Cancel"}</button>
                     {" "}
-                    <button type="submit" class="edit-bookmark__submit--action">{"Update"}</button>
+                    <button type="submit" class="button--action">{"Update"}</button>
                 </p>
             </form>
         </div>

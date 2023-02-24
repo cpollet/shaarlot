@@ -32,8 +32,8 @@ pub fn logout(props: &Props) -> Html {
     });
 
     html! {
-        <div class="edit-bookmark">
-            <h1 class="edit-bookmark__title">{"Logout...n"}</h1>
+        <div class="centered-box">
+            <h1 class="centered-box__title">{"Logout...n"}</h1>
         </div>
     }
 }

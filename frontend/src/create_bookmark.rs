@@ -182,11 +182,11 @@ pub fn create_bookmark() -> Html {
     };
 
     html! {
-        <div class="create-bookmark">
-            <h1 class="create-bookmark__title">{"Create bookmark"}</h1>
+        <div class="centered-box">
+            <h1 class="centered-box__title">{"Create bookmark"}</h1>
             { match state.has_error {
                 true => html! {
-                    <div class="create-bookmark__error">
+                    <div class="centered-box__error">
                         {"Failed to create bookmark"}
                     </div>
                 },
@@ -199,7 +199,6 @@ pub fn create_bookmark() -> Html {
                 <p>
                     <input
                         ref={url_input_ref}
-                        class="create-bookmark__url-input"
                         type="text"
                         value={state.bookmark.url.clone()}
                         oninput={oninput_url}
@@ -210,7 +209,6 @@ pub fn create_bookmark() -> Html {
                 <p>
                     <input
                         ref={title_input_ref}
-                        class="create-bookmark__title-input"
                         type="text"
                         value={state.bookmark.title.clone()}
                         oninput={oninput_title}
@@ -219,7 +217,6 @@ pub fn create_bookmark() -> Html {
                 <p>{"Description"}</p>
                 <p>
                     <textarea
-                        class="create-bookmark__description-input"
                         value={state.bookmark.description.clone()}
                         oninput={oninput_description}
                     />
@@ -227,8 +224,8 @@ pub fn create_bookmark() -> Html {
                 }
                 <p>
                     <button class={match state.in_progress {
-                        true => "create-bookmark--disabled".to_string(),
-                        false => "create-bookmark__submit".to_string(),
+                        true => "button--disabled".to_string(),
+                        false => "button--action".to_string(),
                     }}>
                         {"Add bookmark"}
                     </button>
