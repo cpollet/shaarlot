@@ -49,6 +49,7 @@ pub mod urls {
 
 pub mod authentication {
     use super::*;
+    use http::StatusCode;
     use secrecy::{DebugSecret, Secret, SerializableSecret, Zeroize};
 
     pub const URL_USERS: &str = "/api/users";
@@ -66,16 +67,77 @@ pub mod authentication {
 
     impl DebugSecret for RestPassword {}
 
+    #[cfg(feature = "server")]
     impl<'t> From<&'t RestPassword> for &'t [u8] {
         fn from(value: &'t RestPassword) -> Self {
             value.0.as_bytes()
         }
     }
 
+    #[cfg(feature = "server")]
+    impl<'t> From<&'t RestPassword> for &'t str {
+        fn from(value: &'t RestPassword) -> Self {
+            value.0.as_str()
+        }
+    }
+
     #[derive(Serialize, Deserialize)]
     pub struct CreateUserRequest {
+        pub email: String,
         pub username: String,
         pub password: Secret<RestPassword>,
+        pub password_verif: Secret<RestPassword>,
+    }
+
+    // todo rework codes...
+    pub enum CreateUserResponseCode {
+        Success,
+        InvalidPassword,
+        ServerError,
+        Other,
+    }
+
+    #[cfg(feature = "server")]
+    impl From<CreateUserResponseCode> for StatusCode {
+        fn from(value: CreateUserResponseCode) -> Self {
+            match value {
+                CreateUserResponseCode::Success => StatusCode::CREATED,
+                CreateUserResponseCode::InvalidPassword => StatusCode::BAD_REQUEST,
+                CreateUserResponseCode::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
+                CreateUserResponseCode::Other => StatusCode::INTERNAL_SERVER_ERROR,
+            }
+        }
+    }
+
+    #[cfg(feature = "server")]
+    impl axum::response::IntoResponse for CreateUserResponseCode {
+        fn into_response(self) -> axum::response::Response {
+            StatusCode::from(self).into_response()
+        }
+    }
+
+    #[cfg(feature = "client")]
+    impl TryFrom<StatusCode> for CreateUserResponseCode {
+        type Error = ();
+
+        fn try_from(value: StatusCode) -> Result<Self, Self::Error> {
+            match value {
+                StatusCode::CREATED => Ok(CreateUserResponseCode::Success),
+                StatusCode::BAD_REQUEST => Ok(CreateUserResponseCode::InvalidPassword),
+                StatusCode::INTERNAL_SERVER_ERROR => Ok(CreateUserResponseCode::ServerError),
+                _ => Err(()), // fixme shouldn't it be other?
+            }
+        }
+    }
+
+    #[cfg(feature = "client")]
+    impl From<gloo_net::http::Response> for CreateUserResponseCode {
+        fn from(value: gloo_net::http::Response) -> Self {
+            StatusCode::from_u16(value.status())
+                .map_err(|_| ())
+                .and_then(StatusCode::try_into)
+                .unwrap_or(CreateUserResponseCode::Other)
+        }
     }
 
     #[derive(Serialize, Deserialize)]
@@ -86,7 +148,6 @@ pub mod authentication {
 
     pub mod sessions {
         use super::*;
-        use http::StatusCode;
 
         pub const URL_SESSIONS: &str = "/api/sessions";
         pub const URL_SESSIONS_CURRENT: &str = "/api/sessions/current";
@@ -94,8 +155,8 @@ pub mod authentication {
         pub enum CreateSessionResponseCode {
             Success,
             InvalidCredentials,
-            Other,
             ServerError,
+            Other,
         }
 
         #[cfg(feature = "server")]
@@ -104,8 +165,8 @@ pub mod authentication {
                 match value {
                     CreateSessionResponseCode::Success => StatusCode::CREATED,
                     CreateSessionResponseCode::InvalidCredentials => StatusCode::NOT_FOUND,
-                    CreateSessionResponseCode::Other => StatusCode::BAD_REQUEST,
                     CreateSessionResponseCode::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
+                    CreateSessionResponseCode::Other => StatusCode::BAD_REQUEST,
                 }
             }
         }
@@ -125,9 +186,9 @@ pub mod authentication {
                 match value {
                     StatusCode::CREATED => Ok(CreateSessionResponseCode::Success),
                     StatusCode::NOT_FOUND => Ok(CreateSessionResponseCode::InvalidCredentials),
-                    StatusCode::BAD_REQUEST => Ok(CreateSessionResponseCode::Other),
                     StatusCode::INTERNAL_SERVER_ERROR => Ok(CreateSessionResponseCode::ServerError),
-                    _ => Err(()),
+                    StatusCode::BAD_REQUEST => Ok(CreateSessionResponseCode::Other),
+                    _ => Err(()), // fixme shouldn't it be other?
                 }
             }
         }

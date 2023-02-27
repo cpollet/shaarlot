@@ -46,8 +46,10 @@ POST http://localhost:3000/api/users
 content-type: application/json
 
 {
+  "email": "email@example.com",
   "username": "cpollet",
-  "password": "password"
+  "password": "Password123!",
+  "password_verif": "Password123!"
 }
 
 ### Create session

@@ -7,14 +7,22 @@ body {
 
 a {
   color: black;
+}
+
+a.material-icons-outlined {
   text-decoration: none;
 }
+
 
 .menu {
   background-color: darkgreen;
   color: #f5f5f5;
   margin-bottom: 20px;
   vertical-align: middle;
+}
+
+.menu a {
+  text-decoration: none;
 }
 
 .menu__left-submenu-trigger {
@@ -169,7 +177,6 @@ a {
   padding: 15px;
   box-shadow: 1px 1px 3px #797979;
   background-color: #f5f5f5;
-  text-align: center;
   margin: auto;
   box-sizing: border-box;
   width: 100%;
@@ -177,10 +184,19 @@ a {
 
 .centered-box__title {
   color: darkgreen;
+  text-align: center;
+}
+
+.centered-box__buttons {
+  text-align: right;
 }
 
 .centered-box__error {
   color: darkred;
+}
+
+.centered-box__ok {
+  color: darkgreen;
 }
 
 input,
@@ -189,7 +205,7 @@ textarea {
   border-radius: 2px;
   background: #eee;
   padding: 5px 5px 3px 15px;
-  width: 90%;
+  width: 100%;
   height: 35px;
   color: #252525;
   box-sizing: border-box;

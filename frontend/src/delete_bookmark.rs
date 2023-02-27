@@ -52,7 +52,7 @@ pub fn delete_bookmark(props: &Props) -> Html {
                     {state.bookmark.title.as_ref().map(|t|t.clone()).unwrap_or(state.bookmark.url.clone())}
                 </a>
             </p>
-            <p>
+            <p class="centered-box__buttons">
                 <button type="button" onclick={onclick_no} class="button--safe">{"Cancel"}</button>
                 {" "}
                 <button type="button" onclick={onclick_yes} class="button--danger">{"Delete"}</button>

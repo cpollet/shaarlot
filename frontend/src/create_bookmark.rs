@@ -195,34 +195,34 @@ pub fn create_bookmark() -> Html {
                 }
             }}
             <form {onsubmit}>
-                <p>{"URL"}</p>
                 <p>
                     <input
                         ref={url_input_ref}
                         type="text"
+                        placeholder="URL"
                         value={state.bookmark.url.clone()}
                         oninput={oninput_url}
                     />
                 </p>
                 if state.step == Step::Details {
-                <p>{"Title"}</p>
                 <p>
                     <input
                         ref={title_input_ref}
                         type="text"
+                        placeholder="title"
                         value={state.bookmark.title.clone()}
                         oninput={oninput_title}
                     />
                 </p>
-                <p>{"Description"}</p>
                 <p>
                     <textarea
+                        placeholder="description"
                         value={state.bookmark.description.clone()}
                         oninput={oninput_description}
                     />
                 </p>
                 }
-                <p>
+                <p class="centered-box__buttons">
                     <button class={match state.in_progress {
                         true => "button--disabled".to_string(),
                         false => "button--action".to_string(),

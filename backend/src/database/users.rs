@@ -25,10 +25,12 @@ pub struct Mutation;
 impl Mutation {
     pub async fn create(
         db: &DatabaseConnection,
+        email: String,
         username: String,
         password: String,
     ) -> Result<Model, DbErr> {
         ActiveModel {
+            email: Set(email),
             username: Set(username.to_lowercase()),
             password: Set(password),
             ..Default::default()

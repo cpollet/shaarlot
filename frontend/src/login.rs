@@ -147,14 +147,27 @@ pub fn login(props: &Props) -> Html {
                         oninput={oninput_password}
                     />
                 </p>
-                <p>
-                    <button type="submit" class={match state.in_progress {
-                        true => "button--disabled".to_string(),
-                        false => "button--action".to_string(),
-                    }}>
-                        {"Login"}
-                    </button>
-                </p>
+                <div class="centered-box__buttons">
+                    <p>
+                        <button type="submit" class={match state.in_progress {
+                            true => "button--disabled".to_string(),
+                            false => "button--action".to_string(),
+                        }}>
+                            {"Login"}
+                        </button>
+                    </p>
+                    <p>{"or"}</p>
+                    <p>
+                        <a href={Route::Signup.to_path()} onclick={
+                            move |e:MouseEvent| {
+                                e.prevent_default();
+                                navigator.push(&Route::Signup);
+                            }
+                        }>
+                            {"create an account"}
+                        </a>
+                    </p>
+                </div>
             </form>
         </div>
     }

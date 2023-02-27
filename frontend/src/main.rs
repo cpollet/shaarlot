@@ -7,6 +7,7 @@ mod edit_bookmark;
 mod login;
 mod logout;
 mod menu;
+mod signup;
 
 use crate::bookmark_provider::BookmarkProvider;
 use crate::bookmarks::bookmark::BookmarkHOC;
@@ -16,6 +17,7 @@ use crate::create_bookmark::CreateBookmark;
 use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
+use crate::signup::Signup;
 use gloo_net::http::Request;
 use login::Login;
 use logout::Logout;
@@ -53,6 +55,9 @@ pub enum Route {
 
     #[at("/tools")]
     Tools,
+
+    #[at("/signup")]
+    Signup,
 
     #[at("/login")]
     Login,
@@ -163,6 +168,11 @@ fn app() -> Html {
                         // todo prevent display when not logged
                         html! {
                             {"todo: tools"}
+                        }
+                    }
+                    Route::Signup => {
+                        html!{
+                            <Signup />
                         }
                     }
                     Route::Login => {
