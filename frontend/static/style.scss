@@ -171,6 +171,8 @@ a {
   background-color: #f5f5f5;
   text-align: center;
   margin: auto;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .centered-box__title {
@@ -232,13 +234,11 @@ textarea {
 
 /** Responsive **/
 
-@media (min-width: 350px) {
-  .centered-box {
-    width: 300px;
-  }
-}
-
 @media (min-width: 760px) {
+  .centered-box {
+    width: 700px;
+  }
+
   .menu__left-submenu-trigger {
     display: none;
   }
