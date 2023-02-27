@@ -10,7 +10,7 @@ members = [".", "entity", "migration", "rest-api", "backend", "frontend"]
 [dependencies]
 backend = { path = "backend" }
 migration = { path = "migration" }
-axum = "0.6.4"
+axum = "0.6.9"
 tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread", "signal"] }
 sea-orm-migration = "0.11.0"
 tower = "0.4.13"
