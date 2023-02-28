@@ -13,3 +13,5 @@ else
     --network rbm \
     postgres
 fi
+
+grep DATABASE_URL .env 2>/dev/null || echo "DATABASE_URL=postgres://postgres:password@localhost:5432/postgres" >> .env
