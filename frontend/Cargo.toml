@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-rest-api = { path = "../rest-api", features=["client"] }
+rest-api = { path = "../rest-api", features = ["frontend"] }
 common = { path = "../common" }
 gloo-net = "0.2.6"
 yew = { version = "0.20.0", features = ["csr"] }

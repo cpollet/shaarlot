@@ -1,26 +1,24 @@
 mod bookmarks;
-pub mod error_response;
 mod json;
 mod sessions;
 mod users;
 
 use crate::rest::bookmarks::*;
-use crate::rest::json::Json;
 use crate::rest::sessions::*;
 use crate::rest::users::*;
 use crate::session::Session;
 use crate::AppState;
 use axum::extract::Path;
-use axum::http::StatusCode;
 use axum::middleware::from_fn;
 use axum::routing::{delete, get, post, put};
 use axum::Router;
 use axum_sessions::async_session::SessionStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
-use rest_api::authentication::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
-use rest_api::authentication::URL_USERS;
-use rest_api::bookmarks::{URL_BOOKMARK, URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
-use rest_api::urls::{UrlResponse, URL_URLS};
+use rest_api::bookmarks::URL_BOOKMARK;
+use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
+use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
+use rest_api::urls::{GetUrlResponse, GetUrlResult, URL_URLS};
+use rest_api::users::URL_USERS;
 use secrecy::{ExposeSecret, SecretVec};
 use webpage::{Webpage, WebpageOptions};
 
@@ -94,7 +92,7 @@ where
         .with_state(state)
 }
 
-async fn get_url(Path(url): Path<String>) -> Result<Json<UrlResponse>, StatusCode> {
+async fn get_url(Path(url): Path<String>) -> Result<GetUrlResult, GetUrlResult> {
     log::info!("Fetching metadata about {}", &url);
 
     let mut options = WebpageOptions::default();
@@ -102,10 +100,10 @@ async fn get_url(Path(url): Path<String>) -> Result<Json<UrlResponse>, StatusCod
 
     let webpage = Webpage::from_url(&url, options).map_err(|e| {
         log::error!("Error while fetching metadata about {}: {}", &url, e);
-        StatusCode::INTERNAL_SERVER_ERROR
+        GetUrlResult::ServerError
     })?;
 
-    Ok(Json(UrlResponse {
+    Ok(GetUrlResult::Success(GetUrlResponse {
         url: webpage.http.url,
         title: webpage.html.title,
         description: webpage.html.description,

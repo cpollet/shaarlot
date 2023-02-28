@@ -1,6 +1,7 @@
 use crate::data::Bookmark;
 use gloo_net::http::Request;
-use rest_api::bookmarks::{BookmarkResponse, URL_BOOKMARK};
+use rest_api::bookmarks::get_one::GetBookmarkResult;
+use rest_api::bookmarks::URL_BOOKMARK;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -22,9 +23,7 @@ pub fn bookmark_provider(props: &Props) -> Html {
             if state.is_none() {
                 let props = props.clone();
                 spawn_local(async move {
-                    let res = fetch_bookmark(props.id).await;
-                    // todo implement a 500 page
-                    if let Ok(bookmark) = res {
+                    if let Some(bookmark) = fetch_bookmark(props.id).await {
                         state.set(Some(Rc::new(bookmark)))
                     }
                 });
@@ -46,25 +45,18 @@ pub fn bookmark_provider(props: &Props) -> Html {
     }
 }
 
-async fn fetch_bookmark(id: i32) -> Result<Bookmark, String> {
-    match Request::get(&URL_BOOKMARK.replace(":id", &id.to_string()))
-        .send()
-        .await
+async fn fetch_bookmark(id: i32) -> Option<Bookmark> {
+    match GetBookmarkResult::from(
+        Request::get(&URL_BOOKMARK.replace(":id", &id.to_string()))
+            .send()
+            .await,
+    )
+    .await
     {
-        Err(_) => Err("Error fetching data".to_string()),
-        Ok(resp) => {
-            if !resp.ok() {
-                Err(format!(
-                    "Error fetching data: {} ({})",
-                    resp.status(),
-                    resp.status_text()
-                ))
-            } else {
-                resp.json::<BookmarkResponse>()
-                    .await
-                    .map_err(|err| err.to_string())
-                    .map(Bookmark::from)
-            }
+        Some(GetBookmarkResult::Success(payload)) => Some(Bookmark::from(payload)),
+        _ => {
+            // todo handle error
+            None
         }
     }
 }

@@ -1,7 +1,8 @@
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::bookmarks::{UpdateBookmarkRequest, URL_BOOKMARK};
+use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
+use rest_api::bookmarks::URL_BOOKMARK;
 use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -50,14 +51,20 @@ pub fn edit_bookmark(props: &Props) -> Html {
             let state = state.clone();
             let navigator = navigator.clone();
             spawn_local(async move {
-                // TODO finish this
-                let _todo =
+                match UpdateBookmarkResult::from(
                     Request::put(&URL_BOOKMARK.replace(":id", &state.bookmark.id.to_string()))
                         .json(&UpdateBookmarkRequest::from(&state.bookmark))
                         .expect("could not set json")
                         .send()
-                        .await;
-                navigator.push(&Route::Bookmarks);
+                        .await,
+                )
+                .await
+                {
+                    Some(UpdateBookmarkResult::Success(_)) => navigator.push(&Route::Bookmarks),
+                    _ => {
+                        //todo handle error
+                    }
+                }
             })
         })
     };

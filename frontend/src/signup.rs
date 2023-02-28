@@ -1,9 +1,8 @@
 use crate::Route;
 use common::{PasswordFlags, PasswordRules};
 use gloo_net::http::Request;
-use rest_api::authentication::{
-    CreateUserRequest, CreateUserResponseCode, RestPassword, URL_USERS,
-};
+use rest_api::users::{CreateUserRequest, CreateUserResult, URL_USERS};
+use rest_api::RestPassword;
 use secrecy::Secret;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -73,28 +72,30 @@ pub fn signup() -> Html {
                 state.set(new_state);
             }
             spawn_local(async move {
-                let result = Request::post(&URL_USERS)
-                    .json(&CreateUserRequest {
-                        email: state.email.to_string(),
-                        username: state.username.to_string(),
-                        password: Secret::new(RestPassword(state.password.to_string())),
-                        password_verif: Secret::new(RestPassword(state.password_verif.to_string())),
-                    })
-                    .expect("could not set json")
-                    .send()
-                    .await;
+                let result = CreateUserResult::from(
+                    Request::post(&URL_USERS)
+                        .json(&CreateUserRequest {
+                            email: state.email.to_string(),
+                            username: state.username.to_string(),
+                            password: Secret::new(RestPassword(state.password.to_string())),
+                            password_verif: Secret::new(RestPassword(
+                                state.password_verif.to_string(),
+                            )),
+                        })
+                        .expect("could not set json")
+                        .send()
+                        .await,
+                )
+                .await;
 
                 let mut new_state = (*state).clone();
                 new_state.in_progress = false;
 
-                match result
-                    .map(|r| CreateUserResponseCode::from(r))
-                    .unwrap_or(CreateUserResponseCode::Other)
-                {
-                    CreateUserResponseCode::Success => {
+                match result {
+                    Some(CreateUserResult::Success(_)) => {
                         navigator.push(&Route::Login);
                     }
-                    CreateUserResponseCode::InvalidPassword => {
+                    Some(CreateUserResult::InvalidPassword) => {
                         new_state.invalid_password = true;
                         new_state.password = AttrValue::default();
                         new_state.password_verif = AttrValue::default();

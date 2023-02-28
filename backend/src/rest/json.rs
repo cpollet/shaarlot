@@ -1,10 +1,10 @@
-use crate::rest::error_response::ErrorResponse;
 use async_trait::async_trait;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{FromRequest, MatchedPath};
 use axum::http::{Request, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::RequestPartsExt;
+use rest_api::error_response::ErrorResponse;
 use serde::Serialize;
 
 // https://docs.rs/axum/0.6.4/axum/extract/index.html#customizing-extractor-responses

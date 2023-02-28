@@ -58,7 +58,7 @@ content-type: application/json
 
 {
   "username": "cpollet",
-  "password": "password"
+  "password": "Password123!"
 }
 
 ### Get session user id

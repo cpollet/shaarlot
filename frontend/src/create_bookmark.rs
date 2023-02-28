@@ -1,8 +1,9 @@
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::bookmarks::{CreateBookmarkRequest, URL_BOOKMARKS};
-use rest_api::urls::{UrlResponse, URL_URLS};
+use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
+use rest_api::bookmarks::URL_BOOKMARKS;
+use rest_api::urls::{GetUrlResult, URL_URLS};
 use urlencoding::encode;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -86,30 +87,22 @@ pub fn create_bookmark() -> Html {
                         let url =
                             URL_URLS.replace(":url", encode(state.bookmark.url.as_str()).as_ref());
 
-                        let info = match Request::get(&url).send().await {
-                            Ok(response) => {
-                                if response.ok() {
-                                    match response.json::<UrlResponse>().await {
-                                        Ok(url) => Some(url),
-                                        Err(_) => None,
-                                    }
-                                } else {
-                                    None
-                                }
-                            }
-                            Err(_) => None,
-                        };
+                        let payload =
+                            match GetUrlResult::from(Request::get(&url).send().await).await {
+                                Some(GetUrlResult::Success(payload)) => Some(payload),
+                                _ => None,
+                            };
 
                         let mut new_state = (*state).clone();
                         new_state.step = Step::Details;
                         new_state.focused = false;
                         new_state.in_progress = false;
 
-                        if let Some(info) = info {
-                            new_state.bookmark.url = AttrValue::from(info.url);
-                            new_state.bookmark.title = info.title.map(|v| AttrValue::from(v));
+                        if let Some(payload) = payload {
+                            new_state.bookmark.url = AttrValue::from(payload.url);
+                            new_state.bookmark.title = payload.title.map(|v| AttrValue::from(v));
                             new_state.bookmark.description =
-                                info.description.map(|v| AttrValue::from(v))
+                                payload.description.map(|v| AttrValue::from(v))
                         }
                         state.set(new_state);
                     });
@@ -118,13 +111,18 @@ pub fn create_bookmark() -> Html {
                     let navigator = navigator.clone();
                     let state = state.clone();
                     spawn_local(async move {
-                        match Request::post(URL_BOOKMARKS)
-                            .json(&CreateBookmarkRequest::from(&state.bookmark))
-                            .expect("could not set json")
-                            .send()
-                            .await
+                        match CreateBookmarkResult::from(
+                            Request::post(URL_BOOKMARKS)
+                                .json(&CreateBookmarkRequest::from(&state.bookmark))
+                                .expect("could not set json")
+                                .send()
+                                .await,
+                        )
+                        .await
                         {
-                            Ok(response) if response.ok() => navigator.push(&Route::Bookmarks),
+                            Some(CreateBookmarkResult::Success(_)) => {
+                                navigator.push(&Route::Bookmarks)
+                            }
                             _ => {
                                 let mut new_state = (*state).clone();
                                 new_state.in_progress = false;

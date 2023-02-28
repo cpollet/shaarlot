@@ -9,7 +9,7 @@ publish = false
 [dependencies]
 entity = { path = "../entity" }
 common = { path = "../common" }
-rest-api = { path = "../rest-api", features = ["server"] }
+rest-api = { path = "../rest-api", features = ["backend"] }
 async-trait = "0.1.64"
 axum = "0.6.4"
 sea-orm = { version = "0.11.0", features = ["runtime-tokio-rustls", "sqlx-postgres"] }

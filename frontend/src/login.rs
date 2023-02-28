@@ -1,9 +1,7 @@
 use crate::Route;
 use gloo_net::http::Request;
-use rest_api::authentication::sessions::{
-    CreateSessionRequest, CreateSessionResponseCode, URL_SESSIONS,
-};
-use rest_api::authentication::RestPassword;
+use rest_api::sessions::{CreateSessionRequest, CreateSessionResult, URL_SESSIONS};
+use rest_api::RestPassword;
 use secrecy::Secret;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -68,27 +66,27 @@ pub fn login(props: &Props) -> Html {
                 state.set(new_state);
             }
             spawn_local(async move {
-                let result = Request::post(&URL_SESSIONS)
-                    .json(&CreateSessionRequest {
-                        username: state.username.to_string(),
-                        password: Secret::new(RestPassword(state.password.to_string())),
-                    })
-                    .expect("could not set json")
-                    .send()
-                    .await;
+                let result = CreateSessionResult::from(
+                    Request::post(&URL_SESSIONS)
+                        .json(&CreateSessionRequest {
+                            username: state.username.to_string(),
+                            password: Secret::new(RestPassword(state.password.to_string())),
+                        })
+                        .expect("could not set json")
+                        .send()
+                        .await,
+                )
+                .await;
 
                 let mut new_state = (*state).clone();
                 new_state.in_progress = false;
 
-                match result
-                    .map(|r| CreateSessionResponseCode::from(r))
-                    .unwrap_or(CreateSessionResponseCode::Other)
-                {
-                    CreateSessionResponseCode::Success => {
+                match result {
+                    Some(CreateSessionResult::Success(_)) => {
                         props.onlogin.emit(state.username.clone());
                         navigator.push(&Route::Index);
                     }
-                    CreateSessionResponseCode::InvalidCredentials => {
+                    Some(CreateSessionResult::InvalidCredentials) => {
                         new_state.invalid_credentials = true;
                     }
                     _ => {}

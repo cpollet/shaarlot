@@ -1,7 +1,7 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ErrorResponse {
     code: String,
     message: String,
@@ -31,5 +31,20 @@ impl ErrorResponse {
             message: self.message,
             data: Some(data),
         }
+    }
+
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    pub fn message(&self) -> &str {
+        &self.message
+    }
+
+    pub fn data(&self, key: &str) -> Option<&str> {
+        self.data
+            .as_ref()
+            .and_then(|d| d.get(key))
+            .map(|d| d.as_str())
     }
 }

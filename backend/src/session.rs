@@ -1,8 +1,8 @@
-use crate::rest::error_response::ErrorResponse;
 use axum::http::{Request, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::Json;
 use axum_sessions::SessionHandle;
+use rest_api::error_response::ErrorResponse;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 

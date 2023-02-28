@@ -1,6 +1,7 @@
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
+use rest_api::bookmarks::delete::DeleteBookmarkResult;
 use rest_api::bookmarks::URL_BOOKMARK;
 use std::rc::Rc;
 use yew::platform::spawn_local;
@@ -38,8 +39,18 @@ pub fn delete_bookmark(props: &Props) -> Html {
             let navigator = navigator.clone();
             e.prevent_default();
             spawn_local(async move {
-                del_bookmark(id).await;
-                navigator.push(&Route::Bookmarks);
+                match DeleteBookmarkResult::from(
+                    Request::delete(&URL_BOOKMARK.replace(":id", &id.to_string()))
+                        .send()
+                        .await,
+                )
+                .await
+                {
+                    Some(DeleteBookmarkResult::Success) => navigator.push(&Route::Bookmarks),
+                    _ => {
+                        // todo handle error
+                    }
+                };
             });
         })
     };
@@ -59,12 +70,6 @@ pub fn delete_bookmark(props: &Props) -> Html {
             </p>
         </div>
     }
-}
-async fn del_bookmark(id: i32) {
-    // todo error handling?
-    let _ = Request::delete(&URL_BOOKMARK.replace(":id", &id.to_string()))
-        .send()
-        .await;
 }
 
 #[function_component(DeleteBookmarkHOC)]

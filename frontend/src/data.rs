@@ -1,5 +1,7 @@
 use chrono::{DateTime, Local};
-use rest_api::bookmarks::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
+use rest_api::bookmarks::create::CreateBookmarkRequest;
+use rest_api::bookmarks::get_one::GetBookmarkResponse;
+use rest_api::bookmarks::update::UpdateBookmarkRequest;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]
@@ -25,8 +27,8 @@ impl Default for Bookmark {
     }
 }
 
-impl From<BookmarkResponse> for Bookmark {
-    fn from(value: BookmarkResponse) -> Self {
+impl From<GetBookmarkResponse> for Bookmark {
+    fn from(value: GetBookmarkResponse) -> Self {
         Bookmark {
             id: value.id,
             url: AttrValue::from(value.url),

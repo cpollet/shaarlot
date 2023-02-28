@@ -1,4 +1,4 @@
-use crate::bookmarks::bookmark::*;
+use crate::bookmarks::bookmark::Bookmark;
 use crate::bookmarks::bookmarks_provider::Order;
 use crate::data::Bookmark as BookmarkData;
 use std::rc::Rc;

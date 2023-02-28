@@ -1,15 +1,21 @@
 use crate::database::bookmarks::SortOrder;
-use crate::rest::error_response::ErrorResponse;
 use crate::{database, AppState};
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
-
 use axum::Json;
 use chrono::Utc;
 use qrcode_generator::QrCodeEcc;
-use rest_api::bookmarks::{BookmarkResponse, CreateBookmarkRequest, UpdateBookmarkRequest};
+use rest_api::bookmarks::create::{
+    CreateBookmarkRequest, CreateBookmarkResponse, CreateBookmarkResult,
+};
+use rest_api::bookmarks::delete::DeleteBookmarkResult;
+use rest_api::bookmarks::get_many::{GetBookmarksResponse, GetBookmarksResult};
+use rest_api::bookmarks::get_one::{GetBookmarkResponse, GetBookmarkResult};
+use rest_api::bookmarks::update::{
+    UpdateBookmarkRequest, UpdateBookmarkResponse, UpdateBookmarkResult,
+};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -22,86 +28,57 @@ pub struct GetBookmarksQueryParams {
 pub async fn get_bookmarks(
     Query(query): Query<GetBookmarksQueryParams>,
     State(state): State<AppState>,
-) -> Result<Json<Vec<BookmarkResponse>>, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<GetBookmarksResult, GetBookmarksResult> {
     let order = query
         .order
         .map(|v| SortOrder::try_from(v.as_str()))
         .unwrap_or(Ok(SortOrder::CreationDateDesc))
         .map_err(|_| {
-            (
-                StatusCode::BAD_REQUEST,
-                Json(ErrorResponse::new(
-                    "INVALID_PARAMETER",
-                    "Unsupported value provided for the 'sort' query parameter",
-                )),
+            GetBookmarksResult::InvalidParameter(
+                "Unsupported value provided for the 'sort' query parameter".to_string(),
             )
         })?;
 
-    Ok(Json(
-        database::bookmarks::Query::find_all_order_by(&state.database, order)
-            .await
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(ErrorResponse::new(
-                        "CANNOT_READ_FROM_DATABASE",
-                        "Cannot read bookmarks from database",
-                    )),
-                )
-            })?
-            .into_iter()
-            .map(|m| BookmarkResponse {
-                id: m.id,
-                url: m.url,
-                title: m.title,
-                description: m.description,
-                tags: vec![],
-                creation_date: m.creation_date.with_timezone(&Utc),
-                update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-            })
-            .collect(),
-    ))
+    let bookmarks = database::bookmarks::Query::find_all_order_by(&state.database, order)
+        .await
+        .map_err(|_| GetBookmarksResult::ServerError)?
+        .into_iter()
+        .map(|m| GetBookmarkResponse {
+            id: m.id,
+            url: m.url,
+            title: m.title,
+            description: m.description,
+            tags: vec![],
+            creation_date: m.creation_date.with_timezone(&Utc),
+            update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+        })
+        .collect::<GetBookmarksResponse>();
+
+    Ok(GetBookmarksResult::Success(bookmarks))
 }
 
 pub async fn get_bookmark(
     State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
-) -> Result<Json<BookmarkResponse>, (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+) -> Result<GetBookmarkResult, GetBookmarkResult> {
+    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
         .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(
-                    ErrorResponse::new(
-                        "CANNOT_READ_FROM_DATABASE",
-                        &format!("Cannot read bookmark '{}' from database", bookmark_id),
-                    )
-                    .with_data("id", &format!("{}", bookmark_id)),
-                ),
-            )
-        })?
-        .map(|m| {
-            Json(BookmarkResponse {
-                id: m.id,
-                url: m.url,
-                title: m.title,
-                description: m.description,
-                tags: vec![],
-                creation_date: m.creation_date.with_timezone(&Utc),
-                update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-            })
+        .map_err(|_| GetBookmarkResult::ServerError)?
+        .map(|m| GetBookmarkResponse {
+            id: m.id,
+            url: m.url,
+            title: m.title,
+            description: m.description,
+            tags: vec![],
+            creation_date: m.creation_date.with_timezone(&Utc),
+            update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
         })
-        .ok_or((
-            StatusCode::NOT_FOUND,
-            Json(
-                ErrorResponse::new(
-                    "NOT_FOUND",
-                    &format!("Bookmark '{}' not found", bookmark_id),
-                )
-                .with_data("id", &format!("{}", bookmark_id)),
-            ),
-        ))
+        .ok_or(GetBookmarkResult::NotFound(
+            bookmark_id,
+            format!("Bookmark '{}' not found", bookmark_id),
+        ))?;
+
+    Ok(GetBookmarkResult::Success(bookmark))
 }
 
 pub async fn get_bookmark_qrcode(
@@ -142,45 +119,34 @@ pub async fn get_bookmark_qrcode(
 pub async fn create_bookmark(
     State(state): State<AppState>,
     Json(bookmark): Json<CreateBookmarkRequest>,
-) -> Result<(StatusCode, Json<BookmarkResponse>), (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Mutation::create_bookmark(
+) -> Result<CreateBookmarkResult, CreateBookmarkResult> {
+    let bookmark = database::bookmarks::Mutation::create_bookmark(
         &state.database,
         bookmark.url,
         bookmark.title,
         bookmark.description,
     )
     .await
-    .map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(
-                "CANNOT_WRITE_TO_DATABASE",
-                "Cannot save bookmark to database",
-            )),
-        )
-    })
-    .map(|m| {
-        (
-            StatusCode::CREATED,
-            Json(BookmarkResponse {
-                id: m.id,
-                url: m.url,
-                title: m.title,
-                description: m.description,
-                tags: vec![],
-                creation_date: m.creation_date.with_timezone(&Utc),
-                update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-            }),
-        )
-    })
+    .map_err(|_| CreateBookmarkResult::ServerError)
+    .map(|m| CreateBookmarkResponse {
+        id: m.id,
+        url: m.url,
+        title: m.title,
+        description: m.description,
+        tags: vec![],
+        creation_date: m.creation_date.with_timezone(&Utc),
+        update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+    })?;
+
+    Ok(CreateBookmarkResult::Success(bookmark))
 }
 
 pub async fn update_bookmark(
     State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
     Json(bookmark): Json<UpdateBookmarkRequest>,
-) -> Result<Json<BookmarkResponse>, (StatusCode, Json<ErrorResponse>)> {
-    database::bookmarks::Mutation::update_bookmark(
+) -> Result<UpdateBookmarkResult, UpdateBookmarkResult> {
+    let bookmark = database::bookmarks::Mutation::update_bookmark(
         &state.database,
         bookmark_id,
         bookmark.url,
@@ -188,62 +154,34 @@ pub async fn update_bookmark(
         bookmark.description,
     )
     .await
-    .map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse::new(
-                "CANNOT_WRITE_TO_DATABASE",
-                "Cannot save bookmark to database",
-            )),
-        )
-    })?
-    .map(|m| {
-        Json(BookmarkResponse {
-            id: bookmark_id,
-            url: m.url,
-            title: m.title,
-            description: m.description,
-            tags: vec![],
-            creation_date: m.creation_date.with_timezone(&Utc),
-            update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-        })
+    .map_err(|_| UpdateBookmarkResult::ServerError)?
+    .map(|m| UpdateBookmarkResponse {
+        id: bookmark_id,
+        url: m.url,
+        title: m.title,
+        description: m.description,
+        tags: vec![],
+        creation_date: m.creation_date.with_timezone(&Utc),
+        update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
     })
-    .ok_or((
-        StatusCode::NOT_FOUND,
-        Json(
-            ErrorResponse::new(
-                "NOT_FOUND",
-                &format!("Bookmark '{}' not found", bookmark_id),
-            )
-            .with_data("id", &format!("{}", bookmark_id)),
-        ),
-    ))
+    .ok_or(UpdateBookmarkResult::NotFound(
+        bookmark_id,
+        format!("Bookmark '{}' not found", bookmark_id),
+    ))?;
+
+    Ok(UpdateBookmarkResult::Success(bookmark))
 }
 
 pub async fn delete_bookmark(
     State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
-) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<DeleteBookmarkResult, DeleteBookmarkResult> {
     database::bookmarks::Mutation::delete_bookmark(&state.database, bookmark_id)
         .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse::new(
-                    "CANNOT_WRITE_TO_DATABASE",
-                    "Cannot save bookmark to database",
-                )),
-            )
-        })?
-        .map(|_| StatusCode::NO_CONTENT)
-        .ok_or((
-            StatusCode::NOT_FOUND,
-            Json(
-                ErrorResponse::new(
-                    "NOT_FOUND",
-                    &format!("Bookmark '{}' not found", bookmark_id),
-                )
-                .with_data("id", &format!("{}", bookmark_id)),
-            ),
+        .map_err(|_| DeleteBookmarkResult::ServerError)?
+        .map(|_| DeleteBookmarkResult::Success)
+        .ok_or(DeleteBookmarkResult::NotFound(
+            bookmark_id,
+            format!("Bookmark '{}' not found", bookmark_id),
         ))
 }

@@ -21,7 +21,7 @@ use crate::signup::Signup;
 use gloo_net::http::Request;
 use login::Login;
 use logout::Logout;
-use rest_api::authentication::sessions::{SessionResponse, URL_SESSIONS_CURRENT};
+use rest_api::sessions::{CreateSessionResponse, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -89,7 +89,7 @@ fn app() -> Html {
 
                     if let Ok(response) = Request::get(&URL_SESSIONS_CURRENT).send().await {
                         if response.ok() {
-                            if let Ok(session) = response.json::<SessionResponse>().await {
+                            if let Ok(session) = response.json::<CreateSessionResponse>().await {
                                 new_state.username = Some(AttrValue::from(session.username));
                             }
                         }

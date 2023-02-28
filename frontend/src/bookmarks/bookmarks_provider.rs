@@ -1,7 +1,8 @@
 use crate::bookmarks::Props as BookmarksContext;
 use crate::data::Bookmark;
 use gloo_net::http::Request;
-use rest_api::bookmarks::{BookmarkResponse, URL_BOOKMARKS};
+use rest_api::bookmarks::get_many::GetBookmarksResult;
+use rest_api::bookmarks::URL_BOOKMARKS;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -62,14 +63,11 @@ pub fn bookmarks_provider(props: &Props) -> Html {
             if state.context.is_none() {
                 let state = state.clone();
                 spawn_local(async move {
-                    let res = fetch_bookmarks(&state.order, on_change_order).await;
-                    // todo implement a 500 page
-                    if let Ok(bookmarks) = res {
-                        state.set(State {
-                            order: state.order.clone(),
-                            context: Some(bookmarks),
-                        })
-                    }
+                    let bookmarks = fetch_bookmarks(&state.order, on_change_order).await;
+                    state.set(State {
+                        order: state.order.clone(),
+                        context: Some(bookmarks),
+                    })
                 });
             }
 
@@ -89,39 +87,28 @@ pub fn bookmarks_provider(props: &Props) -> Html {
     }
 }
 
-async fn fetch_bookmarks(
-    order: &Order,
-    callback: Callback<Order>,
-) -> Result<BookmarksContext, String> {
-    match Request::get(URL_BOOKMARKS)
-        .query([("order", format!("creation_date:{}", order.query_param()))])
-        .send()
-        .await
+async fn fetch_bookmarks(order: &Order, callback: Callback<Order>) -> BookmarksContext {
+    let bookmarks = match GetBookmarksResult::from(
+        Request::get(URL_BOOKMARKS)
+            .query([("order", format!("creation_date:{}", order.query_param()))])
+            .send()
+            .await,
+    )
+    .await
     {
-        Err(_) => Err("Error fetching data".to_string()),
-        Ok(resp) => {
-            if !resp.ok() {
-                Err(format!(
-                    "Error fetching data: {} ({})",
-                    resp.status(),
-                    resp.status_text()
-                ))
-            } else {
-                resp.json::<Vec<BookmarkResponse>>()
-                    .await
-                    .map_err(|err| err.to_string())
-                    .map(|elements| {
-                        elements
-                            .into_iter()
-                            .map(Bookmark::from)
-                            .collect::<Vec<Bookmark>>()
-                    })
-                    .map(|bookmarks| BookmarksContext {
-                        bookmarks: Rc::new(bookmarks),
-                        order: order.clone(),
-                        on_change_order: callback,
-                    })
-            }
+        Some(GetBookmarksResult::Success(bookmarks)) => bookmarks
+            .into_iter()
+            .map(Bookmark::from)
+            .collect::<Vec<Bookmark>>(),
+        _ => {
+            // todo handle errors
+            vec![]
         }
+    };
+
+    BookmarksContext {
+        bookmarks: Rc::new(bookmarks),
+        order: order.clone(),
+        on_change_order: callback,
     }
 }
