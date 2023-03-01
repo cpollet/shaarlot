@@ -11,7 +11,7 @@ members = [".", "entity", "migration", "rest-api", "common", "backend", "fronten
 backend = { path = "backend" }
 migration = { path = "migration" }
 axum = "0.6.4"
-tokio = { version = "1.25.0", features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread", "signal"] }
 sea-orm-migration = "0.11.0"
 tower = "0.4.13"
 tower-http = { version = "0.3.5", features = ["trace"] }
