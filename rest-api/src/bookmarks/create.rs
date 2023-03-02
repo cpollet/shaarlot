@@ -21,6 +21,7 @@ pub struct CreateBookmarkResponse {
 
 pub enum CreateBookmarkResult {
     Success(CreateBookmarkResponse),
+    Forbidden,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -39,6 +40,7 @@ impl CreateBookmarkResult {
                     Err(_) => Some(CreateBookmarkResult::DeserializationError),
                     Ok(payload) => Some(CreateBookmarkResult::Success(payload)),
                 },
+                403 => Some(CreateBookmarkResult::Forbidden),
                 500 => Some(CreateBookmarkResult::ServerError),
                 _ => {
                     // todo add log
@@ -56,6 +58,7 @@ impl axum::response::IntoResponse for CreateBookmarkResult {
             CreateBookmarkResult::Success(payload) => {
                 (http::StatusCode::CREATED, axum::Json(payload)).into_response()
             }
+            CreateBookmarkResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
             CreateBookmarkResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

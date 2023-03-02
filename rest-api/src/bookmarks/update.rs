@@ -24,6 +24,7 @@ pub struct UpdateBookmarkResponse {
 
 pub enum UpdateBookmarkResult {
     Success(UpdateBookmarkResponse),
+    Forbidden,
     NotFound(i32, String),
     ServerError,
 
@@ -43,6 +44,7 @@ impl UpdateBookmarkResult {
                     Err(_) => Some(UpdateBookmarkResult::DeserializationError),
                     Ok(payload) => Some(UpdateBookmarkResult::Success(payload)),
                 },
+                403 => Some(UpdateBookmarkResult::Forbidden),
                 404 => match response.json::<ErrorResponse>().await {
                     Err(_) => Some(UpdateBookmarkResult::DeserializationError),
                     Ok(payload) => match payload.data("id").and_then(|id| i32::from_str(id).ok()) {
@@ -68,6 +70,7 @@ impl axum::response::IntoResponse for UpdateBookmarkResult {
     fn into_response(self) -> axum::response::Response {
         match self {
             UpdateBookmarkResult::Success(payload) => axum::Json(payload).into_response(),
+            UpdateBookmarkResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
             UpdateBookmarkResult::NotFound(id, message) => (
                 http::StatusCode::NOT_FOUND,
                 axum::Json(

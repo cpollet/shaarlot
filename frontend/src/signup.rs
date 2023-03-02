@@ -11,6 +11,11 @@ use yew_hooks::use_effect_once;
 use yew_router::hooks::use_navigator;
 
 #[derive(Clone, PartialEq)]
+enum Error {
+    InvalidPassword,
+}
+
+#[derive(Clone, PartialEq)]
 struct State {
     email: AttrValue,
     username: AttrValue,
@@ -18,10 +23,9 @@ struct State {
     password_verif: AttrValue,
     /// form submission in progress
     in_progress: bool,
-    /// got an invalid password error from backend
-    invalid_password: bool,
     /// live password check result
     password_flags: PasswordFlags,
+    error: Option<Error>,
 }
 
 impl Default for State {
@@ -32,8 +36,8 @@ impl Default for State {
             password: AttrValue::default(),
             password_verif: AttrValue::default(),
             in_progress: false,
-            invalid_password: false,
             password_flags: PasswordFlags::default(),
+            error: None,
         }
     }
 }
@@ -96,10 +100,10 @@ pub fn signup() -> Html {
                         navigator.push(&Route::Login);
                     }
                     Some(CreateUserResult::InvalidPassword) => {
-                        new_state.invalid_password = true;
                         new_state.password = AttrValue::default();
                         new_state.password_verif = AttrValue::default();
                         new_state.password_flags = PasswordFlags::default();
+                        new_state.error = Some(Error::InvalidPassword);
                         let _ = password_input_ref
                             .cast::<HtmlInputElement>()
                             .unwrap()
@@ -161,13 +165,13 @@ pub fn signup() -> Html {
     html! {
         <div class="centered-box">
            <h1 class="centered-box__title">{"Create account"}</h1>
-            { match state.invalid_password {
-                true => html! {
+            { match state.error {
+                Some(Error::InvalidPassword) => html! {
                     <div class="centered-box__error">
                         {"Invalid password"}
                     </div>
                 },
-                false => html!{ <></> }
+                None => html!{ <></> }
             }}
             <form {onsubmit}>
                 <p>
@@ -204,24 +208,24 @@ pub fn signup() -> Html {
                         oninput={oninput_password_verif}
                     />
                 </p>
-                <ul>
+                <ul class="password-checks">
                     <li class={if !state.password_flags.length { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"min. 8 characters"}
+                        {if !state.password_flags.length { "\u{2717}" } else { "\u{2713}" } }{" min. 8 characters"}
                     </li>
                     <li class={if !state.password_flags.lower_case { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"at least one lower case letter"}
+                        {if !state.password_flags.lower_case { "\u{2717}" } else { "\u{2713}" } }{" at least one lower case letter"}
                     </li>
                     <li class={if !state.password_flags.upper_case { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"at least one upper case letter"}
+                        {if !state.password_flags.upper_case { "\u{2717}" } else { "\u{2713}" } }{" at least one upper case letter"}
                     </li>
                     <li class={if !state.password_flags.digits { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"at least one digit"}
+                        {if !state.password_flags.digits { "\u{2717}" } else { "\u{2713}" } }{" at least one digit"}
                     </li>
                     <li class={if !state.password_flags.symbols { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"at least one symbol"}
+                        {if !state.password_flags.symbols { "\u{2717}" } else { "\u{2713}" } }{" at least one symbol"}
                     </li>
                     <li class={if !state.password_flags.same { "centered-box__error" } else { "centered-box__ok" } }>
-                        {"passwords match"}
+                        {if !state.password_flags.same { "\u{2717}" } else { "\u{2713}" } }{" passwords match"}
                     </li>
                 </ul>
                 <p class="centered-box__buttons">

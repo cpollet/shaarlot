@@ -14,12 +14,17 @@ pub struct Props {
     pub onlogin: Callback<AttrValue>,
 }
 
+#[derive(Clone, PartialEq)]
+enum Error {
+    InvalidCredentials,
+}
+
 #[derive(Clone)]
 struct State {
     username: AttrValue,
     password: AttrValue,
-    invalid_credentials: bool,
     in_progress: bool,
+    error: Option<Error>,
 }
 
 impl Default for State {
@@ -27,8 +32,8 @@ impl Default for State {
         Self {
             username: AttrValue::default(),
             password: AttrValue::default(),
-            invalid_credentials: false,
             in_progress: false,
+            error: None,
         }
     }
 }
@@ -87,7 +92,7 @@ pub fn login(props: &Props) -> Html {
                         navigator.push(&Route::Index);
                     }
                     Some(CreateSessionResult::InvalidCredentials) => {
-                        new_state.invalid_credentials = true;
+                        new_state.error = Some(Error::InvalidCredentials);
                     }
                     _ => {}
                 }
@@ -119,13 +124,13 @@ pub fn login(props: &Props) -> Html {
     html! {
         <div class="centered-box">
             <h1 class="centered-box__title">{"Login"}</h1>
-            { match state.invalid_credentials {
-                true => html! {
+            { match state.error {
+                Some(Error::InvalidCredentials) => html! {
                     <div class="centered-box__error">
                         {"Invalid credentials"}
                     </div>
                 },
-                false => html!{ <></> }
+                None => html!{ <></> }
             }}
             <form {onsubmit}>
                 <p>

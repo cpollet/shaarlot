@@ -1,3 +1,4 @@
+use crate::create_bookmark::Error::Forbidden;
 use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
@@ -17,12 +18,18 @@ enum Step {
 }
 
 #[derive(Clone, PartialEq)]
+enum Error {
+    Forbidden,
+    Other,
+}
+
+#[derive(Clone, PartialEq)]
 struct State {
     focused: bool,
     in_progress: bool,
-    has_error: bool,
     step: Step,
     bookmark: Bookmark,
+    error: Option<Error>,
 }
 
 impl Default for State {
@@ -30,9 +37,9 @@ impl Default for State {
         Self {
             focused: false,
             in_progress: false,
-            has_error: false,
             step: Step::Init,
             bookmark: Bookmark::default(),
+            error: None,
         }
     }
 }
@@ -123,10 +130,15 @@ pub fn create_bookmark() -> Html {
                             Some(CreateBookmarkResult::Success(_)) => {
                                 navigator.push(&Route::Bookmarks)
                             }
+                            Some(CreateBookmarkResult::Forbidden) => {
+                                let mut new_state = (*state).clone();
+                                new_state.error = Some(Forbidden);
+                                state.set(new_state);
+                            }
                             _ => {
                                 let mut new_state = (*state).clone();
                                 new_state.in_progress = false;
-                                new_state.has_error = true;
+                                new_state.error = Some(Error::Other);
                                 state.set(new_state);
                             }
                         }
@@ -182,13 +194,18 @@ pub fn create_bookmark() -> Html {
     html! {
         <div class="centered-box">
             <h1 class="centered-box__title">{"Create bookmark"}</h1>
-            { match state.has_error {
-                true => html! {
+            { match state.error {
+                Some(Forbidden) => html! {
                     <div class="centered-box__error">
-                        {"Failed to create bookmark"}
+                        {"You don't have the right to create bookmarks"}
                     </div>
                 },
-                false => html! {
+                Some(_) => html! {
+                    <div class="centered-box__error">
+                        {"An error has occurred"}
+                    </div>
+                },
+                None => html! {
                     <></>
                 }
             }}

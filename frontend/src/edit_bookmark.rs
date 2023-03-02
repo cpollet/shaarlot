@@ -15,9 +15,18 @@ pub struct Props {
 }
 
 #[derive(Clone, PartialEq)]
+enum Error {
+    Forbidden,
+    NotFound,
+    Other,
+}
+
+#[derive(Clone, PartialEq)]
 struct State {
     focused: bool,
     bookmark: Bookmark,
+    // todo implement in_progress
+    error: Option<Error>,
 }
 
 #[function_component(EditBookmark)]
@@ -25,6 +34,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
     let state = use_state(|| State {
         focused: false,
         bookmark: (*props.bookmark).clone(),
+        error: None,
     });
     let navigator = use_navigator().unwrap();
 
@@ -61,8 +71,20 @@ pub fn edit_bookmark(props: &Props) -> Html {
                 .await
                 {
                     Some(UpdateBookmarkResult::Success(_)) => navigator.push(&Route::Bookmarks),
+                    Some(UpdateBookmarkResult::Forbidden) => {
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::Forbidden);
+                        state.set(new_state);
+                    }
+                    Some(UpdateBookmarkResult::NotFound(_, _)) => {
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::NotFound);
+                        state.set(new_state);
+                    }
                     _ => {
-                        //todo handle error
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::Other);
+                        state.set(new_state);
                     }
                 }
             })
@@ -121,6 +143,24 @@ pub fn edit_bookmark(props: &Props) -> Html {
     html! {
         <div class="centered-box">
             <h1 class="centered-box__title">{"Edit bookmark"}</h1>
+            { match state.error {
+                Some(Error::Forbidden) => html! {
+                    <div class="centered-box__error">
+                        {"You don't have the right to update this bookmark"}
+                    </div>
+                },
+                Some(Error::NotFound) => html! {
+                    <div class="centered-box__error">
+                        {"Bookmark not found"}
+                    </div>
+                },
+                Some(_) => html! {
+                    <div class="centered-box__error">
+                        {"An error has occurred"}
+                    </div>
+                },
+                None => html!{ <></> }
+            }}
             <form {onsubmit}>
                 <p>
                     <input

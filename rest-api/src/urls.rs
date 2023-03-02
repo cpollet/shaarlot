@@ -11,6 +11,7 @@ pub struct GetUrlResponse {
 
 pub enum GetUrlResult {
     Success(GetUrlResponse),
+    Forbidden,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -29,6 +30,7 @@ impl GetUrlResult {
                     Err(_) => Some(GetUrlResult::DeserializationError),
                     Ok(payload) => Some(GetUrlResult::Success(payload)),
                 },
+                403 => Some(GetUrlResult::Forbidden),
                 500 => Some(GetUrlResult::ServerError),
                 _ => {
                     // todo add log
@@ -44,6 +46,7 @@ impl axum::response::IntoResponse for GetUrlResult {
     fn into_response(self) -> axum::response::Response {
         match self {
             GetUrlResult::Success(payload) => axum::Json(payload).into_response(),
+            GetUrlResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
             GetUrlResult::ServerError => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
         }
     }

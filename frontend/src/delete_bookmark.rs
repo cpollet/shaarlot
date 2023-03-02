@@ -13,8 +13,18 @@ pub struct Props {
     pub bookmark: Rc<Bookmark>,
 }
 
+#[derive(Clone, PartialEq)]
+enum Error {
+    Forbidden,
+    NotFound,
+    Other,
+}
+
+#[derive(Clone, PartialEq)]
 struct State {
     bookmark: Bookmark,
+    // todo implement in_progress
+    error: Option<Error>,
 }
 
 #[function_component(DeleteBookmark)]
@@ -22,6 +32,7 @@ pub fn delete_bookmark(props: &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let state = use_state(|| State {
         bookmark: (*props.bookmark).clone(),
+        error: None,
     });
 
     let onclick_no = {
@@ -35,8 +46,10 @@ pub fn delete_bookmark(props: &Props) -> Html {
     let onclick_yes = {
         let navigator = navigator.clone();
         let id = props.bookmark.id;
+        let state = state.clone();
         Callback::from(move |e: MouseEvent| {
             let navigator = navigator.clone();
+            let state = state.clone();
             e.prevent_default();
             spawn_local(async move {
                 match DeleteBookmarkResult::from(
@@ -47,8 +60,20 @@ pub fn delete_bookmark(props: &Props) -> Html {
                 .await
                 {
                     Some(DeleteBookmarkResult::Success) => navigator.push(&Route::Bookmarks),
+                    Some(DeleteBookmarkResult::Forbidden) => {
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::Forbidden);
+                        state.set(new_state);
+                    }
+                    Some(DeleteBookmarkResult::NotFound(_, _)) => {
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::NotFound);
+                        state.set(new_state);
+                    }
                     _ => {
-                        // todo handle error
+                        let mut new_state = (*state).clone();
+                        new_state.error = Some(Error::Other);
+                        state.set(new_state);
                     }
                 };
             });
@@ -58,6 +83,24 @@ pub fn delete_bookmark(props: &Props) -> Html {
     html! {
         <div class="centered-box">
             <h1 class="delete-bookmark__title">{"Delete bookmark?"}</h1>
+            { match state.error {
+                Some(Error::Forbidden) => html! {
+                    <div class="centered-box__error">
+                        {"You don't have the right to delete this bookmark"}
+                    </div>
+                },
+                Some(Error::NotFound) => html! {
+                    <div class="centered-box__error">
+                        {"Bookmark not found"}
+                    </div>
+                },
+                Some(_) => html! {
+                    <div class="centered-box__error">
+                        {"An error has occurred"}
+                    </div>
+                },
+                None => html!{ <></> }
+            }}
             <p>
                 <a href={state.bookmark.url.clone()}>
                     {state.bookmark.title.as_ref().map(|t|t.clone()).unwrap_or(state.bookmark.url.clone())}
