@@ -1,0 +1,152 @@
+[env]
+CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+
+[tasks.install-trunk]
+workspace = false
+install_crate = { crate_name = "trunk", binary = "trunk", test_arg = "--help" }
+
+[tasks.install-wasm32]
+workspace = false
+command = "rustup"
+args = ["target", "add", "wasm32-unknown-unknown"]
+
+[tasks.postgres]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+
+docker network ls | grep rbm || docker network create rbm
+
+if docker ps -a | grep rbm-postgres; then
+  docker start rbm-postgres
+else
+  docker run -d \
+    --name rbm-postgres \
+    -e POSTGRES_PASSWORD=password \
+    -v rbm-postgres:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    --network rbm \
+    postgres
+fi
+
+grep DATABASE_URL .env 2>/dev/null || echo "DATABASE_URL=postgres://postgres:password@localhost:5432/postgres" >> .env
+'''
+
+[tasks.dev-frontend]
+workspace = false
+dependencies = ["install-trunk"]
+cwd = "./frontend"
+command = "trunk"
+args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=http://localhost:3000/api/"]
+
+[tasks.dev-backend]
+workspace = false
+env = { "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
+command = "cargo"
+args = ["run"]
+watch = true
+
+[tasks.run-dev]
+workspace = false
+dependencies = ["install-trunk", "install-wasm32", "postgres"]
+run_task = { name = ["dev-frontend", "dev-backend"], fork = true, parallel = true }
+
+[tasks.build-backend-release]
+command = "cargo"
+args = ["build", "--release"]
+
+[tasks.build-frontend-release]
+workspace = false
+dependencies = ["install-trunk", "install-wasm32"]
+cwd = "./frontend"
+command = "trunk"
+args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", "--release"]
+
+[tasks.run-prod]
+workspace = false
+env = { "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm cargo" }
+dependencies = ["postgres", "build-backend-release", "build-frontend-release"]
+command = "cargo"
+args = ["run", "--release"]
+
+[tasks.docker-prepare-build]
+workspace = false
+dependencies = ["clean-docker-image", "clean-docker", "build-backend-release", "build-frontend-release"]
+script = [
+    "mkdir -p docker/target",
+    "cp target/release/rbm docker/target/rbm",
+    "cp -r target/release/wasm docker/target/webroot"
+]
+
+[tasks.docker-build]
+workspace = false
+cwd = "./docker"
+dependencies = ["docker-prepare-build"]
+command = "docker"
+args = ["build", "-t", "cpollet/rbm", "."]
+
+[tasks.docker-push]
+workspace = false
+dependencies = ["docker-build"]
+command = "docker"
+args = ["push", "cpollet/rbm"]
+
+[tasks.run-docker]
+workspace = false
+dependencies = ["postgres", "docker-build"]
+command = "docker"
+args = ["run", "--rm", "--name", "rbm",
+        "-e", "DATABASE_HOST=rbm-postgres",
+        "-e", "HTTP_PORT=8001",
+        "-p", "8001:8001",
+        "--network", "rbm",
+        "cpollet/rbm"]
+
+[tasks.deploy]
+workspace = false
+dependencies = ["docker-push"]
+env_files = ["./.env"]
+command = "curl"
+args = ["${WEBHOOK_URL}"]
+
+[tasks.deploy-health]
+workspace = false
+env_files = ["./.env"]
+dependencies = ["deploy"]
+script = '''
+#!/usr/bin/env bash
+
+while ! curl --silent --fail "$HEALTH_URL" &>/dev/null; do
+    sleep 2
+done
+curl "$HEALTH_URL"; echo
+'''
+
+[tasks.clean-docker-image]
+workspace = false
+ignore_errors = true
+command = "docker"
+args = ["rmi", "cpollet/rbm"]
+
+[tasks.clean-docker]
+workspace = false
+command = "rm"
+args = ["-rf", "docker/target"]
+
+[tasks.clean]
+workspace = false
+dependencies = ["clean-docker"]
+command = "cargo"
+args = ["clean"]
+
+[tasks.update-entities]
+workspace = false
+env_files = ["./.env"]
+dependencies = ["postgres"]
+command = "sea-orm-cli"
+args = ["generate", "entity", "-l", "-o", "entity/src/"]
+
+[tasks.generate-migration]
+workspace = false
+command = "sea-orm-cli"
+args = ["migrate", "generate", "MIGRATION_NAME", "--local-time"]

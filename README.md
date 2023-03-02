@@ -2,17 +2,29 @@
 
 ## Running
 ### Development mode
-In this mode, both the front-end and back-end changes are compiled whenever the sources files are saved.
-It is with `./dev.sh`. The URL to use is http://localhost:8080.
+In this mode, both the front-end and back-end changes are compiled whenever the sources files are saved. Execute
+```sh
+$ cargo install cargo-make
+$ cargo make run-dev
+```
+The URL to use is http://localhost:8080.
 
 ### Production mode
 In this mode, both the front-end and the back-end are compiled with `--release`.
-It is started with `./prod.sh` The URL to use is http://localhost:8000.
+```sh
+$ cargo install cargo-make
+$ cargo make run-prod
+```
+The URL to use is http://localhost:8000.
 
 ### Docker mode
 In this mode, both the front-end and the back-end are compiled with `--release` and everything is packaged in a docker
 image.
-It is started with `./docker.sh` The URL to use is http://localhost:8001.
+```sh
+$ cargo install cargo-make
+$ cargo make run-docker
+```
+The URL to use is http://localhost:8001.
 
 ## Configuration
 ### Environment variables
