@@ -64,7 +64,7 @@ args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", 
 
 [tasks.run-prod]
 workspace = false
-env = { "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm cargo" }
+env = { "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
 dependencies = ["postgres", "build-backend-release", "build-frontend-release"]
 command = "cargo"
 args = ["run", "--release"]
