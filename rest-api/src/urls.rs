@@ -48,6 +48,7 @@ impl axum::response::IntoResponse for GetUrlResult {
             GetUrlResult::Success(payload) => axum::Json(payload).into_response(),
             GetUrlResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
             GetUrlResult::ServerError => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            _ => panic!()
         }
     }
 }

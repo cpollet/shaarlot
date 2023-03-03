@@ -402,18 +402,27 @@ dependencies = [
  "argon2",
  "async-trait",
  "axum",
+ "axum-extra 0.5.0",
  "axum-sessions",
+ "build-data",
  "chrono",
  "common",
  "entity",
  "log",
+ "migration",
  "qrcode-generator",
  "rest-api",
  "sea-orm",
+ "sea-orm-migration",
  "secrecy",
  "serde",
  "serde_json",
  "tokio",
+ "tower",
+ "tower-http 0.4.0",
+ "tracing",
+ "tracing-subscriber",
+ "vergen",
  "webpage",
 ]
 
@@ -2485,28 +2494,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "16abd0c1b639e9eb4d7c50c0b8100b0d0f849be2349829c740fe8e6eb4816429"
 dependencies = [
  "rand_core 0.5.1",
-]
-
-[[package]]
-name = "rbm"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "axum",
- "axum-extra 0.5.0",
- "axum-sessions",
- "backend",
- "build-data",
- "log",
- "migration",
- "sea-orm-migration",
- "secrecy",
- "tokio",
- "tower",
- "tower-http 0.4.0",
- "tracing",
- "tracing-subscriber",
- "vergen",
 ]
 
 [[package]]

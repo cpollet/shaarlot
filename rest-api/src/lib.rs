@@ -7,9 +7,6 @@ pub mod sessions;
 pub mod urls;
 pub mod users;
 
-#[cfg(all(feature = "frontend", feature = "backend"))]
-compile_error!("feature \"frontend\" and feature \"backend\" cannot be enabled at the same time");
-
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RestPassword(pub String);
 

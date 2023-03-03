@@ -43,7 +43,7 @@ args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=h
 workspace = false
 env = { "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
 command = "cargo"
-args = ["run"]
+args = ["run", "--bin", "backend"]
 watch = true
 
 [tasks.run-dev]
@@ -67,7 +67,7 @@ workspace = false
 env = { "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
 dependencies = ["postgres", "build-backend-release", "build-frontend-release"]
 command = "cargo"
-args = ["run", "--release"]
+args = ["run", "--release", "--bin", "backend"]
 
 [tasks.docker-prepare-build]
 workspace = false

@@ -63,6 +63,7 @@ impl axum::response::IntoResponse for CreateSessionResult {
             CreateSessionResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }
+            _ => panic!()
         }
     }
 }
