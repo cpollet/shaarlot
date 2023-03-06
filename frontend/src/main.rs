@@ -8,6 +8,7 @@ mod login;
 mod logout;
 mod menu;
 mod signup;
+mod validate_email;
 
 use crate::bookmark_provider::BookmarkProvider;
 use crate::bookmarks::bookmark::BookmarkHOC;
@@ -18,6 +19,7 @@ use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
 use crate::signup::Signup;
+use crate::validate_email::ValidateEmail;
 use gloo_net::http::Request;
 use login::Login;
 use logout::Logout;
@@ -61,6 +63,9 @@ pub enum Route {
 
     #[at("/login")]
     Login,
+
+    #[at("/email/:uuid/~validate")]
+    ValidateEmail { uuid: uuid::Uuid },
 
     #[at("/logout")]
     Logout,
@@ -178,6 +183,11 @@ fn app() -> Html {
                     Route::Login => {
                         html! {
                             <Login onlogin={onlogin.clone()} />
+                        }
+                    }
+                    Route::ValidateEmail { uuid } => {
+                        html! {
+                            <ValidateEmail {uuid} />
                         }
                     }
                     Route::Logout => {

@@ -12,6 +12,8 @@ pub struct Model {
     pub password: String,
     pub creation_date: DateTimeWithTimeZone,
     pub email: String,
+    pub email_token: Option<String>,
+    pub email_token_generation_date: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

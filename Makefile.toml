@@ -41,7 +41,8 @@ args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=h
 
 [tasks.dev-backend]
 workspace = false
-env = { "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
+env_files = ["./.env"]
+env = { "PUBLIC_URL" = "http://localhost:8080", "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
 command = "cargo"
 args = ["run", "--bin", "backend"]
 watch = true
@@ -64,7 +65,8 @@ args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", 
 
 [tasks.run-prod]
 workspace = false
-env = { "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
+env_files = ["./.env"]
+env = { "PUBLIC_URL" = "http://localhost:8000", "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
 dependencies = ["postgres", "build-backend-release", "build-frontend-release"]
 command = "cargo"
 args = ["run", "--release", "--bin", "backend"]
@@ -96,8 +98,10 @@ workspace = false
 dependencies = ["postgres", "docker-build"]
 command = "docker"
 args = ["run", "--rm", "--name", "rbm",
+        "--env-file", "./.env",
         "-e", "DATABASE_HOST=rbm-postgres",
         "-e", "HTTP_PORT=8001",
+        "-e", "PUBLIC_URL=http://localhost:8001",
         "-p", "8001:8001",
         "--network", "rbm",
         "cpollet/rbm"]
@@ -145,6 +149,13 @@ env_files = ["./.env"]
 dependencies = ["postgres"]
 command = "sea-orm-cli"
 args = ["generate", "entity", "-l", "-o", "entity/src/"]
+
+[tasks.migration-down]
+workspace = false
+env_files = ["./.env"]
+dependencies = ["postgres"]
+command = "cargo"
+args = ["-p", "migration", "--", "down", "-n1"]
 
 [tasks.generate-migration]
 workspace = false

@@ -6,6 +6,7 @@ pub mod error_response;
 pub mod sessions;
 pub mod urls;
 pub mod users;
+pub mod validate_email;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RestPassword(pub String);

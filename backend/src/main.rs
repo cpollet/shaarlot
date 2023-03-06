@@ -6,11 +6,16 @@ use axum_extra::routing::SpaRouter;
 use axum_sessions::async_session::MemoryStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
 use backend::database::Configuration;
+use backend::mailer::Mailer;
 use backend::rest::router;
 use backend::{database, AppState};
+use lettre::message::Mailbox;
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::SmtpTransport;
 use sea_orm_migration::MigratorTrait;
 use secrecy::{ExposeSecret, SecretVec};
 use std::env;
+use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
 use tokio::signal;
@@ -45,6 +50,8 @@ async fn main() {
 
     let http_host = env::var("HTTP_HOST").unwrap_or("0.0.0.0".to_owned());
     let http_port = env::var("HTTP_PORT").unwrap_or("3000".to_owned());
+    let public_url =
+        env::var("PUBLIC_URL").unwrap_or(format!("http://{}:{}", http_host, http_port));
     let database_host = env::var("DATABASE_HOST").unwrap_or("localhost".to_owned());
     let database_port = env::var("DATABASE_PORT").unwrap_or("5432".to_owned());
     let database_username = env::var("DATABASE_USERNAME").unwrap_or("postgres".to_owned());
@@ -52,6 +59,11 @@ async fn main() {
     let database_name = env::var("DATABASE_NAME").unwrap_or("postgres".to_owned());
     let static_files_path = env::var("ROOT_PATH").unwrap_or("./webroot".to_owned());
     let assets_url = env::var("ASSETS_URL").unwrap_or("/assets".to_owned());
+    let smtp_host = env::var("SMTP_HOST").unwrap_or("localhost".to_owned());
+    let smtp_port = env::var("SMTP_PORT").unwrap_or("25".to_owned());
+    let smtp_username = env::var("SMTP_USERNAME").unwrap_or("username".to_owned());
+    let smtp_password = env::var("SMTP_PASSWORD").unwrap_or("password".to_owned());
+    let smtp_from = env::var("SMTP_FROM").unwrap_or("rbm@localhost".to_owned());
 
     let database = {
         let config = Configuration {
@@ -89,12 +101,25 @@ async fn main() {
         session_store: MemoryStore::new(),
     };
 
+    let creds = Credentials::new(smtp_username.to_owned(), smtp_password.to_owned());
+    let smtp_transport = SmtpTransport::relay(&smtp_host)
+        .unwrap()
+        .port(u16::from_str(&smtp_port).unwrap())
+        .credentials(creds)
+        .build();
+
+    let mailer = Mailer {
+        smtp: smtp_transport,
+        from: smtp_from.parse::<Mailbox>().unwrap(),
+        public_url,
+    };
+
     log::info!("Serving {} under {}", static_files_path, assets_url);
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
-            router(&configuration, AppState { database })
+            router(&configuration, AppState { database, mailer })
                 .merge(
                     Router::new()
                         .merge(SpaRouter::new(&assets_url, static_files_path))

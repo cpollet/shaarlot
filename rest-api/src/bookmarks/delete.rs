@@ -58,7 +58,7 @@ impl axum::response::IntoResponse for DeleteBookmarkResult {
             DeleteBookmarkResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }

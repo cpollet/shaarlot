@@ -62,7 +62,7 @@ impl axum::response::IntoResponse for CreateBookmarkResult {
             CreateBookmarkResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }
-            _ => panic!()
+            _ => panic!(),
         }
     }
 }

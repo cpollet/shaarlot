@@ -1,9 +1,11 @@
 mod bookmarks;
+mod emails;
 mod json;
 mod sessions;
 mod users;
 
 use crate::rest::bookmarks::*;
+use crate::rest::emails::update_email;
 use crate::rest::sessions::*;
 use crate::rest::users::*;
 use crate::session::Session;
@@ -19,6 +21,7 @@ use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::urls::{GetUrlResponse, GetUrlResult, URL_URLS};
 use rest_api::users::URL_USERS;
+use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
 use webpage::{Webpage, WebpageOptions};
 
@@ -56,6 +59,7 @@ where
                 .route(URL_BOOKMARK, get(get_bookmark))
                 .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
                 .route(URL_USERS, post(create_user))
+                .route(URL_EMAIL, put(update_email))
                 .layer(from_fn(Session::supported))
                 .layer(
                     SessionLayer::new(
