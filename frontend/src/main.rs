@@ -93,11 +93,10 @@ fn app() -> Html {
         let state = state.clone();
         use_effect(move || {
             if state.is_none() {
-                let state = state.clone();
                 spawn_local(async move {
                     let mut new_state = State { username: None };
 
-                    if let Ok(response) = Request::get(&URL_SESSIONS_CURRENT).send().await {
+                    if let Ok(response) = Request::get(URL_SESSIONS_CURRENT).send().await {
                         if response.ok() {
                             if let Ok(session) = response.json::<CreateSessionResponse>().await {
                                 new_state.username = Some(AttrValue::from(session.username));

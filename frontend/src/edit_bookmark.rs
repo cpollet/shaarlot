@@ -91,7 +91,6 @@ pub fn edit_bookmark(props: &Props) -> Html {
         })
     };
     let onclick_cancel = {
-        let navigator = navigator.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
             navigator.push(&Route::Bookmarks);
@@ -111,10 +110,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
             let mut new_state = (*state).clone();
-            let value = e
-                .target_unchecked_into::<HtmlInputElement>()
-                .value()
-                .to_string();
+            let value = e.target_unchecked_into::<HtmlInputElement>().value();
             if value.is_empty() {
                 new_state.bookmark.title = None
             } else {
@@ -127,10 +123,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
             let mut new_state = (*state).clone();
-            let value = e
-                .target_unchecked_into::<HtmlInputElement>()
-                .value()
-                .to_string();
+            let value = e.target_unchecked_into::<HtmlInputElement>().value();
             if value.is_empty() {
                 new_state.bookmark.description = None
             } else {
@@ -200,6 +193,6 @@ pub fn edit_bookmark(props: &Props) -> Html {
 pub fn edit_bookmark_hoc() -> Html {
     let bookmark = use_context::<Rc<Bookmark>>().expect("no ctx found");
     html! {
-        <EditBookmark bookmark={bookmark.clone()} />
+        <EditBookmark bookmark={bookmark} />
     }
 }

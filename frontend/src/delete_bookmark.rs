@@ -44,7 +44,6 @@ pub fn delete_bookmark(props: &Props) -> Html {
     };
 
     let onclick_yes = {
-        let navigator = navigator.clone();
         let id = props.bookmark.id;
         let state = state.clone();
         Callback::from(move |e: MouseEvent| {
@@ -103,7 +102,7 @@ pub fn delete_bookmark(props: &Props) -> Html {
             }}
             <p>
                 <a href={state.bookmark.url.clone()}>
-                    {state.bookmark.title.as_ref().map(|t|t.clone()).unwrap_or(state.bookmark.url.clone())}
+                    {state.bookmark.title.as_ref().cloned().unwrap_or(state.bookmark.url.clone())}
                 </a>
             </p>
             <p class="centered-box__buttons">
@@ -119,6 +118,6 @@ pub fn delete_bookmark(props: &Props) -> Html {
 pub fn edit_bookmark_hoc() -> Html {
     let bookmark = use_context::<Rc<Bookmark>>().expect("no ctx found");
     html! {
-        <DeleteBookmark bookmark={bookmark.clone()} />
+        <DeleteBookmark bookmark={bookmark} />
     }
 }

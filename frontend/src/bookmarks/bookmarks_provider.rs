@@ -18,6 +18,12 @@ pub enum Order {
     Desc,
 }
 
+impl Default for Order {
+    fn default() -> Self {
+        Order::Desc
+    }
+}
+
 impl Order {
     fn query_param(&self) -> &str {
         match self {
@@ -27,24 +33,15 @@ impl Order {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct State {
     order: Order,
     context: Option<BookmarksContext>,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            order: Order::Desc,
-            context: None,
-        }
-    }
-}
-
 #[function_component(BookmarksProvider)]
 pub fn bookmarks_provider(props: &Props) -> Html {
-    let state = use_state(|| State::default());
+    let state = use_state(State::default);
 
     let on_change_order = {
         let state = state.clone();

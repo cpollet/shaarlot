@@ -19,7 +19,7 @@ enum Error {
     InvalidCredentials,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct State {
     username: AttrValue,
     password: AttrValue,
@@ -27,20 +27,9 @@ struct State {
     error: Option<Error>,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            username: AttrValue::default(),
-            password: AttrValue::default(),
-            in_progress: false,
-            error: None,
-        }
-    }
-}
-
 #[function_component(Login)]
 pub fn login(props: &Props) -> Html {
-    let state = use_state(|| State::default());
+    let state = use_state(State::default);
     let navigator = use_navigator().unwrap();
     let username_input_ref = use_node_ref();
 
@@ -72,7 +61,7 @@ pub fn login(props: &Props) -> Html {
             }
             spawn_local(async move {
                 let result = CreateSessionResult::from(
-                    Request::post(&URL_SESSIONS)
+                    Request::post(URL_SESSIONS)
                         .json(&CreateSessionRequest {
                             username: state.username.to_string(),
                             password: Secret::new(RestPassword(state.password.to_string())),

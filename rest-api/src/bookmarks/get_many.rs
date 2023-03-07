@@ -17,7 +17,7 @@ pub enum GetBookmarksResult {
 #[cfg(feature = "frontend")]
 impl GetBookmarksResult {
     pub async fn from(response: Result<gloo_net::http::Response, gloo_net::Error>) -> Option<Self> {
-        if let Err(_) = response {
+        if response.is_err() {
             return Some(GetBookmarksResult::BrowserError);
         }
         let response = response.unwrap();

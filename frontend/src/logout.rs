@@ -19,7 +19,7 @@ pub fn logout(props: &Props) -> Html {
         let props = props.clone();
         spawn_local(async move {
             // TODO finish this (error cases)
-            let result = Request::delete(&URL_SESSIONS_CURRENT).send().await;
+            let result = Request::delete(URL_SESSIONS_CURRENT).send().await;
 
             if let Ok(response) = result {
                 if response.ok() {

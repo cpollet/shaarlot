@@ -14,7 +14,7 @@ pub enum ValidateEmailResult {
 #[cfg(feature = "frontend")]
 impl ValidateEmailResult {
     pub async fn from(response: Result<gloo_net::http::Response, gloo_net::Error>) -> Option<Self> {
-        if let Err(_) = response {
+        if response.is_err() {
             return Some(ValidateEmailResult::BrowserError);
         }
         let response = response.unwrap();

@@ -64,7 +64,7 @@ pub fn bookmarks(props: &Props) -> Html {
             </div>
             <ul class="bookmarks">
             {
-                props.bookmarks.as_slice().into_iter().map(|b| html! {
+                props.bookmarks.as_slice().iter().map(|b| html! {
                     <Bookmark key={b.id} bookmark={Rc::new(b.clone())} />
                 }).collect::<Html>()
             }
