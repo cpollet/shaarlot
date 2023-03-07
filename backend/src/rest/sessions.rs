@@ -1,4 +1,4 @@
-use crate::session::{UserInfo, SESSION_KEY_USER_INFO};
+use crate::sessions::session::{UserInfo, SESSION_KEY_USER_INFO};
 use crate::{database, AppState};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;

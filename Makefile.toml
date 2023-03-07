@@ -32,9 +32,29 @@ fi
 grep DATABASE_URL .env 2>/dev/null || echo "DATABASE_URL=postgres://postgres:password@localhost:5432/postgres" >> .env
 '''
 
+[tasks.redis]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+
+docker network ls | grep rbm || docker network create rbm
+
+if docker ps -a | grep rbm-redis; then
+  docker start rbm-redis
+else
+  docker run -d \
+    --name rbm-redis \
+    -p 6379:6379 \
+    --network rbm \
+    redis
+fi
+
+grep REDIS_URL .env 2>/dev/null || echo "REDIS_URL=redis://localhost/" >> .env
+'''
+
 [tasks.dev-frontend]
 workspace = false
-dependencies = ["install-trunk"]
+dependencies = ["install-trunk", "install-wasm32"]
 cwd = "./frontend"
 command = "trunk"
 args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=http://localhost:3000/api/"]
@@ -43,13 +63,13 @@ args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=h
 workspace = false
 env_files = ["./.env"]
 env = { "PUBLIC_URL" = "http://localhost:8080", "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
+dependencies = ["postgres", "redis"]
 command = "cargo"
 args = ["run", "--bin", "backend"]
 watch = true
 
 [tasks.run-dev]
 workspace = false
-dependencies = ["install-trunk", "install-wasm32", "postgres"]
 run_task = { name = ["dev-frontend", "dev-backend"], fork = true, parallel = true }
 
 [tasks.build-backend-release]
@@ -67,7 +87,7 @@ args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", 
 workspace = false
 env_files = ["./.env"]
 env = { "PUBLIC_URL" = "http://localhost:8000", "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
-dependencies = ["postgres", "build-backend-release", "build-frontend-release"]
+dependencies = ["postgres", "redis", "build-backend-release", "build-frontend-release"]
 command = "cargo"
 args = ["run", "--release", "--bin", "backend"]
 

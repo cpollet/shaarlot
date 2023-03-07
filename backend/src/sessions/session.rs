@@ -20,9 +20,9 @@ impl Display for UserInfo {
     }
 }
 
-pub struct Session;
+pub struct SessionHint;
 
-impl Session {
+impl SessionHint {
     pub async fn required<B>(
         mut request: Request<B>,
         next: axum::middleware::Next<B>,

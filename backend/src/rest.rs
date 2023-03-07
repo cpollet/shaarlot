@@ -8,7 +8,7 @@ use crate::rest::bookmarks::*;
 use crate::rest::emails::update_email;
 use crate::rest::sessions::*;
 use crate::rest::users::*;
-use crate::session::Session;
+use crate::sessions::session::SessionHint;
 use crate::AppState;
 use axum::extract::Path;
 use axum::middleware::from_fn;
@@ -44,7 +44,7 @@ where
                 .route(URL_BOOKMARK, delete(delete_bookmark))
                 .route(URL_BOOKMARK, put(update_bookmark))
                 .route(URL_URLS, get(get_url))
-                .layer(from_fn(Session::required))
+                .layer(from_fn(SessionHint::required))
                 .layer(
                     SessionLayer::new(
                         configuration.session_store.clone(),
@@ -60,7 +60,7 @@ where
                 .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
                 .route(URL_USERS, post(create_user))
                 .route(URL_EMAIL, put(update_email))
-                .layer(from_fn(Session::supported))
+                .layer(from_fn(SessionHint::supported))
                 .layer(
                     SessionLayer::new(
                         configuration.session_store.clone(),
@@ -84,7 +84,7 @@ where
         .merge(
             Router::new()
                 .route(URL_SESSIONS_CURRENT, get(get_current_session))
-                .layer(from_fn(Session::required))
+                .layer(from_fn(SessionHint::required))
                 .layer(
                     SessionLayer::new(
                         configuration.session_store.clone(),

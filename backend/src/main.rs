@@ -3,11 +3,12 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use axum_extra::routing::SpaRouter;
-use axum_sessions::async_session::MemoryStore;
+use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SessionLayer};
 use backend::database::Configuration;
 use backend::mailer::Mailer;
 use backend::rest::router;
+use backend::sessions::RedisStore;
 use backend::{database, AppState};
 use lettre::message::Mailbox;
 use lettre::transport::smtp::authentication::Credentials;
@@ -64,6 +65,23 @@ async fn main() {
     let smtp_username = env::var("SMTP_USERNAME").unwrap_or("username".to_owned());
     let smtp_password = env::var("SMTP_PASSWORD").unwrap_or("password".to_owned());
     let smtp_from = env::var("SMTP_FROM").unwrap_or("rbm@localhost".to_owned());
+    let redis_host = env::var("REDIS_HOST").unwrap_or("localhost".to_owned());
+    let redis_port = env::var("REDIS_PORT").unwrap_or("6379".to_owned());
+    let redis_db = env::var("REDIS_DB").unwrap_or("0".to_owned());
+    let cookie_secret = env::var("COOKIE_SECRET")
+        .and_then(|v| Ok(SecretVec::new(base64::decode(v).unwrap())))
+        .unwrap_or_else(|_| {
+            let mut cookie_secret = [0u8; 64];
+            OsRng::default().fill_bytes(&mut cookie_secret);
+            log::info!(
+                "Cookie secret not set, using {}",
+                base64::encode(cookie_secret)
+            );
+            SecretVec::new(cookie_secret.into())
+        });
+    let session_ttl = env::var("SESSION_TTL")
+        .map(|s| Duration::from_secs(u64::from_str(&s).unwrap_or(60 * 60 * 24)))
+        .unwrap_or(Duration::from_secs(60 * 60 * 24));
 
     let database = {
         let config = Configuration {
@@ -92,13 +110,21 @@ async fn main() {
         .await
         .expect("Could not migrate database");
 
-    let mut cookie_secret = [0u8; 64];
-    OsRng::default().fill_bytes(&mut cookie_secret);
-    let cookie_secret = SecretVec::new(cookie_secret.into());
+    let session_store = RedisStore::new(
+        redis::Client::open(format!(
+            "redis://{}:{}/{}",
+            redis_host, redis_port, redis_db
+        ))
+        .unwrap()
+        .get_multiplexed_tokio_connection()
+        .await
+        .unwrap(),
+        session_ttl,
+    );
 
     let configuration = backend::rest::Configuration {
         cookie_secret,
-        session_store: MemoryStore::new(),
+        session_store,
     };
 
     let creds = Credentials::new(smtp_username.to_owned(), smtp_password.to_owned());
@@ -128,6 +154,7 @@ async fn main() {
                                 configuration.session_store.clone(),
                                 configuration.cookie_secret.expose_secret().as_slice(),
                             )
+                            .with_session_ttl(Some(session_ttl))
                             .with_persistence_policy(PersistencePolicy::Always),
                         ),
                 )

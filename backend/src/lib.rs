@@ -4,7 +4,7 @@ use sea_orm::DatabaseConnection;
 pub mod database;
 pub mod mailer;
 pub mod rest;
-mod session;
+pub mod sessions;
 
 #[derive(Clone)]
 pub struct AppState {

@@ -45,6 +45,11 @@ The URL to use is http://localhost:8001.
 | `SMTP_USERNAME`     | `username`                     | the SMTP username                              |
 | `SMTP_PASSWORD`     | `password`                     | the SMTP password                              |
 | `SMTP_FROM`         | `rbm@locahost`                 | the emails sender                              |
+| `REDIS_HOST`        | `localhost`                    | the redis hostname                             |
+| `REDIS_PORT`        | `6379`                         | the redis port                                 |
+| `REDIS_DB`          | `0`                            | the redis database                             |
+| `COOKIE_SECRET`     | 64 random bytes                | random bytes used to generate session cookies  |
+| `SESSION_TTL`       | `86400`                        | session ttl, is seconds                        |
 
 ## Planned features
 * [x] CRUD functionality on links
