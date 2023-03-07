@@ -214,7 +214,14 @@ workspace = false
 env_files = ["./.env"]
 dependencies = ["postgres"]
 command = "cargo"
-args = ["-p", "migration", "--", "down", "-n1"]
+args = ["run", "-p", "migration", "--", "down", "-n1"]
+
+[tasks.migration-up]
+workspace = false
+env_files = ["./.env"]
+dependencies = ["postgres"]
+command = "cargo"
+args = ["run", "-p", "migration", "--", "up"]
 
 [tasks.generate-migration]
 workspace = false

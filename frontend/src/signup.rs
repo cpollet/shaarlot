@@ -1,7 +1,8 @@
 use crate::Route;
 use common::{PasswordFlags, PasswordRules};
 use gloo_net::http::Request;
-use rest_api::users::{CreateUserRequest, CreateUserResult, URL_USERS};
+use rest_api::users::create::{CreateUserRequest, CreateUserResult};
+use rest_api::users::URL_USERS;
 use rest_api::RestPassword;
 use secrecy::Secret;
 use web_sys::HtmlInputElement;
@@ -36,9 +37,9 @@ pub fn signup() -> Html {
     let password_input_ref = use_node_ref();
 
     {
-        let url_input_ref = email_input_ref.clone();
+        let email_input_ref = email_input_ref.clone();
         use_effect_once(move || {
-            let _ = url_input_ref.cast::<HtmlInputElement>().unwrap().focus();
+            let _ = email_input_ref.cast::<HtmlInputElement>().unwrap().focus();
             || ()
         });
     }
@@ -93,6 +94,9 @@ pub fn signup() -> Html {
                             .cast::<HtmlInputElement>()
                             .unwrap()
                             .focus();
+                    }
+                    Some(CreateUserResult::InvalidEmailAddress) => {
+                        todo!();
                     }
                     _ => {}
                 }
@@ -214,12 +218,12 @@ pub fn signup() -> Html {
                     </li>
                 </ul>
                 <p class="centered-box__buttons">
-                <button class={match state.in_progress||!state.password_flags.is_valid() {
-                        true => "button--disabled".to_string(),
-                        false => "button--action".to_string(),
-                }}>
-                    {"Create account"}
-                </button>
+                    <button class={match state.in_progress || !state.password_flags.is_valid() {
+                            true => "button--disabled".to_string(),
+                            false => "button--action".to_string(),
+                    }}>
+                        {"Create account"}
+                    </button>
                 </p>
             </form>
         </div>

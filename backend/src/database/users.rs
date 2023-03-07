@@ -7,6 +7,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
     TryIntoModel,
 };
+use uuid::Uuid;
 
 pub struct Query;
 
@@ -43,7 +44,8 @@ impl Mutation {
         email_token: String,
     ) -> Result<Model, DbErr> {
         ActiveModel {
-            email: Set(email),
+            email: Set(None),
+            new_email: Set(Some(email)),
             username: Set(username.to_lowercase()),
             password: Set(password),
             email_token: Set(Some(email_token)),
@@ -64,11 +66,40 @@ impl Mutation {
             .await?
             .map(Into::<ActiveModel>::into);
         if let Some(mut model) = model {
+            model.email = Set(Some(
+                model
+                    .new_email
+                    .as_ref()
+                    .clone()
+                    .expect("no new email found when validating a token"),
+            ));
+            model.new_email = Set(None);
             model.email_token = Set(None);
             model.email_token_generation_date = Set(None);
             Ok(Some(model.update(db).await?))
         } else {
             Ok(None)
         }
+    }
+
+    pub async fn update(
+        db: &DatabaseConnection,
+        user: Model,
+        new_password: Option<String>,
+        new_email: Option<(String, Uuid)>,
+    ) -> Result<Model, DbErr> {
+        let mut user = ActiveModel::from(user);
+
+        if let Some((email, token)) = new_email {
+            user.new_email = Set(Some(email));
+            user.email_token = Set(Some(token.to_string()));
+            user.email_token_generation_date = Set(Some(DateTimeWithTimeZone::from(Utc::now())));
+        }
+
+        if let Some(new_password) = new_password {
+            user.password = Set(new_password);
+        }
+
+        user.update(db).await
     }
 }
