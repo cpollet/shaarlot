@@ -6,6 +6,7 @@ use rest_api::bookmarks::URL_BOOKMARKS;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_hooks::use_effect_once;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -55,8 +56,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
     {
         let state = state.clone();
-        use_effect(move || {
-            // todo check why it calls the endpoint twice!
+        use_effect_once(move || {
             if state.context.is_none() {
                 let state = state.clone();
                 spawn_local(async move {

@@ -5,6 +5,7 @@ use rest_api::bookmarks::URL_BOOKMARK;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_hooks::use_effect_once;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
@@ -19,7 +20,7 @@ pub fn bookmark_provider(props: &Props) -> Html {
     {
         let state = state.clone();
         let props = props.clone();
-        use_effect(move || {
+        use_effect_once(move || {
             if state.is_none() {
                 let props = props.clone();
                 spawn_local(async move {
@@ -29,7 +30,7 @@ pub fn bookmark_provider(props: &Props) -> Html {
                 });
             }
 
-            || {} // todo check why this is useful and add it to other use_effects if needed
+            || {}
         });
     }
 

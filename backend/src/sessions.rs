@@ -64,10 +64,10 @@ impl SessionStore for RedisStore {
         let id = session.id();
         let mut connection = self.connection.clone();
         connection
-            .set_ex(&id, &json, self.ttl.as_secs() as usize)
+            .set_ex(id, &json, self.ttl.as_secs() as usize)
             .await?;
 
-        log::trace!("stored session by id `{}`: {}", session.id(), json);
+        log::trace!("stored session by id `{}`: {}", &id, json);
 
         session.reset_data_changed();
         Ok(session.into_cookie_value())

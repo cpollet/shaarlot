@@ -28,6 +28,7 @@ use logout::Logout;
 use rest_api::sessions::{CreateSessionResponse, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_hooks::use_effect_once;
 use yew_router::prelude::*;
 
 fn main() {
@@ -91,7 +92,7 @@ fn app() -> Html {
 
     {
         let state = state.clone();
-        use_effect(move || {
+        use_effect_once(move || {
             if state.is_none() {
                 spawn_local(async move {
                     let mut new_state = State { username: None };
