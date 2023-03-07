@@ -127,7 +127,7 @@ pub fn login(props: &Props) -> Html {
             { match state.error {
                 Some(Error::InvalidCredentials) => html! {
                     <div class="centered-box__error">
-                        {"Invalid credentials"}
+                        {"Invalid credentials or account not active"}
                     </div>
                 },
                 None => html!{ <></> }

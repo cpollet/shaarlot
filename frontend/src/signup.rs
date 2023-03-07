@@ -97,7 +97,7 @@ pub fn signup() -> Html {
 
                 match result {
                     Some(CreateUserResult::Success(_)) => {
-                        navigator.push(&Route::Login);
+                        navigator.push(&Route::SignupSuccess);
                     }
                     Some(CreateUserResult::InvalidPassword) => {
                         new_state.password = AttrValue::default();

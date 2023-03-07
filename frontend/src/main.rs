@@ -8,6 +8,7 @@ mod login;
 mod logout;
 mod menu;
 mod signup;
+mod signup_success;
 mod validate_email;
 
 use crate::bookmark_provider::BookmarkProvider;
@@ -19,6 +20,7 @@ use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
 use crate::signup::Signup;
+use crate::signup_success::SignupSuccess;
 use crate::validate_email::ValidateEmail;
 use gloo_net::http::Request;
 use login::Login;
@@ -60,6 +62,9 @@ pub enum Route {
 
     #[at("/signup")]
     Signup,
+
+    #[at("/signup/success")]
+    SignupSuccess,
 
     #[at("/login")]
     Login,
@@ -176,8 +181,13 @@ fn app() -> Html {
                         }
                     }
                     Route::Signup => {
-                        html!{
+                        html! {
                             <Signup />
+                        }
+                    }
+                    Route::SignupSuccess => {
+                        html! {
+                            <SignupSuccess />
                         }
                     }
                     Route::Login => {
