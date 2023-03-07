@@ -20,7 +20,7 @@ pub fn menu(props: &Props) -> Html {
                     let menu_expanded = menu_expanded.clone();
                     move |e:MouseEvent| {
                         e.prevent_default();
-                        let new_menu_expanded = !(*menu_expanded).clone();
+                        let new_menu_expanded = !(*menu_expanded);
                         menu_expanded.set(new_menu_expanded);
                     }
                 }}>

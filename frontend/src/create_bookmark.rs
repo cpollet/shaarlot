@@ -107,9 +107,9 @@ pub fn create_bookmark() -> Html {
 
                         if let Some(payload) = payload {
                             new_state.bookmark.url = AttrValue::from(payload.url);
-                            new_state.bookmark.title = payload.title.map(|v| AttrValue::from(v));
+                            new_state.bookmark.title = payload.title.map(AttrValue::from);
                             new_state.bookmark.description =
-                                payload.description.map(|v| AttrValue::from(v))
+                                payload.description.map(AttrValue::from)
                         }
                         state.set(new_state);
                     });
@@ -161,10 +161,7 @@ pub fn create_bookmark() -> Html {
     let oninput_title = {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
-            let value = e
-                .target_unchecked_into::<HtmlInputElement>()
-                .value()
-                .to_string();
+            let value = e.target_unchecked_into::<HtmlInputElement>().value();
             let mut new_state = (*state).clone();
             if value.is_empty() {
                 new_state.bookmark.title = None;
@@ -177,10 +174,7 @@ pub fn create_bookmark() -> Html {
     let oninput_description = {
         let state = state.clone();
         Callback::from(move |e: InputEvent| {
-            let value = e
-                .target_unchecked_into::<HtmlInputElement>()
-                .value()
-                .to_string();
+            let value = e.target_unchecked_into::<HtmlInputElement>().value();
             let mut new_state = (*state).clone();
             if value.is_empty() {
                 new_state.bookmark.description = None;

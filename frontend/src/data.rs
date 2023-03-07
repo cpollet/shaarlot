@@ -32,10 +32,10 @@ impl From<GetBookmarkResponse> for Bookmark {
         Bookmark {
             id: value.id,
             url: AttrValue::from(value.url),
-            title: value.title.map(|v| AttrValue::from(v)),
-            description: value.description.map(|v| AttrValue::from(v)),
+            title: value.title.map(AttrValue::from),
+            description: value.description.map(AttrValue::from),
             creation_date: DateTime::from(value.creation_date),
-            update_date: value.update_date.map(|d| DateTime::from(d)),
+            update_date: value.update_date.map(DateTime::from),
         }
     }
 }

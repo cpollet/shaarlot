@@ -39,7 +39,6 @@ pub fn bookmark(props: &Props) -> Html {
     };
 
     let onclick_permalink = {
-        let navigator = navigator.clone();
         let props = props.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();

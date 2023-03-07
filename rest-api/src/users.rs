@@ -33,14 +33,14 @@ pub enum CreateUserResult {
 #[cfg(feature = "frontend")]
 impl CreateUserResult {
     pub async fn from(response: Result<gloo_net::http::Response, gloo_net::Error>) -> Option<Self> {
-        if let Err(_) = response {
+        if response.is_err() {
             return Some(CreateUserResult::BrowserError);
         }
         let response = response.unwrap();
         match response.status() {
             201 => {
                 let payload = response.json::<CreateUserResponse>().await;
-                if let Err(_) = payload {
+                if payload.is_err() {
                     return Some(CreateUserResult::DeserializationError);
                 }
                 Some(CreateUserResult::Success(payload.unwrap()))

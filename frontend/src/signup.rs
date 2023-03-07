@@ -15,7 +15,7 @@ enum Error {
     InvalidPassword,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 struct State {
     email: AttrValue,
     username: AttrValue,
@@ -26,20 +26,6 @@ struct State {
     /// live password check result
     password_flags: PasswordFlags,
     error: Option<Error>,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            email: AttrValue::default(),
-            username: AttrValue::default(),
-            password: AttrValue::default(),
-            password_verif: AttrValue::default(),
-            in_progress: false,
-            password_flags: PasswordFlags::default(),
-            error: None,
-        }
-    }
 }
 
 #[function_component(Signup)]
@@ -58,7 +44,6 @@ pub fn signup() -> Html {
     }
 
     let onsubmit = {
-        let navigator = navigator.clone();
         let state = state.clone();
         let password_input_ref = password_input_ref.clone();
         Callback::from(move |e: SubmitEvent| {
@@ -77,7 +62,7 @@ pub fn signup() -> Html {
             }
             spawn_local(async move {
                 let result = CreateUserResult::from(
-                    Request::post(&URL_USERS)
+                    Request::post(URL_USERS)
                         .json(&CreateUserRequest {
                             email: state.email.to_string(),
                             username: state.username.to_string(),
@@ -97,7 +82,7 @@ pub fn signup() -> Html {
 
                 match result {
                     Some(CreateUserResult::Success(_)) => {
-                        navigator.push(&Route::Login);
+                        navigator.push(&Route::SignupSuccess);
                     }
                     Some(CreateUserResult::InvalidPassword) => {
                         new_state.password = AttrValue::default();

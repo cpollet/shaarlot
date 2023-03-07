@@ -47,7 +47,7 @@ pub async fn create_session(
         .verify_password(user.password.expose_secret().into(), &password_hash)
         .map_err(|_| CreateSessionResult::InvalidCredentials)?;
 
-    if let Some(_) = db_user.email_token {
+    if db_user.email_token.is_some() {
         return Err(CreateSessionResult::InvalidCredentials);
     }
 

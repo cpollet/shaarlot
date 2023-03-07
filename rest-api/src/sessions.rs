@@ -30,14 +30,14 @@ pub enum CreateSessionResult {
 #[cfg(feature = "frontend")]
 impl CreateSessionResult {
     pub async fn from(response: Result<gloo_net::http::Response, gloo_net::Error>) -> Option<Self> {
-        if let Err(_) = response {
+        if response.is_err() {
             return Some(CreateSessionResult::BrowserError);
         }
         let response = response.unwrap();
         match response.status() {
             200 => {
                 let payload = response.json::<CreateSessionResponse>().await;
-                if let Err(_) = payload {
+                if payload.is_err() {
                     return Some(CreateSessionResult::DeserializationError);
                 }
                 Some(CreateSessionResult::Success(payload.unwrap()))

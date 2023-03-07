@@ -6,21 +6,14 @@ pub struct Props {
     pub id: i32,
 }
 
+#[derive(Default)]
 struct State {
     overlay_open: bool,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            overlay_open: false,
-        }
-    }
-}
-
 #[function_component(QrCode)]
 pub fn qr_code(props: &Props) -> Html {
-    let state = use_state(|| State::default());
+    let state = use_state(State::default);
 
     let onclick = {
         let state = state.clone();
