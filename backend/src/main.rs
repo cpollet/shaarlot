@@ -83,6 +83,10 @@ async fn main() {
         .map(|s| Duration::from_secs(u64::from_str(&s).unwrap_or(60 * 60 * 24)))
         .unwrap_or(Duration::from_secs(60 * 60 * 24));
 
+    // log::info!("{}:{}/{}", redis_host, redis_port, redis_db);
+    // log::info!("{}", session_ttl.as_secs());
+    // log::info!("{}", base64::encode( cookie_secret.expose_secret()));
+
     let database = {
         let config = Configuration {
             host: database_host.clone(),

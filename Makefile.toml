@@ -48,8 +48,6 @@ else
     --network rbm \
     redis
 fi
-
-grep REDIS_URL .env 2>/dev/null || echo "REDIS_URL=redis://localhost/" >> .env
 '''
 
 [tasks.dev-frontend]
@@ -83,7 +81,11 @@ cwd = "./frontend"
 command = "trunk"
 args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", "--release"]
 
-[tasks.run-prod]
+[tasks.build-release]
+workspace = false
+dependencies = ["build-backend-release", "build-frontend-release"]
+
+[tasks.run-release]
 workspace = false
 env_files = ["./.env"]
 env = { "PUBLIC_URL" = "http://localhost:8000", "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
@@ -91,35 +93,36 @@ dependencies = ["postgres", "redis", "build-backend-release", "build-frontend-re
 command = "cargo"
 args = ["run", "--release", "--bin", "backend"]
 
-[tasks.docker-prepare-build]
+[tasks.prepare-docker-build]
 workspace = false
-dependencies = ["clean-docker-image", "clean-docker", "build-backend-release", "build-frontend-release"]
+dependencies = ["clean-docker", "build-release"]
 script = [
     "mkdir -p docker/target",
-    "cp target/release/rbm docker/target/rbm",
+    "cp target/release/backend docker/target/backend",
     "cp -r target/release/wasm docker/target/webroot"
 ]
 
-[tasks.docker-build]
+[tasks.build-docker]
 workspace = false
 cwd = "./docker"
-dependencies = ["docker-prepare-build"]
+dependencies = ["prepare-docker-build"]
 command = "docker"
 args = ["build", "-t", "cpollet/rbm", "."]
 
 [tasks.docker-push]
 workspace = false
-dependencies = ["docker-build"]
+dependencies = ["build-docker"]
 command = "docker"
 args = ["push", "cpollet/rbm"]
 
 [tasks.run-docker]
 workspace = false
-dependencies = ["postgres", "docker-build"]
+dependencies = ["postgres", "build-docker"]
 command = "docker"
 args = ["run", "--rm", "--name", "rbm",
         "--env-file", "./.env",
         "-e", "DATABASE_HOST=rbm-postgres",
+        "-e", "REDIS_HOST=rbm-redis",
         "-e", "HTTP_PORT=8001",
         "-e", "PUBLIC_URL=http://localhost:8001",
         "-p", "8001:8001",
@@ -155,6 +158,7 @@ args = ["rmi", "cpollet/rbm"]
 [tasks.clean-docker]
 workspace = false
 command = "rm"
+dependencies = ["clean-docker-image"]
 args = ["-rf", "docker/target"]
 
 [tasks.clean]

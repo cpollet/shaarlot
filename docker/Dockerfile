@@ -10,4 +10,4 @@ COPY target /usr/local/bin/
 EXPOSE 3000
 
 WORKDIR /usr/local/bin
-CMD [ "/usr/bin/tini", "rbm" ]
+CMD [ "/usr/bin/tini", "backend" ]
