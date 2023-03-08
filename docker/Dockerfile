@@ -1,7 +1,7 @@
 FROM debian:bullseye-slim
 
 RUN apt-get update ; \
-    apt-get install -y tini ; \
+    apt-get install -y tini ca-certificates ; \
     apt-get clean ; \
     rm -rf /var/lib/apt/lists/*
 

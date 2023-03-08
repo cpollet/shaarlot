@@ -152,7 +152,7 @@ args = ["push", "cpollet/rbm"]
 
 [tasks.run-docker]
 workspace = false
-dependencies = ["postgres", "build-docker"]
+dependencies = ["postgres", "redis", "build-docker"]
 command = "docker"
 args = ["run", "--rm", "--name", "rbm",
         "--env-file", "./.env",
