@@ -25,7 +25,8 @@ use crate::validate_email::ValidateEmail;
 use gloo_net::http::Request;
 use login::Login;
 use logout::Logout;
-use rest_api::sessions::{CreateSessionResponse, URL_SESSIONS_CURRENT};
+use rest_api::application::{GetApplicationResult, URL_APPLICATION};
+use rest_api::sessions::{CreateSessionResult, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
@@ -81,33 +82,35 @@ pub enum Route {
     NotFound,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 struct State {
     username: Option<AttrValue>,
+    commit: Option<AttrValue>,
+    build_date: Option<AttrValue>,
 }
 
 #[function_component(App)]
 fn app() -> Html {
-    let state = use_state(|| None);
+    let state = use_state(State::default);
 
     {
         let state = state.clone();
         use_effect_once(move || {
-            if state.is_none() {
-                spawn_local(async move {
-                    let mut new_state = State { username: None };
-
-                    if let Ok(response) = Request::get(URL_SESSIONS_CURRENT).send().await {
-                        if response.ok() {
-                            if let Ok(session) = response.json::<CreateSessionResponse>().await {
-                                new_state.username = Some(AttrValue::from(session.username));
-                            }
-                        }
-                    }
-
-                    state.set(Some(new_state));
-                })
-            }
+            let mut new_state = (*state).clone();
+            spawn_local(async move {
+                if let Some(CreateSessionResult::Success(session)) =
+                    CreateSessionResult::from(Request::get(URL_SESSIONS_CURRENT).send().await).await
+                {
+                    new_state.username = Some(AttrValue::from(session.username));
+                }
+                if let Some(GetApplicationResult::Success(application)) =
+                    GetApplicationResult::from(Request::get(URL_APPLICATION).send().await).await
+                {
+                    new_state.commit = Some(AttrValue::from(application.commit));
+                    new_state.build_date = Some(AttrValue::from(application.build_date));
+                }
+                state.set(new_state);
+            });
 
             || {}
         });
@@ -116,102 +119,127 @@ fn app() -> Html {
     let onlogin = {
         let state = state.clone();
         Callback::from(move |username: AttrValue| {
-            state.set(Some(State {
-                username: Some(username),
-            }));
+            let mut new_state = (*state).clone();
+            new_state.username = Some(username);
+            state.set(new_state);
         })
     };
     let onlogout = {
         let state = state.clone();
         Callback::from(move |_: ()| {
-            state.set(Some(State { username: None }));
+            let mut new_state = (*state).clone();
+            new_state.username = None;
+            state.set(new_state);
         })
     };
 
     html! {
-        <BrowserRouter>
-            <Menu username={state.as_ref().and_then(|s|s.username.clone())} />
-            <div class="content">
-                <Switch<Route> render={move |route| match route {
-                    Route::Index | Route::Bookmarks => {
-                        html! {
-                            <BookmarksProvider>
-                                <BookmarksHOC />
-                            </BookmarksProvider>
+        <>
+            <BrowserRouter>
+                <Menu username={state.username.clone()} />
+                <a
+                    class="github-fork-ribbon right-bottom fixed"
+                    href="https://github.com/cpollet/rbm"
+                    data-ribbon="Fork me on GitHub"
+                    title="Fork me on GitHub"
+                >
+                    {"Fork me on GitHub"}
+                </a>
+                <div class="content">
+                    <Switch<Route> render={move |route| match route {
+                        Route::Index | Route::Bookmarks => {
+                            html! {
+                                <BookmarksProvider>
+                                    <BookmarksHOC />
+                                </BookmarksProvider>
+                            }
                         }
-                    }
-                    Route::AddBookmark => {
-                        // todo prevent display when not logged
-                        html! {
-                            <CreateBookmark />
+                        Route::AddBookmark => {
+                            // todo prevent display when not logged
+                            html! {
+                                <CreateBookmark />
+                            }
                         }
-                    }
-                    Route::ViewBookmark { id } => {
-                        html! {
-                            <BookmarkProvider {id}>
-                                <BookmarkHOC />
-                            </BookmarkProvider>
+                        Route::ViewBookmark { id } => {
+                            html! {
+                                <BookmarkProvider {id}>
+                                    <BookmarkHOC />
+                                </BookmarkProvider>
+                            }
                         }
-                    }
-                    Route::DeleteBookmark { id } => {
-                        // todo prevent display when not logged
-                        html! {
-                            <BookmarkProvider {id}>
-                                <DeleteBookmarkHOC />
-                            </BookmarkProvider>
+                        Route::DeleteBookmark { id } => {
+                            // todo prevent display when not logged
+                            html! {
+                                <BookmarkProvider {id}>
+                                    <DeleteBookmarkHOC />
+                                </BookmarkProvider>
+                            }
                         }
-                    }
-                    Route::EditBookmark { id } => {
-                        // todo prevent display when not logged
-                        html! {
-                            <BookmarkProvider {id}>
-                                <EditBookmarkHOC />
-                            </BookmarkProvider>
+                        Route::EditBookmark { id } => {
+                            // todo prevent display when not logged
+                            html! {
+                                <BookmarkProvider {id}>
+                                    <EditBookmarkHOC />
+                                </BookmarkProvider>
+                            }
                         }
-                    }
-                    Route::TagCloud => {
-                        html! {
-                            {"todo: tag cloud"}
+                        Route::TagCloud => {
+                            html! {
+                                {"todo: tag cloud"}
+                            }
                         }
-                    }
-                    Route::Tools => {
-                        // todo prevent display when not logged
-                        html! {
-                            {"todo: tools"}
+                        Route::Tools => {
+                            // todo prevent display when not logged
+                            html! {
+                                {"todo: tools"}
+                            }
                         }
-                    }
-                    Route::Signup => {
-                        html! {
-                            <Signup />
+                        Route::Signup => {
+                            html! {
+                                <Signup />
+                            }
                         }
-                    }
-                    Route::SignupSuccess => {
-                        html! {
-                            <SignupSuccess />
+                        Route::SignupSuccess => {
+                            html! {
+                                <SignupSuccess />
+                            }
                         }
-                    }
-                    Route::Login => {
-                        html! {
-                            <Login onlogin={onlogin.clone()} />
+                        Route::Login => {
+                            html! {
+                                <Login onlogin={onlogin.clone()} />
+                            }
                         }
-                    }
-                    Route::ValidateEmail { uuid } => {
-                        html! {
-                            <ValidateEmail {uuid} />
+                        Route::ValidateEmail { uuid } => {
+                            html! {
+                                <ValidateEmail {uuid} />
+                            }
                         }
-                    }
-                    Route::Logout => {
-                        html! {
-                            <Logout onlogout={onlogout.clone()} />
+                        Route::Logout => {
+                            html! {
+                                <Logout onlogout={onlogout.clone()} />
+                            }
                         }
-                    }
-                    Route::NotFound => {
-                        html! {
-                            <h1>{"404 Not Found"}</h1>
+                        Route::NotFound => {
+                            html! {
+                                <h1>{"404 Not Found"}</h1>
+                            }
                         }
-                    }
-                } } />
+                    } } />
+                </div>
+            </BrowserRouter>
+            <div class="footer">
+                <a
+                    href={format!("https://github.com/cpollet/rbm/tree/{}",
+                                  state.commit
+                                    .as_ref()
+                                    .map(AttrValue::to_string)
+                                    .unwrap_or_else(|| "master".to_string())
+                         )}
+                >
+                    {state.commit.clone()}
+                </a>
+                {" · "} {state.build_date.clone()}
             </div>
-        </BrowserRouter>
+        </>
     }
 }

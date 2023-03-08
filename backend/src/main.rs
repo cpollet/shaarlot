@@ -69,7 +69,7 @@ async fn main() {
     let redis_port = env::var("REDIS_PORT").unwrap_or("6379".to_owned());
     let redis_db = env::var("REDIS_DB").unwrap_or("0".to_owned());
     let cookie_secret = env::var("COOKIE_SECRET")
-        .map(|v|SecretVec::new(base64::decode(v).unwrap()))
+        .map(|v| SecretVec::new(base64::decode(v).unwrap()))
         .unwrap_or_else(|_| {
             let mut cookie_secret = [0u8; 64];
             OsRng::default().fill_bytes(&mut cookie_secret);

@@ -83,6 +83,15 @@ a.material-icons-outlined {
   margin: auto;
 }
 
+.footer {
+  position: fixed;
+  top: auto;
+  bottom: 10px;
+  width: 100%;
+  font-size: 0.8em;
+  z-index: -99;
+}
+
 .bookmarks {
   list-style-type: none;
   padding: 0;
@@ -136,7 +145,6 @@ a.material-icons-outlined {
   display: inline-block;
   width: 50%;
   box-sizing: border-box;
-  /*vertical-align: baseline;*/
 }
 
 .bookmark__link {
@@ -160,6 +168,7 @@ a.material-icons-outlined {
   height: 100%;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.8);
+  z-index: 99999;
 }
 
 .overlay__content--center-middle {
@@ -261,6 +270,10 @@ textarea {
     width: 700px;
   }
 
+  .footer {
+    text-align: center;
+  }
+
   .menu__left-submenu-trigger {
     display: none;
   }
@@ -275,3 +288,12 @@ textarea {
     width: 1200px;
   }
 }
+
+.material-icons-outlined { vertical-align: bottom; }
+.material-icons-outlined.red { color: darkred; }
+.material-icons-outlined.blue { color: darkblue; }
+.material-icons-outlined.md-16 { font-size: 16px; }
+.material-icons-outlined.md-18 { font-size: 18px; }
+.material-icons-outlined.md-24 { font-size: 24px; }
+.material-icons-outlined.md-36 { font-size: 36px; }
+.material-icons-outlined.md-48 { font-size: 48px; }

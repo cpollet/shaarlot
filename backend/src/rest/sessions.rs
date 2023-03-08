@@ -12,12 +12,12 @@ const DEFAULT_HASH: &str ="$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$
 
 pub async fn get_current_session(
     session: ReadableSession,
-) -> Result<Json<CreateSessionResponse>, StatusCode> {
+) -> Result<CreateSessionResult, CreateSessionResult> {
     session
         .get::<UserInfo>(SESSION_KEY_USER_INFO)
-        .ok_or(StatusCode::NOT_FOUND)
+        .ok_or(CreateSessionResult::InvalidCredentials)
         .map(|s| {
-            Json(CreateSessionResponse {
+            CreateSessionResult::Success(CreateSessionResponse {
                 username: s.username,
             })
         })

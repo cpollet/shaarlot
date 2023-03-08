@@ -1,9 +1,11 @@
+mod application;
 mod bookmarks;
 mod emails;
 mod json;
 mod sessions;
 mod users;
 
+use crate::rest::application::get_application;
 use crate::rest::bookmarks::*;
 use crate::rest::emails::update_email;
 use crate::rest::sessions::*;
@@ -16,6 +18,7 @@ use axum::routing::{delete, get, post, put};
 use axum::Router;
 use axum_sessions::async_session::SessionStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
+use rest_api::application::URL_APPLICATION;
 use rest_api::bookmarks::URL_BOOKMARK;
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
@@ -38,6 +41,7 @@ where
     S: SessionStore,
 {
     Router::new()
+        .merge(Router::new().route(URL_APPLICATION, get(get_application)))
         .merge(
             Router::new()
                 .route(URL_BOOKMARKS, post(create_bookmark))

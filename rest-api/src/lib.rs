@@ -1,6 +1,7 @@
 use secrecy::{DebugSecret, SerializableSecret, Zeroize};
 use serde::{Deserialize, Serialize};
 
+pub mod application;
 pub mod bookmarks;
 pub mod error_response;
 pub mod sessions;
