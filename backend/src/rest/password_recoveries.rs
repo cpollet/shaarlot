@@ -83,6 +83,7 @@ pub async fn create_password_recovery(
             log::error!("Could not save recovery in database: {}", e);
             CreatePasswordRecoveryResult::ServerError
         })?;
+
         state
             .mailer
             .send_password_recovery(recovery_id, recovery_token.0, to);

@@ -69,7 +69,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
                 spawn_local(async move {
                     let bookmarks = fetch_bookmarks(&state.order, on_change_order).await;
-                    let  mut new_state = (*state).clone();
+                    let mut new_state = (*state).clone();
                     new_state.context = Some(bookmarks);
                     new_state.loading = false;
                     state.set(new_state);

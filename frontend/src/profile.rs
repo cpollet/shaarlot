@@ -1,4 +1,3 @@
-use crate::Route;
 use common::{PasswordFlags, PasswordRules};
 use gloo_net::http::Request;
 use rest_api::users::get::GetUserResult;
@@ -10,7 +9,6 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
-use yew_router::hooks::use_navigator;
 
 #[derive(Clone, PartialEq)]
 enum Status {
@@ -24,8 +22,10 @@ impl Default for Status {
     }
 }
 
+// todo merge with status
 #[derive(Clone, PartialEq)]
 enum Error {
+    Success,
     InvalidCurrentPassword,
     InvalidNewPassword,
     InvalidEmailAddress,
@@ -60,7 +60,6 @@ impl Default for State {
 #[function_component(Profile)]
 pub fn profile() -> Html {
     let state = use_state(State::default);
-    let navigator = use_navigator().unwrap();
     let email_input_ref = use_node_ref();
 
     {
@@ -153,7 +152,6 @@ pub fn profile() -> Html {
                 state.set(new_state);
             }
 
-            let navigator = navigator.clone();
             let state = state.clone();
             spawn_local(async move {
                 let new_password = if state.new_password.is_empty() {
@@ -189,8 +187,7 @@ pub fn profile() -> Html {
 
                 match result {
                     Some(UpdateUserResult::Success(_)) => {
-                        new_state.error = None;
-                        navigator.push(&Route::Bookmarks);
+                        new_state.error = Some(Error::Success);
                     }
                     Some(UpdateUserResult::InvalidCurrentPassword) => {
                         new_state.new_password = AttrValue::default();
@@ -221,6 +218,11 @@ pub fn profile() -> Html {
         <div class="centered-box">
            <h1 class="centered-box__title">{"My profile"}</h1>
             { match state.error {
+                Some(Error::Success) => html! {
+                    <div class="centered-box__ok">
+                        {"Profile updated successfully"}
+                    </div>
+                },
                 Some(Error::InvalidCurrentPassword) => html! {
                     <div class="centered-box__error">
                         {"Current password was incorrect"}
