@@ -58,6 +58,33 @@ content-type: application/json
 ### Get current user
 GET http://localhost:3000/api/users/current
 
+### Update current user
+PUT http://localhost:3000/api/users/current
+content-type: application/json
+
+{
+
+}
+
+### Start password recovery
+POST http://localhost:3000/api/password-recoveries
+content-type: application/json
+
+{
+  "username_or_email": "cpollet"
+}
+
+### Complete password recovery
+PUT http://localhost:3000/api/password-recoveries
+content-type: application/json
+
+{
+  "id": "9e8bac33-60d4-411b-aaee-ee555caa9320",
+  "token": "d19bb39f-80fa-44b6-aa82-79267dc3541e",
+  "password":"Password123!",
+  "password_verif": "Password123!"
+}
+
 ### Create session
 POST http://localhost:3000/api/sessions
 content-type: application/json

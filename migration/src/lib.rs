@@ -7,6 +7,7 @@ mod m20230221_181655_create_table_users;
 mod m20230227_211829_add_email_to_user;
 mod m20230306_194756_add_email_token_to_user;
 mod m20230311_105845_add_new_email_to_user;
+mod m20230312_124742_create_table_password_recovery;
 
 pub struct Migrator;
 
@@ -21,6 +22,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230227_211829_add_email_to_user::Migration),
             Box::new(m20230306_194756_add_email_token_to_user::Migration),
             Box::new(m20230311_105845_add_new_email_to_user::Migration),
+            Box::new(m20230312_124742_create_table_password_recovery::Migration),
         ]
     }
 }

@@ -27,6 +27,8 @@ use tracing_subscriber::filter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+// todo better logging
+
 #[tokio::main]
 async fn main() {
     let filter = filter::Targets::new()

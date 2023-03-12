@@ -28,22 +28,20 @@ pub async fn create_session(
     State(state): State<AppState>,
     Json(user): Json<CreateSessionRequest>,
 ) -> Result<CreateSessionResult, CreateSessionResult> {
-    let argon2 = Argon2::default();
-
     let db_user = database::users::Query::find_by_username(&state.database, &user.username)
         .await
         .map_err(|_| CreateSessionResult::ServerError)?
         .ok_or({
             // compute a dummy hash to prevent timing attacks
             let hash = PasswordHash::new(DEFAULT_HASH).unwrap();
-            let _ = argon2.verify_password(user.password.expose_secret().into(), &hash);
+            let _ = Argon2::default().verify_password(user.password.expose_secret().into(), &hash);
             CreateSessionResult::InvalidCredentials
         })?;
 
     let password_hash = PasswordHash::new(&db_user.password)
         .map_err(|_| CreateSessionResult::InvalidCredentials)?;
 
-    argon2
+    Argon2::default()
         .verify_password(user.password.expose_secret().into(), &password_hash)
         .map_err(|_| CreateSessionResult::InvalidCredentials)?;
 

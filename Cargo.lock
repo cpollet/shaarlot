@@ -1155,6 +1155,7 @@ dependencies = [
  "gloo-net",
  "rest-api",
  "secrecy",
+ "serde",
  "urlencoding",
  "uuid",
  "web-sys",

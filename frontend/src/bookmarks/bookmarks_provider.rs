@@ -54,6 +54,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         })
     };
 
+    // fixme does not reload as expected
     {
         let state = state.clone();
         use_effect_update(move || {

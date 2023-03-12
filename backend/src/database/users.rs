@@ -4,20 +4,34 @@ use entity::user::{ActiveModel, Column, Entity};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter,
-    TryIntoModel,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait,
+    QueryFilter, TryIntoModel,
 };
 use uuid::Uuid;
 
 pub struct Query;
 
 impl Query {
+    pub async fn find_by_id(db: &DatabaseConnection, id: i32) -> Result<Option<Model>, DbErr> {
+        Entity::find_by_id(id).one(db).await
+    }
+
     pub async fn find_by_username(
         db: &DatabaseConnection,
         username: &str,
     ) -> Result<Option<Model>, DbErr> {
         Entity::find()
             .filter(Column::Username.eq(username.to_lowercase()))
+            .one(db)
+            .await
+    }
+
+    pub async fn find_by_email(
+        db: &DatabaseConnection,
+        email: &str,
+    ) -> Result<Option<Model>, DbErr> {
+        Entity::find()
+            .filter(Column::Email.eq(email.to_lowercase()))
             .one(db)
             .await
     }
@@ -82,12 +96,15 @@ impl Mutation {
         }
     }
 
-    pub async fn update(
-        db: &DatabaseConnection,
+    pub async fn update<C>(
+        db: &C,
         user: Model,
         new_password: Option<String>,
         new_email: Option<(String, Uuid)>,
-    ) -> Result<Model, DbErr> {
+    ) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
         let mut user = ActiveModel::from(user);
 
         if let Some((email, token)) = new_email {

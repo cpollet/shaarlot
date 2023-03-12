@@ -2,12 +2,14 @@ mod application;
 mod bookmarks;
 mod emails;
 mod json;
+mod password_recoveries;
 mod sessions;
 mod users;
 
 use crate::rest::application::get_application;
 use crate::rest::bookmarks::*;
 use crate::rest::emails::update_email;
+use crate::rest::password_recoveries::{create_password_recovery, update_password_recovery};
 use crate::rest::sessions::*;
 use crate::rest::users::*;
 use crate::sessions::session::SessionHint;
@@ -21,6 +23,7 @@ use axum_sessions::{PersistencePolicy, SessionLayer};
 use rest_api::application::URL_APPLICATION;
 use rest_api::bookmarks::URL_BOOKMARK;
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
+use rest_api::password_recoveries::URL_PASSWORD_RECOVERIES;
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::urls::{GetUrlResponse, GetUrlResult, URL_URLS};
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
@@ -41,7 +44,12 @@ where
     S: SessionStore,
 {
     Router::new()
-        .merge(Router::new().route(URL_APPLICATION, get(get_application)))
+        .merge(
+            Router::new()
+                .route(URL_APPLICATION, get(get_application))
+                .route(URL_PASSWORD_RECOVERIES, post(create_password_recovery))
+                .route(URL_PASSWORD_RECOVERIES, put(update_password_recovery)),
+        )
         .merge(
             Router::new()
                 .route(URL_BOOKMARKS, post(create_bookmark))

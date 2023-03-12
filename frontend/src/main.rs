@@ -8,6 +8,8 @@ mod login;
 mod logout;
 mod menu;
 mod profile;
+mod recover_password;
+mod recover_password_form;
 mod signup;
 mod signup_success;
 mod validate_email;
@@ -21,6 +23,8 @@ use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
 use crate::profile::Profile;
+use crate::recover_password::RecoverPassword;
+use crate::recover_password_form::RecoverPasswordFormHOC;
 use crate::signup::Signup;
 use crate::signup_success::SignupSuccess;
 use crate::validate_email::ValidateEmail;
@@ -72,6 +76,12 @@ pub enum Route {
 
     #[at("/login")]
     Login,
+
+    #[at("/recover-password")]
+    RecoverPassword,
+
+    #[at("/recover-password/:id")]
+    RecoverPasswordForm { id: String },
 
     #[at("/email/:uuid/~validate")]
     ValidateEmail { uuid: uuid::Uuid },
@@ -214,6 +224,16 @@ fn app() -> Html {
                             Route::Login => {
                                 html! {
                                     <Login {logged_in} onlogin={onlogin.clone()} />
+                                }
+                            }
+                            Route::RecoverPassword => {
+                                html! {
+                                    <RecoverPassword />
+                                }
+                            }
+                            Route::RecoverPasswordForm { id } => {
+                                html! {
+                                    <RecoverPasswordFormHOC {id} />
                                 }
                             }
                             Route::ValidateEmail { uuid } => {

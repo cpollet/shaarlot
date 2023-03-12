@@ -34,10 +34,8 @@ pub async fn create_user(
         .parse::<Mailbox>()
         .map_err(|_| CreateUserResult::InvalidEmailAddress)?;
 
-    let argon2 = Argon2::default();
-
     let salt = SaltString::generate(&mut OsRng);
-    let hashed = argon2
+    let hashed = Argon2::default()
         .hash_password(user.password.expose_secret().into(), &salt)
         .map_err(|_| CreateUserResult::ServerError)?
         .to_string();

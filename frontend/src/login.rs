@@ -161,12 +161,22 @@ pub fn login(props: &Props) -> Html {
                     <p>{"or"}</p>
                     <p>
                         <a href={Route::Signup.to_path()} onclick={
+                            let navigator = navigator.clone();
                             move |e:MouseEvent| {
                                 e.prevent_default();
                                 navigator.push(&Route::Signup);
                             }
                         }>
-                            {"create an account"}
+                            {"Create an account"}
+                        </a>
+                        {"\u{00a0}\u{ff5c}\u{00a0}"}
+                        <a href={Route::RecoverPassword.to_path()} onclick={
+                            move |e:MouseEvent| {
+                                e.prevent_default();
+                                navigator.push(&Route::RecoverPassword);
+                            }
+                        }>
+                            {"I forgot my password"}
                         </a>
                     </p>
                 </div>

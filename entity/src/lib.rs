@@ -3,4 +3,5 @@
 pub mod prelude;
 
 pub mod bookmark;
+pub mod password_recovery;
 pub mod user;

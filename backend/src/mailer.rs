@@ -9,6 +9,8 @@ pub struct Mailer {
     pub public_url: String,
 }
 
+// todo make it run in a different thread
+
 impl Mailer {
     pub fn send_email_token<S>(&self, token: S, to: Mailbox)
     where
@@ -52,6 +54,27 @@ impl Mailer {
             .subject("Update of password")
             .body("Your password has been updated.".to_string())
             .unwrap();
+        match self.smtp.send(&email) {
+            Ok(_) => {}
+            Err(e) => log::error!("Could not send email: {:?}", e),
+        }
+    }
+
+    pub fn send_password_recovery<I, T>(&self, id: I, token: T, to: Mailbox)
+    where
+        I: Display,
+        T: Display,
+    {
+        let email = Message::builder()
+            .from(self.from.clone())
+            .to(to)
+            .subject("Password recovery")
+            .body(format!(
+                "Please visit {}/recover-password/{}?token={} to proceed.",
+                self.public_url, id, token
+            ))
+            .unwrap();
+
         match self.smtp.send(&email) {
             Ok(_) => {}
             Err(e) => log::error!("Could not send email: {:?}", e),
