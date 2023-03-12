@@ -6,7 +6,6 @@ use rest_api::bookmarks::URL_BOOKMARKS;
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_hooks::use_effect_update;
 
 #[derive(Properties, PartialEq)]
 pub struct Props {
@@ -34,9 +33,10 @@ impl Order {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq)]
 pub struct State {
     order: Order,
+    loading: bool,
     context: Option<BookmarksContext>,
 }
 
@@ -49,27 +49,32 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         Callback::from(move |order: Order| {
             state.set(State {
                 order,
+                loading: false,
                 context: None,
             });
         })
     };
 
-    // fixme does not reload as expected
     {
         let state = state.clone();
-        use_effect_update(move || {
-            if state.context.is_none() {
+        use_effect(move || {
+            if state.context.is_none() && !state.loading {
                 let state = state.clone();
+
+                {
+                    let mut new_state = (*state).clone();
+                    new_state.loading = true;
+                    state.set(new_state);
+                }
+
                 spawn_local(async move {
                     let bookmarks = fetch_bookmarks(&state.order, on_change_order).await;
-                    state.set(State {
-                        order: state.order.clone(),
-                        context: Some(bookmarks),
-                    })
+                    let  mut new_state = (*state).clone();
+                    new_state.context = Some(bookmarks);
+                    new_state.loading = false;
+                    state.set(new_state);
                 });
             }
-
-            || {}
         });
     }
 
