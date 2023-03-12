@@ -54,7 +54,11 @@ The URL to use is http://localhost:8001.
 ## Planned features
 * [x] CRUD functionality on links
 * [x] Permalinks
-* [ ] Authentication
+* [x] Authentication
+  * [ ] Invalidate all sessions after update
+  * [ ] Implement login throttling
+  * [ ] Implement MFA
+* [ ] Assign links to users
 * [ ] Private links
 * [ ] Read it later flags
 * [ ] Tags on links
