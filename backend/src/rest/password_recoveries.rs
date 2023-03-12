@@ -170,7 +170,7 @@ async fn find_recovery(
     let now = DateTime::<FixedOffset>::from(Utc::now());
     let duration = now.signed_duration_since(recovery.generation_date);
 
-    if duration.num_minutes() > 60 {
+    if duration.num_minutes() > 5 {
         let _ = Mutation::delete(db, id).await;
         log::info!("Recovery {} expired", id);
         return Err(UpdatePasswordRecoveryResult::InvalidToken);
