@@ -11,6 +11,17 @@ pub struct PasswordFlags {
 }
 
 impl PasswordFlags {
+    pub fn valid() -> Self {
+        Self {
+            same: true,
+            length: true,
+            lower_case: true,
+            upper_case: true,
+            digits: true,
+            symbols: true,
+        }
+    }
+
     pub fn is_valid(&self) -> bool {
         self.same
             && self.length

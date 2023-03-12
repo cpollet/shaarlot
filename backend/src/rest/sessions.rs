@@ -8,14 +8,14 @@ use axum_sessions::extractors::{ReadableSession, WritableSession};
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResponse, CreateSessionResult};
 use secrecy::ExposeSecret;
 
-const DEFAULT_HASH: &str ="$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
+const DEFAULT_HASH: &str = "$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
 
 pub async fn get_current_session(
     session: ReadableSession,
 ) -> Result<CreateSessionResult, CreateSessionResult> {
     session
         .get::<UserInfo>(SESSION_KEY_USER_INFO)
-        .ok_or(CreateSessionResult::InvalidCredentials)
+        .ok_or(CreateSessionResult::InvalidCredentials) // fixme this is weird...
         .map(|s| {
             CreateSessionResult::Success(CreateSessionResponse {
                 username: s.username,
@@ -47,7 +47,7 @@ pub async fn create_session(
         .verify_password(user.password.expose_secret().into(), &password_hash)
         .map_err(|_| CreateSessionResult::InvalidCredentials)?;
 
-    if db_user.email_token.is_some() {
+    if db_user.email.is_none() {
         return Err(CreateSessionResult::InvalidCredentials);
     }
 

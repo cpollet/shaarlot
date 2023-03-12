@@ -23,7 +23,7 @@ use rest_api::bookmarks::URL_BOOKMARK;
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::urls::{GetUrlResponse, GetUrlResult, URL_URLS};
-use rest_api::users::URL_USERS;
+use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
 use webpage::{Webpage, WebpageOptions};
@@ -88,6 +88,8 @@ where
         .merge(
             Router::new()
                 .route(URL_SESSIONS_CURRENT, get(get_current_session))
+                .route(URL_CURRENT_USER, get(get_current_user))
+                .route(URL_CURRENT_USER, post(update_current_user))
                 .layer(from_fn(SessionHint::required))
                 .layer(
                     SessionLayer::new(
