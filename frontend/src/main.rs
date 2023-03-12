@@ -7,6 +7,7 @@ mod edit_bookmark;
 mod login;
 mod logout;
 mod menu;
+mod profile;
 mod signup;
 mod signup_success;
 mod validate_email;
@@ -19,6 +20,7 @@ use crate::create_bookmark::CreateBookmark;
 use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
+use crate::profile::Profile;
 use crate::signup::Signup;
 use crate::signup_success::SignupSuccess;
 use crate::validate_email::ValidateEmail;
@@ -29,7 +31,7 @@ use rest_api::application::{GetApplicationResult, URL_APPLICATION};
 use rest_api::sessions::{CreateSessionResult, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_hooks::use_effect_once;
+use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
 fn main() {
@@ -73,6 +75,9 @@ pub enum Route {
 
     #[at("/email/:uuid/~validate")]
     ValidateEmail { uuid: uuid::Uuid },
+
+    #[at("/profile")]
+    Profile,
 
     #[at("/logout")]
     Logout,
@@ -132,7 +137,7 @@ fn app() -> Html {
             state.set(new_state);
         })
     };
-
+    use_navigator();
     html! {
         <>
             <BrowserRouter>
@@ -146,85 +151,93 @@ fn app() -> Html {
                     {"Fork me on GitHub"}
                 </a>
                 <div class="content">
-                    <Switch<Route> render={move |route| match route {
-                        Route::Index | Route::Bookmarks => {
-                            html! {
-                                <BookmarksProvider>
-                                    <BookmarksHOC />
-                                </BookmarksProvider>
+                    <Switch<Route> render={
+                        let logged_in = state.username.is_some();
+                        move |route| match route {
+                            Route::Index | Route::Bookmarks => {
+                                html! {
+                                    <BookmarksProvider>
+                                        <BookmarksHOC />
+                                    </BookmarksProvider>
+                                }
+                            }
+                            Route::AddBookmark => {
+                                // todo prevent display when not logged
+                                html! {
+                                    <CreateBookmark />
+                                }
+                            }
+                            Route::ViewBookmark { id } => {
+                                html! {
+                                    <BookmarkProvider {id}>
+                                        <BookmarkHOC />
+                                    </BookmarkProvider>
+                                }
+                            }
+                            Route::DeleteBookmark { id } => {
+                                // todo prevent display when not logged
+                                html! {
+                                    <BookmarkProvider {id}>
+                                        <DeleteBookmarkHOC />
+                                    </BookmarkProvider>
+                                }
+                            }
+                            Route::EditBookmark { id } => {
+                                // todo prevent display when not logged
+                                html! {
+                                    <BookmarkProvider {id}>
+                                        <EditBookmarkHOC />
+                                    </BookmarkProvider>
+                                }
+                            }
+                            Route::TagCloud => {
+                                html! {
+                                    {"todo: tag cloud"}
+                                }
+                            }
+                            Route::Tools => {
+                                // todo prevent display when not logged
+                                html! {
+                                    {"todo: tools"}
+                                }
+                            }
+                            Route::Signup => {
+                                html! {
+                                    <Signup />
+                                }
+                            }
+                            Route::SignupSuccess => {
+                                html! {
+                                    <SignupSuccess />
+                                }
+                            }
+                            Route::Login => {
+                                html! {
+                                    <Login {logged_in} onlogin={onlogin.clone()} />
+                                }
+                            }
+                            Route::ValidateEmail { uuid } => {
+                                html! {
+                                    <ValidateEmail {uuid} />
+                                }
+                            }
+                            Route::Profile => {
+                                html! {
+                                    <Profile />
+                                    }
+                                }
+                            Route::Logout => {
+                                html! {
+                                    <Logout onlogout={onlogout.clone()} />
+                                }
+                            }
+                            Route::NotFound => {
+                                html! {
+                                    <h1>{"404 Not Found"}</h1>
+                                }
                             }
                         }
-                        Route::AddBookmark => {
-                            // todo prevent display when not logged
-                            html! {
-                                <CreateBookmark />
-                            }
-                        }
-                        Route::ViewBookmark { id } => {
-                            html! {
-                                <BookmarkProvider {id}>
-                                    <BookmarkHOC />
-                                </BookmarkProvider>
-                            }
-                        }
-                        Route::DeleteBookmark { id } => {
-                            // todo prevent display when not logged
-                            html! {
-                                <BookmarkProvider {id}>
-                                    <DeleteBookmarkHOC />
-                                </BookmarkProvider>
-                            }
-                        }
-                        Route::EditBookmark { id } => {
-                            // todo prevent display when not logged
-                            html! {
-                                <BookmarkProvider {id}>
-                                    <EditBookmarkHOC />
-                                </BookmarkProvider>
-                            }
-                        }
-                        Route::TagCloud => {
-                            html! {
-                                {"todo: tag cloud"}
-                            }
-                        }
-                        Route::Tools => {
-                            // todo prevent display when not logged
-                            html! {
-                                {"todo: tools"}
-                            }
-                        }
-                        Route::Signup => {
-                            html! {
-                                <Signup />
-                            }
-                        }
-                        Route::SignupSuccess => {
-                            html! {
-                                <SignupSuccess />
-                            }
-                        }
-                        Route::Login => {
-                            html! {
-                                <Login onlogin={onlogin.clone()} />
-                            }
-                        }
-                        Route::ValidateEmail { uuid } => {
-                            html! {
-                                <ValidateEmail {uuid} />
-                            }
-                        }
-                        Route::Logout => {
-                            html! {
-                                <Logout onlogout={onlogout.clone()} />
-                            }
-                        }
-                        Route::NotFound => {
-                            html! {
-                                <h1>{"404 Not Found"}</h1>
-                            }
-                        }
-                    } } />
+                    } />
                 </div>
             </BrowserRouter>
             <div class="footer">

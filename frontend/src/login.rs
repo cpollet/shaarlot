@@ -12,6 +12,7 @@ use yew_router::prelude::*;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub onlogin: Callback<AttrValue>,
+    pub logged_in: bool,
 }
 
 #[derive(Clone, PartialEq)]
@@ -33,6 +34,15 @@ pub fn login(props: &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let username_input_ref = use_node_ref();
 
+    {
+        let logged_in = props.logged_in;
+        let navigator = navigator.clone();
+        use_effect(move || {
+            if logged_in {
+                navigator.push(&Route::Index);
+            }
+        });
+    }
     {
         let url_input_ref = username_input_ref.clone();
         use_effect_once(move || {

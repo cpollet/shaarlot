@@ -80,13 +80,14 @@ a.material-icons-outlined {
 
 .content {
   padding: 0 10px;
-  margin: auto;
+  margin: auto auto 40px;
 }
 
 .footer {
   position: fixed;
   top: auto;
   bottom: 10px;
+  text-align: center;
   width: 100%;
   font-size: 0.8em;
   z-index: -99;
@@ -263,15 +264,15 @@ textarea {
   padding: 0;
 }
 
+.github-fork-ribbon {
+  display: none;
+}
+
 /** Responsive **/
 
 @media (min-width: 760px) {
   .centered-box {
     width: 700px;
-  }
-
-  .footer {
-    text-align: center;
   }
 
   .menu__left-submenu-trigger {
@@ -280,6 +281,10 @@ textarea {
 
   .menu__left-submenu {
     display: inline-block;
+  }
+
+  .github-fork-ribbon {
+    display: block;
   }
 }
 

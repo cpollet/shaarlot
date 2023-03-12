@@ -74,13 +74,14 @@ pub fn menu(props: &Props) -> Html {
                 </li>
             </ul>
             <div class="menu__right-submenu">
-                {if let Some(_username)=&props.username {
+                {if let Some(_username) = &props.username {
                     html!{
                         <>
-                            <a class="menu__item" href="#todo">
-                                <span class="material-icons-outlined">
-                                    {"account_circle"}
-                                </span>
+                            <a onclick={{let navigator = navigator.clone(); move |e:MouseEvent| {
+                                navigator.push(&Route::Profile);
+                                e.prevent_default();
+                            }}} class="menu__item" href={Route::Profile.to_path()}>
+                                <span class="material-icons-outlined">{"account_circle"}</span>
                             </a>
                             <a onclick={{let navigator = navigator.clone(); move |e:MouseEvent| {
                                 navigator.push(&Route::Logout);

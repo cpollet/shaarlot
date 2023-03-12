@@ -55,6 +55,9 @@ content-type: application/json
   "password_verif": "Password123!"
 }
 
+### Get current user
+GET http://localhost:3000/api/users/current
+
 ### Create session
 POST http://localhost:3000/api/sessions
 content-type: application/json
