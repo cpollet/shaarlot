@@ -14,9 +14,11 @@ base64 = "0.21.0"
 chrono = "0.4.23"
 common = { path = "../common" }
 entity = { path = "../entity" }
+include_dir = "0.7.3"
 lettre = "0.10.3"
 log = "0.4.17"
 migration = { path = "../migration" }
+mime_guess = "2.0.4"
 qrcode-generator = "4.1.7"
 redis = { version = "0.22.3", features = ["tokio-comp"] }
 rest-api = { path = "../rest-api", features = ["backend"] }

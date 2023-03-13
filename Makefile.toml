@@ -118,13 +118,13 @@ args = ["build", "--public-url", "/", "--dist", "../target/release/wasm", "--rel
 
 [tasks.build-release]
 workspace = false
-dependencies = ["build-backend-release", "build-frontend-release"]
+dependencies = ["build-frontend-release", "build-backend-release"]
 
 [tasks.run-release]
 workspace = false
 env_files = ["./.env"]
-env = { "PUBLIC_URL" = "http://localhost:8000", "HTTP_PORT" = "8000", "ROOT_PATH" = "target/release/wasm" }
-dependencies = ["postgres", "redis", "build-backend-release", "build-frontend-release"]
+env = { "PUBLIC_URL" = "http://localhost:8000", "HTTP_PORT" = "8000" }
+dependencies = ["postgres", "redis", "build-release"]
 command = "cargo"
 args = ["run", "--release", "--bin", "backend"]
 
@@ -134,7 +134,6 @@ dependencies = ["clean-docker", "build-release"]
 script = [
     "mkdir -p docker/target",
     "cp target/release/backend docker/target/backend",
-    "cp -r target/release/wasm docker/target/webroot"
 ]
 
 [tasks.build-docker]

@@ -1,5 +1,4 @@
 use argon2::password_hash::rand_core::{OsRng, RngCore};
-use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
@@ -18,6 +17,7 @@ use std::env;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
+use axum::response::IntoResponse;
 use tokio::signal;
 use tower::ServiceBuilder;
 use tower_http::services::{ServeDir, ServeFile};
@@ -26,6 +26,10 @@ use tracing::Level;
 use tracing_subscriber::filter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+
+#[cfg(not(debug_assertions))]
+static STATIC_DIR: include_dir::Dir<'_> =
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../target/release/wasm");
 
 // todo better logging
 
@@ -60,8 +64,14 @@ async fn main() {
     let database_username = env::var("DATABASE_USERNAME").unwrap_or("postgres".to_owned());
     let database_password = env::var("DATABASE_PASSWORD").unwrap_or("password".to_owned());
     let database_name = env::var("DATABASE_NAME").unwrap_or("postgres".to_owned());
-    // todo eventually remove?
-    let static_files_path = env::var("ROOT_PATH").unwrap_or("./webroot".to_owned());
+    let static_files_path = env::var("ROOT_PATH").unwrap_or(
+        if cfg!(debug_assertions) {
+            "./webroot"
+        } else {
+            "@"
+        }
+        .to_owned(),
+    );
     let smtp_host = env::var("SMTP_HOST").unwrap_or("localhost".to_owned());
     let smtp_port = env::var("SMTP_PORT").unwrap_or("25".to_owned());
     let smtp_username = env::var("SMTP_USERNAME").unwrap_or("username".to_owned());
@@ -148,21 +158,14 @@ async fn main() {
         .serve(
             api_router(&configuration, AppState { database, mailer })
                 .merge(
-                    Router::new()
-                        .nest_service(
-                            "/",
-                            ServeDir::new(&static_files_path).not_found_service(ServeFile::new(
-                                format!("{}/index.html", static_files_path),
-                            )),
+                    static_file_provider(&static_files_path).layer(
+                        SessionLayer::new(
+                            configuration.session_store.clone(),
+                            configuration.cookie_secret.expose_secret().as_slice(),
                         )
-                        .layer(
-                            SessionLayer::new(
-                                configuration.session_store.clone(),
-                                configuration.cookie_secret.expose_secret().as_slice(),
-                            )
-                            .with_session_ttl(Some(session_ttl))
-                            .with_persistence_policy(PersistencePolicy::Always),
-                        ),
+                        .with_session_ttl(Some(session_ttl))
+                        .with_persistence_policy(PersistencePolicy::Always),
+                    ),
                 )
                 .route("/health", get(health))
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
@@ -171,6 +174,59 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+}
+
+fn static_file_provider(static_files_path: &str) -> Router {
+    #[cfg(not(debug_assertions))]
+    {
+        if static_files_path == "@" {
+            log::info!("Serving static files from binary");
+            return Router::new()
+                .route("/", get(static_index_file))
+                .route("/*path", get(static_file));
+        }
+    }
+
+    log::info!("Serving static files from {}", static_files_path);
+    Router::new().nest_service(
+        "/",
+        ServeDir::new(static_files_path)
+            .not_found_service(ServeFile::new(format!("{}/index.html", static_files_path))),
+    )
+}
+
+#[cfg(not(debug_assertions))]
+async fn static_index_file() -> impl IntoResponse {
+    axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::HeaderValue::from_str("text/html").unwrap(),
+        )
+        .body(axum::body::boxed(axum::body::Full::from(STATIC_DIR.get_file("index.html").unwrap().contents())))
+        .unwrap()
+}
+
+#[cfg(not(debug_assertions))]
+async fn static_file(axum::extract::Path(path): axum::extract::Path<String>) -> impl IntoResponse {
+    let path = path.trim_start_matches('/');
+
+    let (file, mime_type) = match STATIC_DIR.get_file(path) {
+        None => (
+            STATIC_DIR.get_file("index.html").unwrap(),
+            mime_guess::from_path("index.html").first_or_text_plain(),
+        ),
+        Some(file) => (file, mime_guess::from_path(path).first_or_text_plain()),
+    };
+
+    axum::response::Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header(
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::HeaderValue::from_str(mime_type.as_ref()).unwrap(),
+        )
+        .body(axum::body::boxed(axum::body::Full::from(file.contents())))
+        .unwrap()
 }
 
 async fn health() -> impl IntoResponse {
