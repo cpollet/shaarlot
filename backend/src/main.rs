@@ -1,4 +1,5 @@
 use argon2::password_hash::rand_core::{OsRng, RngCore};
+use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
@@ -17,9 +18,9 @@ use std::env;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
-use axum::response::IntoResponse;
 use tokio::signal;
 use tower::ServiceBuilder;
+use tower_http::compression::CompressionLayer;
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing::Level;
@@ -157,6 +158,8 @@ async fn main() {
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
             api_router(&configuration, AppState { database, mailer })
+                .route("/health", get(health))
+                .layer(CompressionLayer::new())
                 .merge(
                     static_file_provider(&static_files_path).layer(
                         SessionLayer::new(
@@ -167,7 +170,6 @@ async fn main() {
                         .with_persistence_policy(PersistencePolicy::Always),
                     ),
                 )
-                .route("/health", get(health))
                 .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
                 .into_make_service(),
         )
@@ -196,37 +198,102 @@ fn static_file_provider(static_files_path: &str) -> Router {
 }
 
 #[cfg(not(debug_assertions))]
-async fn static_index_file() -> impl IntoResponse {
-    axum::response::Response::builder()
+async fn static_index_file(headers: axum::http::header::HeaderMap) -> impl IntoResponse {
+    let compression = Compression::from(headers);
+
+    let response_builder = axum::response::Response::builder()
         .status(axum::http::StatusCode::OK)
         .header(
             axum::http::header::CONTENT_TYPE,
             axum::http::header::HeaderValue::from_str("text/html").unwrap(),
-        )
-        .body(axum::body::boxed(axum::body::Full::from(STATIC_DIR.get_file("index.html").unwrap().contents())))
+        );
+
+    compression
+        .add_header(response_builder)
+        .body(axum::body::boxed(axum::body::Full::from(
+            STATIC_DIR
+                .get_file(compression.append_suffix("index.html"))
+                .unwrap()
+                .contents(),
+        )))
         .unwrap()
 }
 
 #[cfg(not(debug_assertions))]
-async fn static_file(axum::extract::Path(path): axum::extract::Path<String>) -> impl IntoResponse {
+async fn static_file(
+    axum::extract::Path(path): axum::extract::Path<String>,
+    headers: axum::http::header::HeaderMap,
+) -> impl IntoResponse {
     let path = path.trim_start_matches('/');
 
-    let (file, mime_type) = match STATIC_DIR.get_file(path) {
+    let compression = Compression::from(headers);
+    let compressed_path = compression.append_suffix(path);
+    log::info!("Serving {} as {}", path, compressed_path);
+
+    let (file, mime_type) = match STATIC_DIR.get_file(compressed_path) {
         None => (
-            STATIC_DIR.get_file("index.html").unwrap(),
+            STATIC_DIR
+                .get_file(compression.append_suffix("index.html"))
+                .unwrap(),
             mime_guess::from_path("index.html").first_or_text_plain(),
         ),
         Some(file) => (file, mime_guess::from_path(path).first_or_text_plain()),
     };
 
-    axum::response::Response::builder()
+    let response_builder = axum::response::Response::builder()
         .status(axum::http::StatusCode::OK)
         .header(
             axum::http::header::CONTENT_TYPE,
             axum::http::header::HeaderValue::from_str(mime_type.as_ref()).unwrap(),
-        )
+        );
+
+    compression
+        .add_header(response_builder)
         .body(axum::body::boxed(axum::body::Full::from(file.contents())))
         .unwrap()
+}
+
+#[cfg(not(debug_assertions))]
+enum Compression {
+    Br,
+    Gzip,
+    None,
+}
+
+#[cfg(not(debug_assertions))]
+impl Compression {
+    fn append_suffix(&self, path: &str) -> String {
+        match self {
+            Compression::Br => format!("{}.br", path),
+            Compression::Gzip => format!("{}.gzip", path),
+            Compression::None => path.to_string(),
+        }
+    }
+
+    fn add_header(&self, builder: axum::http::response::Builder) -> axum::http::response::Builder {
+        match self {
+            Compression::Br => builder.header(axum::http::header::CONTENT_ENCODING, "br"),
+            Compression::Gzip => builder.header(axum::http::header::CONTENT_ENCODING, "gzip"),
+            Compression::None => builder,
+        }
+    }
+}
+
+#[cfg(not(debug_assertions))]
+impl From<axum::http::header::HeaderMap> for Compression {
+    fn from(headers: axum::http::header::HeaderMap) -> Self {
+        let accept_encoding = headers
+            .get(axum::http::header::ACCEPT_ENCODING)
+            .map(|h| h.to_str().unwrap_or_default().to_lowercase())
+            .unwrap_or_default();
+        if accept_encoding.contains("br") {
+            return Compression::Br;
+        }
+        if accept_encoding.contains("gzip") {
+            return Compression::Gzip;
+        }
+        return Compression::None;
+    }
 }
 
 async fn health() -> impl IntoResponse {

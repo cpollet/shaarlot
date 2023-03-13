@@ -116,9 +116,19 @@ cwd = "./frontend"
 command = "trunk"
 args = ["build", "--public-url", "/", "--dist", "../target/release/wasm", "--release"]
 
+[tasks.compress-assets]
+workspace = false
+cwd = "./target/release/wasm"
+script = [
+    "for f in $(ls); do",
+    "   command -v gzip >/dev/null   && gzip \"$f\" -c > \"$f.gz\"",
+    "   command -v brotli >/dev/null && brotli \"$f\"",
+    "done",
+]
+
 [tasks.build-release]
 workspace = false
-dependencies = ["build-frontend-release", "build-backend-release"]
+dependencies = ["build-frontend-release", "compress-assets", "build-backend-release"]
 
 [tasks.run-release]
 workspace = false
