@@ -2,12 +2,11 @@ use argon2::password_hash::rand_core::{OsRng, RngCore};
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
-use axum_extra::routing::SpaRouter;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SessionLayer};
 use backend::database::Configuration;
 use backend::mailer::Mailer;
-use backend::rest::router;
+use backend::rest::api_router;
 use backend::sessions::RedisStore;
 use backend::{database, AppState};
 use lettre::message::Mailbox;
@@ -21,6 +20,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use tokio::signal;
 use tower::ServiceBuilder;
+use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 use tracing::Level;
 use tracing_subscriber::filter;
@@ -60,8 +60,8 @@ async fn main() {
     let database_username = env::var("DATABASE_USERNAME").unwrap_or("postgres".to_owned());
     let database_password = env::var("DATABASE_PASSWORD").unwrap_or("password".to_owned());
     let database_name = env::var("DATABASE_NAME").unwrap_or("postgres".to_owned());
+    // todo eventually remove?
     let static_files_path = env::var("ROOT_PATH").unwrap_or("./webroot".to_owned());
-    let assets_url = env::var("ASSETS_URL").unwrap_or("/assets".to_owned());
     let smtp_host = env::var("SMTP_HOST").unwrap_or("localhost".to_owned());
     let smtp_port = env::var("SMTP_PORT").unwrap_or("25".to_owned());
     let smtp_username = env::var("SMTP_USERNAME").unwrap_or("username".to_owned());
@@ -84,10 +84,6 @@ async fn main() {
     let session_ttl = env::var("SESSION_TTL")
         .map(|s| Duration::from_secs(u64::from_str(&s).unwrap_or(60 * 60 * 24)))
         .unwrap_or(Duration::from_secs(60 * 60 * 24));
-
-    // log::info!("{}:{}/{}", redis_host, redis_port, redis_db);
-    // log::info!("{}", session_ttl.as_secs());
-    // log::info!("{}", base64::encode( cookie_secret.expose_secret()));
 
     let database = {
         let config = Configuration {
@@ -146,15 +142,19 @@ async fn main() {
         public_url,
     };
 
-    log::info!("Serving {} under {}", static_files_path, assets_url);
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
-            router(&configuration, AppState { database, mailer })
+            api_router(&configuration, AppState { database, mailer })
                 .merge(
                     Router::new()
-                        .merge(SpaRouter::new(&assets_url, static_files_path))
+                        .nest_service(
+                            "/",
+                            ServeDir::new(&static_files_path).not_found_service(ServeFile::new(
+                                format!("{}/index.html", static_files_path),
+                            )),
+                        )
                         .layer(
                             SessionLayer::new(
                                 configuration.session_store.clone(),

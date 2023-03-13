@@ -95,7 +95,7 @@ args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=h
 [tasks.dev-backend]
 workspace = false
 env_files = ["./.env"]
-env = { "PUBLIC_URL" = "http://localhost:8080", "ROOT_PATH" = "target/debug/wasm", "ASSETS_URL" = "/assets" }
+env = { "PUBLIC_URL" = "http://localhost:8080", "ROOT_PATH" = "target/debug/wasm" }
 dependencies = ["postgres", "redis"]
 command = "cargo"
 args = ["run", "--bin", "backend"]
@@ -114,7 +114,7 @@ workspace = false
 dependencies = ["install-trunk", "install-wasm32"]
 cwd = "./frontend"
 command = "trunk"
-args = ["build", "--public-url", "/assets", "--dist", "../target/release/wasm", "--release"]
+args = ["build", "--public-url", "/", "--dist", "../target/release/wasm", "--release"]
 
 [tasks.build-release]
 workspace = false

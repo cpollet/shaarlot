@@ -39,7 +39,7 @@ where
     pub session_store: S,
 }
 
-pub fn router<S>(configuration: &Configuration<S>, state: AppState) -> Router
+pub fn api_router<S>(configuration: &Configuration<S>, state: AppState) -> Router
 where
     S: SessionStore,
 {
