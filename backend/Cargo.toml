@@ -11,7 +11,7 @@ async-trait = "0.1.66"
 axum = "0.6.10"
 axum-sessions = "0.4.1"
 base64 = "0.21.0"
-chrono = "0.4.23"
+chrono = "0.4.24"
 common = { path = "../common" }
 entity = { path = "../entity" }
 include_dir = "0.7.3"
