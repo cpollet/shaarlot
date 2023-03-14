@@ -230,14 +230,19 @@ async fn static_file(
     let compressed_path = compression.append_suffix(path);
     log::info!("Serving {} as {}", path, compressed_path);
 
-    let (file, mime_type) = match STATIC_DIR.get_file(compressed_path) {
+    let (file, mime_type, set_cache_header) = match STATIC_DIR.get_file(compressed_path) {
         None => (
             STATIC_DIR
                 .get_file(compression.append_suffix("index.html"))
                 .unwrap(),
             mime_guess::from_path("index.html").first_or_text_plain(),
+            false,
         ),
-        Some(file) => (file, mime_guess::from_path(path).first_or_text_plain()),
+        Some(file) => (
+            file,
+            mime_guess::from_path(path).first_or_text_plain(),
+            true,
+        ),
     };
 
     let response_builder = axum::response::Response::builder()
@@ -246,6 +251,12 @@ async fn static_file(
             axum::http::header::CONTENT_TYPE,
             axum::http::header::HeaderValue::from_str(mime_type.as_ref()).unwrap(),
         );
+
+    let response_builder = if set_cache_header {
+        response_builder.header(axum::http::header::CACHE_CONTROL, "private")
+    } else {
+        response_builder
+    };
 
     compression
         .add_header(response_builder)
