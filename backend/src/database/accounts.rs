@@ -1,6 +1,6 @@
 use chrono::Utc;
-use entity::user::Model;
-use entity::user::{ActiveModel, Column, Entity};
+use entity::account::Model;
+use entity::account::{ActiveModel, Column, Entity};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{

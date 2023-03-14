@@ -7,6 +7,7 @@ use axum::Json;
 use axum_sessions::extractors::{ReadableSession, WritableSession};
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResponse, CreateSessionResult};
 use secrecy::ExposeSecret;
+use database::accounts::Query;
 
 const DEFAULT_HASH: &str = "$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
 
@@ -28,7 +29,7 @@ pub async fn create_session(
     State(state): State<AppState>,
     Json(user): Json<CreateSessionRequest>,
 ) -> Result<CreateSessionResult, CreateSessionResult> {
-    let db_user = database::users::Query::find_by_username(&state.database, &user.username)
+    let db_user = Query::find_by_username(&state.database, &user.username)
         .await
         .map_err(|_| CreateSessionResult::ServerError)?
         .ok_or({

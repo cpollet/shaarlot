@@ -1,6 +1,6 @@
-use crate::database::users::Query;
+use crate::database::accounts::{Query, Mutation};
 use crate::sessions::session::{UserInfo, SESSION_KEY_USER_INFO};
-use crate::{database, AppState};
+use crate:: AppState;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -42,7 +42,7 @@ pub async fn create_user(
 
     let email_token = Uuid::new_v4().to_string();
 
-    let result = database::users::Mutation::create(
+    let result = Mutation::create(
         &state.database,
         user.email,
         user.username,
@@ -157,7 +157,7 @@ pub async fn update_current_user(
     };
 
     let db_user =
-        database::users::Mutation::update(&state.database, db_user, new_password.1, new_email.1)
+        Mutation::update(&state.database, db_user, new_password.1, new_email.1)
             .await
             .map_err(|_| UpdateUserResult::ServerError)?;
 

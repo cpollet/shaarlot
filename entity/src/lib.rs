@@ -2,6 +2,6 @@
 
 pub mod prelude;
 
+pub mod account;
 pub mod bookmark;
 pub mod password_recovery;
-pub mod user;
