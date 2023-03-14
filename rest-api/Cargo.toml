@@ -7,7 +7,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6.10" , optional = true }
+axum = { version = "0.6.11" , optional = true }
 chrono = { version = "0.4.24", features = ["serde"] }
 http = "0.2.9"
 secrecy = { version = "0.8.0", features = ["serde"] }
