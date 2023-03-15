@@ -1,10 +1,11 @@
 use crate::database::bookmarks::SortOrder;
+use crate::sessions::session::UserInfo;
 use crate::{database, AppState};
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
-use axum::Json;
+use axum::{Extension, Json};
 use chrono::Utc;
 use qrcode_generator::QrCodeEcc;
 use rest_api::bookmarks::create::{
@@ -16,6 +17,7 @@ use rest_api::bookmarks::get_one::{GetBookmarkResponse, GetBookmarkResult};
 use rest_api::bookmarks::update::{
     UpdateBookmarkRequest, UpdateBookmarkResponse, UpdateBookmarkResult,
 };
+use rest_api::bookmarks::Access;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -27,6 +29,7 @@ pub struct GetBookmarksQueryParams {
 
 pub async fn get_bookmarks(
     Query(query): Query<GetBookmarksQueryParams>,
+    Extension(user_info): Extension<Option<UserInfo>>,
     State(state): State<AppState>,
 ) -> Result<GetBookmarksResult, GetBookmarksResult> {
     let order = query
@@ -51,6 +54,16 @@ pub async fn get_bookmarks(
             tags: vec![],
             creation_date: m.creation_date.with_timezone(&Utc),
             update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+            user_id: m.user_id,
+            access: if user_info
+                .as_ref()
+                .map(|u| m.user_id == u.id)
+                .unwrap_or_default()
+            {
+                Access::Write
+            } else {
+                Access::Read
+            },
         })
         .collect::<GetBookmarksResponse>();
 
@@ -59,6 +72,7 @@ pub async fn get_bookmarks(
 
 pub async fn get_bookmark(
     State(state): State<AppState>,
+    Extension(user_info): Extension<Option<UserInfo>>,
     Path(bookmark_id): Path<i32>,
 ) -> Result<GetBookmarkResult, GetBookmarkResult> {
     let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
@@ -72,6 +86,12 @@ pub async fn get_bookmark(
             tags: vec![],
             creation_date: m.creation_date.with_timezone(&Utc),
             update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+            user_id: m.user_id,
+            access: if user_info.map(|u| m.user_id == u.id).unwrap_or_default() {
+                Access::Write
+            } else {
+                Access::Read
+            },
         })
         .ok_or(GetBookmarkResult::NotFound(
             bookmark_id,
@@ -118,6 +138,7 @@ pub async fn get_bookmark_qrcode(
 
 pub async fn create_bookmark(
     State(state): State<AppState>,
+    Extension(user_info): Extension<UserInfo>,
     Json(bookmark): Json<CreateBookmarkRequest>,
 ) -> Result<CreateBookmarkResult, CreateBookmarkResult> {
     let bookmark = database::bookmarks::Mutation::create_bookmark(
@@ -125,6 +146,7 @@ pub async fn create_bookmark(
         bookmark.url,
         bookmark.title,
         bookmark.description,
+        user_info.id,
     )
     .await
     .map_err(|_| CreateBookmarkResult::ServerError)
@@ -136,6 +158,12 @@ pub async fn create_bookmark(
         tags: vec![],
         creation_date: m.creation_date.with_timezone(&Utc),
         update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+        user_id: m.user_id,
+        access: if user_info.id == m.user_id {
+            Access::Write
+        } else {
+            Access::Read
+        },
     })?;
 
     Ok(CreateBookmarkResult::Success(bookmark))
@@ -144,8 +172,22 @@ pub async fn create_bookmark(
 pub async fn update_bookmark(
     State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
+    Extension(user_info): Extension<UserInfo>,
     Json(bookmark): Json<UpdateBookmarkRequest>,
 ) -> Result<UpdateBookmarkResult, UpdateBookmarkResult> {
+    if database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+        .await
+        .map_err(|_| UpdateBookmarkResult::ServerError)?
+        .ok_or(UpdateBookmarkResult::NotFound(
+            bookmark_id,
+            format!("Bookmark '{}' not found", bookmark_id),
+        ))?
+        .user_id
+        != user_info.id
+    {
+        return Err(UpdateBookmarkResult::Forbidden);
+    }
+
     let bookmark = database::bookmarks::Mutation::update_bookmark(
         &state.database,
         bookmark_id,
@@ -163,6 +205,12 @@ pub async fn update_bookmark(
         tags: vec![],
         creation_date: m.creation_date.with_timezone(&Utc),
         update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
+        user_id: m.user_id,
+        access: if user_info.id == m.user_id {
+            Access::Write
+        } else {
+            Access::Read
+        },
     })
     .ok_or(UpdateBookmarkResult::NotFound(
         bookmark_id,
@@ -175,7 +223,21 @@ pub async fn update_bookmark(
 pub async fn delete_bookmark(
     State(state): State<AppState>,
     Path(bookmark_id): Path<i32>,
+    Extension(user_info): Extension<UserInfo>,
 ) -> Result<DeleteBookmarkResult, DeleteBookmarkResult> {
+    if database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+        .await
+        .map_err(|_| DeleteBookmarkResult::ServerError)?
+        .ok_or(DeleteBookmarkResult::NotFound(
+            bookmark_id,
+            format!("Bookmark '{}' not found", bookmark_id),
+        ))?
+        .user_id
+        != user_info.id
+    {
+        return Err(DeleteBookmarkResult::Forbidden);
+    };
+
     database::bookmarks::Mutation::delete_bookmark(&state.database, bookmark_id)
         .await
         .map_err(|_| DeleteBookmarkResult::ServerError)?

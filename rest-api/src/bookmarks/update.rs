@@ -1,3 +1,4 @@
+use crate::bookmarks::Access;
 use crate::error_response::ErrorResponse;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -20,6 +21,8 @@ pub struct UpdateBookmarkResponse {
     pub tags: Vec<String>,
     pub creation_date: DateTime<Utc>,
     pub update_date: Option<DateTime<Utc>>,
+    pub user_id: i32,
+    pub access: Access,
 }
 
 pub enum UpdateBookmarkResult {

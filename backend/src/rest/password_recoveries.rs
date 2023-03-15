@@ -1,6 +1,6 @@
-use crate::database::password_recoveries::{Mutation, Query};
 use crate::database::accounts::Mutation as UserMutation;
 use crate::database::accounts::Query as UserQuery;
+use crate::database::password_recoveries::{Mutation, Query};
 use crate::rest::json::Json;
 use crate::AppState;
 use argon2::password_hash::rand_core::OsRng;

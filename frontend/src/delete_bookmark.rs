@@ -2,7 +2,7 @@ use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::delete::DeleteBookmarkResult;
-use rest_api::bookmarks::URL_BOOKMARK;
+use rest_api::bookmarks::{Access, URL_BOOKMARK};
 use std::rc::Rc;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -79,38 +79,48 @@ pub fn delete_bookmark(props: &Props) -> Html {
         })
     };
 
-    html! {
-        <div class="centered-box">
-            <h1 class="delete-bookmark__title">{"Delete bookmark?"}</h1>
-            { match state.error {
-                Some(Error::Forbidden) => html! {
-                    <div class="centered-box__error">
-                        {"You don't have the right to delete this bookmark"}
-                    </div>
-                },
-                Some(Error::NotFound) => html! {
-                    <div class="centered-box__error">
-                        {"Bookmark not found"}
-                    </div>
-                },
-                Some(_) => html! {
-                    <div class="centered-box__error">
-                        {"An error has occurred"}
-                    </div>
-                },
-                None => html!{ <></> }
-            }}
-            <p>
-                <a href={state.bookmark.url.clone()}>
-                    {state.bookmark.title.as_ref().cloned().unwrap_or(state.bookmark.url.clone())}
-                </a>
-            </p>
-            <p class="centered-box__buttons">
-                <button type="button" onclick={onclick_no} class="button--safe">{"Cancel"}</button>
-                {" "}
-                <button type="button" onclick={onclick_yes} class="button--danger">{"Delete"}</button>
-            </p>
-        </div>
+    match state.bookmark.access {
+        Access::Read => html! {
+            <div class="centered-box">
+                <h1 class="centered-box__title">{"Delete bookmark"}</h1>
+                <div class="centered-box__error">
+                    {"You don't have the right to delete this bookmark"}
+                </div>
+            </div>
+        },
+        Access::Write => html! {
+            <div class="centered-box">
+                <h1 class="delete-bookmark__title">{"Delete bookmark?"}</h1>
+                { match state.error {
+                    Some(Error::Forbidden) => html! {
+                        <div class="centered-box__error">
+                            {"You don't have the right to delete this bookmark"}
+                        </div>
+                    },
+                    Some(Error::NotFound) => html! {
+                        <div class="centered-box__error">
+                            {"Bookmark not found"}
+                        </div>
+                    },
+                    Some(_) => html! {
+                        <div class="centered-box__error">
+                            {"An error has occurred"}
+                        </div>
+                    },
+                    None => html!{ <></> }
+                }}
+                <p>
+                    <a href={state.bookmark.url.clone()}>
+                        {state.bookmark.title.as_ref().cloned().unwrap_or(state.bookmark.url.clone())}
+                    </a>
+                </p>
+                <p class="centered-box__buttons">
+                    <button type="button" onclick={onclick_no} class="button--safe">{"Cancel"}</button>
+                    {" "}
+                    <button type="button" onclick={onclick_yes} class="button--danger">{"Delete"}</button>
+                </p>
+            </div>
+        },
     }
 }
 

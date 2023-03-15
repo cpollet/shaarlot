@@ -2,7 +2,7 @@ use crate::data::Bookmark;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
-use rest_api::bookmarks::URL_BOOKMARK;
+use rest_api::bookmarks::{Access, URL_BOOKMARK};
 use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
@@ -133,59 +133,69 @@ pub fn edit_bookmark(props: &Props) -> Html {
         })
     };
 
-    html! {
-        <div class="centered-box">
-            <h1 class="centered-box__title">{"Edit bookmark"}</h1>
-            { match state.error {
-                Some(Error::Forbidden) => html! {
-                    <div class="centered-box__error">
-                        {"You don't have the right to update this bookmark"}
-                    </div>
-                },
-                Some(Error::NotFound) => html! {
-                    <div class="centered-box__error">
-                        {"Bookmark not found"}
-                    </div>
-                },
-                Some(_) => html! {
-                    <div class="centered-box__error">
-                        {"An error has occurred"}
-                    </div>
-                },
-                None => html!{ <></> }
-            }}
-            <form {onsubmit}>
-                <p>
-                    <input
-                        ref={url_input_ref}
-                        type="text"
-                        placeholder="url"
-                        value={state.bookmark.url.clone()}
-                        oninput={oninput_url}
-                    />
-                </p>
-                <p>
-                    <input
-                        type="text"
-                        placeholder="title"
-                        value={state.bookmark.title.clone()}
-                        oninput={oninput_title}
-                    />
-                </p>
-                <p>
-                    <textarea
-                        placeholder="description"
-                        value={state.bookmark.description.clone()}
-                        oninput={oninput_description}
-                    />
-                </p>
-                <p class="centered-box__buttons">
-                    <button type="button" onclick={onclick_cancel} class="button--safe">{"Cancel"}</button>
-                    {" "}
-                    <button type="submit" class="button--action">{"Update"}</button>
-                </p>
-            </form>
-        </div>
+    match state.bookmark.access {
+        Access::Read => html! {
+            <div class="centered-box">
+                <h1 class="centered-box__title">{"Edit bookmark"}</h1>
+                <div class="centered-box__error">
+                    {"You don't have the right to update this bookmark"}
+                </div>
+            </div>
+        },
+        Access::Write => html! {
+            <div class="centered-box">
+                <h1 class="centered-box__title">{"Edit bookmark"}</h1>
+                { match state.error {
+                    Some(Error::Forbidden) => html! {
+                        <div class="centered-box__error">
+                            {"You don't have the right to update this bookmark"}
+                        </div>
+                    },
+                    Some(Error::NotFound) => html! {
+                        <div class="centered-box__error">
+                            {"Bookmark not found"}
+                        </div>
+                    },
+                    Some(_) => html! {
+                        <div class="centered-box__error">
+                            {"An error has occurred"}
+                        </div>
+                    },
+                    None => html!{ <></> }
+                }}
+                <form {onsubmit}>
+                    <p>
+                        <input
+                            ref={url_input_ref}
+                            type="text"
+                            placeholder="url"
+                            value={state.bookmark.url.clone()}
+                            oninput={oninput_url}
+                        />
+                    </p>
+                    <p>
+                        <input
+                            type="text"
+                            placeholder="title"
+                            value={state.bookmark.title.clone()}
+                            oninput={oninput_title}
+                        />
+                    </p>
+                    <p>
+                        <textarea
+                            placeholder="description"
+                            value={state.bookmark.description.clone()}
+                            oninput={oninput_description}
+                        />
+                    </p>
+                    <p class="centered-box__buttons">
+                        <button type="button" onclick={onclick_cancel} class="button--safe">{"Cancel"}</button>
+                        {" "}
+                        <button type="submit" class="button--action">{"Update"}</button>
+                    </p>
+                </form>
+            </div>
+        },
     }
 }
 

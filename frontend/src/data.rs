@@ -2,6 +2,7 @@ use chrono::{DateTime, Local};
 use rest_api::bookmarks::create::CreateBookmarkRequest;
 use rest_api::bookmarks::get_one::GetBookmarkResponse;
 use rest_api::bookmarks::update::UpdateBookmarkRequest;
+use rest_api::bookmarks::Access;
 use yew::prelude::*;
 
 #[derive(Clone, PartialEq)]
@@ -12,6 +13,7 @@ pub struct Bookmark {
     pub description: Option<AttrValue>,
     pub creation_date: DateTime<Local>,
     pub update_date: Option<DateTime<Local>>,
+    pub access: Access,
 }
 
 impl Default for Bookmark {
@@ -23,6 +25,7 @@ impl Default for Bookmark {
             description: None,
             creation_date: DateTime::default(),
             update_date: None,
+            access: Access::Read,
         }
     }
 }
@@ -36,6 +39,7 @@ impl From<GetBookmarkResponse> for Bookmark {
             description: value.description.map(AttrValue::from),
             creation_date: DateTime::from(value.creation_date),
             update_date: value.update_date.map(DateTime::from),
+            access: value.access,
         }
     }
 }

@@ -61,11 +61,13 @@ impl Mutation {
         url: String,
         title: Option<String>,
         description: Option<String>,
+        user_id: i32,
     ) -> Result<Model, DbErr> {
         ActiveModel {
             url: Set(url),
             title: Set(title),
             description: Set(description),
+            user_id: Set(user_id),
             ..Default::default()
         }
         .save(db)

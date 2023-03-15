@@ -5,9 +5,9 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use axum_sessions::extractors::{ReadableSession, WritableSession};
+use database::accounts::Query;
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResponse, CreateSessionResult};
 use secrecy::ExposeSecret;
-use database::accounts::Query;
 
 const DEFAULT_HASH: &str = "$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
 

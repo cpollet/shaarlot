@@ -1,6 +1,6 @@
-use crate::database::accounts::{Query, Mutation};
+use crate::database::accounts::{Mutation, Query};
 use crate::sessions::session::{UserInfo, SESSION_KEY_USER_INFO};
-use crate:: AppState;
+use crate::AppState;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
@@ -156,10 +156,9 @@ pub async fn update_current_user(
         (false, None)
     };
 
-    let db_user =
-        Mutation::update(&state.database, db_user, new_password.1, new_email.1)
-            .await
-            .map_err(|_| UpdateUserResult::ServerError)?;
+    let db_user = Mutation::update(&state.database, db_user, new_password.1, new_email.1)
+        .await
+        .map_err(|_| UpdateUserResult::ServerError)?;
 
     if new_password.0 {
         state.mailer.send_password_updated(user_old_mailbox.clone());

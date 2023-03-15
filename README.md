@@ -51,22 +51,22 @@ The URL to use is http://localhost:8001.
 | `SESSION_TTL`       | `86400`                                   | session ttl, is seconds                                      |
 
 ## Planned features
-* [x] CRUD functionality on links
+* [x] CRUD functionality on bookmarks
 * [x] Permalinks
 * [x] Authentication
   * [ ] Invalidate all sessions after update
   * [ ] Implement login throttling
   * [ ] Implement MFA
-* [ ] Assign links to users
-* [ ] Private links
+* [x] Link bookmarks to users
+* [ ] Private bookmarks
+* [ ] Tags on bookmarks
 * [ ] Read it later flags
-* [ ] Tags on links
 * [ ] Pagination
 * [ ] Search & filtering
 * [ ] Tag cloud
-* [ ] Private links sharing
-* [ ] Markdown support in links description
-* [ ] Export & Import links (incl. from Shaarli)
-* [ ] Dead links detection & report
+* [ ] Private bookmarks sharing
+* [ ] Markdown support in bookmarks description
+* [ ] Export & Import bookmarks (incl. from Shaarli)
+* [ ] Dead bookmarks detection & report
 * [ ] URL cleanup (utm_source=, fb=)
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/

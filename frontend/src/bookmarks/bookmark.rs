@@ -2,6 +2,7 @@ use crate::bookmarks::qr_code::QrCode;
 use crate::data::Bookmark as BookmarkData;
 use crate::Route;
 use chrono::{DateTime, Local};
+use rest_api::bookmarks::Access;
 use std::rc::Rc;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
@@ -63,33 +64,39 @@ pub fn bookmark(props: &Props) -> Html {
                 {"todo\u{00a0}·\u{00a0}tags"}
                 </div>
                 <div class="bookmark__actions">
-                    <a
-                        class="material-icons-outlined md-16 blue"
-                        onclick={onclick_edit}
-                        href={Route::EditBookmark {id: props.bookmark.id}.to_path()}
-                    >
-                        {"edit"}
-                    </a>
-                    {"\u{00a0}\u{ff5c}\u{00a0}"}
-                    <a
-                        class="material-icons-outlined md-16 red"
-                        onclick={onclick_delete}
-                        href={Route::DeleteBookmark {id: props.bookmark.id}.to_path()}
-                    >
-                        {"delete"}
-                    </a>
-                    {"\u{00a0}\u{ff5c}\u{00a0}"}
                     {display_date(&props.bookmark)}
-                    // {props.bookmark.creation_date.format("%h %e, %Y at %T %Z")}
                     {"\u{00a0}\u{ff5c}\u{00a0}"}
                     <a
+                         class="material-icons-outlined md-16"
                         onclick={onclick_permalink}
                         href={Route::ViewBookmark {id: props.bookmark.id}.to_path()}
                     >
-                        {"permalink"}
+                        {"link"}
                     </a>
                     {"\u{00a0}\u{ff5c}\u{00a0}"}
                     <QrCode id={props.bookmark.id} />
+                    { if props.bookmark.access == Access::Write {
+                        html!{
+                            <>
+                                {"\u{00a0}\u{ff5c}\u{00a0}"}
+                                 <a
+                                    class="material-icons-outlined md-16 blue"
+                                    onclick={onclick_edit}
+                                    href={Route::EditBookmark {id: props.bookmark.id}.to_path()}
+                                >
+                                    {"edit"}
+                                </a>
+                                {"\u{00a0}\u{ff5c}\u{00a0}"}
+                                <a
+                                    class="material-icons-outlined md-16 red"
+                                    onclick={onclick_delete}
+                                    href={Route::DeleteBookmark {id: props.bookmark.id}.to_path()}
+                                >
+                                    {"delete"}
+                                </a>
+                            </>
+                        }
+                    } else { html!{<></>} } }
                 </div>
                 <div class="bookmark__link">
                     <a href={props.bookmark.url.clone()}>

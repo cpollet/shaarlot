@@ -7,13 +7,21 @@ pub struct Migration;
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .rename_table(Table::rename().table(User::Table, Account::Table).to_owned())
+            .rename_table(
+                Table::rename()
+                    .table(User::Table, Account::Table)
+                    .to_owned(),
+            )
             .await
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
         manager
-            .rename_table(Table::rename().table( Account::Table, User::Table).to_owned())
+            .rename_table(
+                Table::rename()
+                    .table(Account::Table, User::Table)
+                    .to_owned(),
+            )
             .await
     }
 }
