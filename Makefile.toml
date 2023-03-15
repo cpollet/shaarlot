@@ -109,9 +109,15 @@ run_task = { name = ["dev-frontend", "dev-backend"], fork = true, parallel = tru
 command = "cargo"
 args = ["build", "--release"]
 
+[tasks.prepare-frontend-release]
+workspace = false
+cwd = "./frontend"
+command = "mkdir"
+args = ["-p", "../target/release/wasm"]
+
 [tasks.build-frontend-release]
 workspace = false
-dependencies = ["install-trunk", "install-wasm32"]
+dependencies = ["install-trunk", "install-wasm32", "prepare-frontend-release"]
 cwd = "./frontend"
 command = "trunk"
 args = ["build", "--public-url", "/", "--dist", "../target/release/wasm", "--release"]
