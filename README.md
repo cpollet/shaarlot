@@ -54,19 +54,19 @@ The URL to use is http://localhost:8001.
 * [x] CRUD functionality on bookmarks
 * [x] Permalinks
 * [x] Authentication
-  * [ ] Invalidate all sessions after update
+  * [ ] Invalidate all sessions after password change
   * [ ] Implement login throttling
   * [ ] Implement MFA
 * [x] Link bookmarks to users
-* [ ] Private bookmarks
 * [ ] Tags on bookmarks
-* [ ] Read it later flags
+* [ ] Private bookmarks
 * [ ] Pagination
 * [ ] Search & filtering
 * [ ] Tag cloud
-* [ ] Private bookmarks sharing
-* [ ] Markdown support in bookmarks description
 * [ ] Export & Import bookmarks (incl. from Shaarli)
+* [ ] Markdown support in bookmarks description
+* [ ] Read it later flags
+* [ ] Private bookmarks sharing
 * [ ] Dead bookmarks detection & report
 * [ ] URL cleanup (utm_source=, fb=)
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
