@@ -50,6 +50,7 @@ impl From<&Bookmark> for UpdateBookmarkRequest {
             url: bookmark.url.to_string(),
             title: bookmark.title.as_ref().map(|v| v.to_string()),
             description: bookmark.description.as_ref().map(|v| v.to_string()),
+            tags: vec![], // todo
         }
     }
 }
@@ -60,6 +61,7 @@ impl From<&Bookmark> for CreateBookmarkRequest {
             url: bookmark.url.to_string(),
             title: bookmark.title.as_ref().map(|v| v.to_string()),
             description: bookmark.description.as_ref().map(|v| v.to_string()),
+            tags: vec![], // todo
         }
     }
 }

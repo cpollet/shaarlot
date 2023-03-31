@@ -3,27 +3,23 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq)]
-#[sea_orm(table_name = "bookmark")]
+#[sea_orm(table_name = "tag")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
-    pub url: String,
-    pub description: Option<String>,
-    pub title: Option<String>,
-    pub creation_date: DateTimeWithTimeZone,
-    pub update_date: Option<DateTimeWithTimeZone>,
-    pub user_id: i32,
+    #[sea_orm(unique)]
+    pub name: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {}
 
-impl Related<super::tag::Entity> for Entity {
+impl Related<super::bookmark::Entity> for Entity {
     fn to() -> RelationDef {
-        super::bookmark_tag::Relation::Tag.def()
+        super::bookmark_tag::Relation::Bookmark.def()
     }
     fn via() -> Option<RelationDef> {
-        Some(super::bookmark_tag::Relation::Bookmark.def().rev())
+        Some(super::bookmark_tag::Relation::Tag.def().rev())
     }
 }
 

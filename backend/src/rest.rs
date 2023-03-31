@@ -5,6 +5,7 @@ mod json;
 mod password_recoveries;
 mod sessions;
 mod users;
+mod tags;
 
 use crate::rest::application::get_application;
 use crate::rest::bookmarks::*;
@@ -30,6 +31,8 @@ use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
 use webpage::{Webpage, WebpageOptions};
+use rest_api::tags::URL_TAGS;
+use crate::rest::tags::get_tags;
 
 pub struct Configuration<S>
 where
@@ -72,6 +75,7 @@ where
                 .route(URL_BOOKMARK_QRCODE, get(get_bookmark_qrcode))
                 .route(URL_USERS, post(create_user))
                 .route(URL_EMAIL, put(update_email))
+                .route(URL_TAGS, get(get_tags))
                 .layer(from_fn(SessionHint::supported))
                 .layer(
                     SessionLayer::new(

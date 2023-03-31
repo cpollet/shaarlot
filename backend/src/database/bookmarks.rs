@@ -4,8 +4,7 @@ use entity::bookmark::{Column, Model};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, DatabaseConnection, DbErr, EntityTrait, Order, QueryOrder, Select,
-    TryIntoModel,
+    ActiveModelTrait, ConnectionTrait, DbErr, EntityTrait, Order, QueryOrder, Select, TryIntoModel,
 };
 
 pub enum SortOrder {
@@ -37,32 +36,55 @@ impl TryFrom<&str> for SortOrder {
 pub struct Query;
 
 impl Query {
-    pub async fn find_all(db: &DatabaseConnection) -> Result<Vec<Model>, DbErr> {
+    pub async fn find_all<C>(db: &C) -> Result<Vec<Model>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
         Entity::find().all(db).await
     }
 
-    pub async fn find_all_order_by(
-        db: &DatabaseConnection,
+    pub async fn find_all_order_by<C>(
+        db: &C,
         order: SortOrder,
-    ) -> Result<Vec<Model>, DbErr> {
-        order.add_clause(Entity::find()).all(db).await
+    ) -> Result<Vec<(Model, Vec<entity::tag::Model>)>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        order
+            .add_clause(Entity::find())
+            .find_with_related(entity::tag::Entity)
+            .all(db)
+            .await
     }
 
-    pub async fn find_by_id(db: &DatabaseConnection, id: i32) -> Result<Option<Model>, DbErr> {
-        Entity::find_by_id(id).one(db).await
+    pub async fn find_by_id<C>(
+        db: &C,
+        id: i32,
+    ) -> Result<Option<(Model, Vec<entity::tag::Model>)>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Ok(Entity::find_by_id(id)
+            .find_with_related(entity::tag::Entity)
+            .all(db)
+            .await?
+            .pop())
     }
 }
 
 pub struct Mutation;
 
 impl Mutation {
-    pub async fn create_bookmark(
-        db: &DatabaseConnection,
+    pub async fn create_bookmark<C>(
+        db: &C,
         url: String,
         title: Option<String>,
         description: Option<String>,
         user_id: i32,
-    ) -> Result<Model, DbErr> {
+    ) -> Result<Model, DbErr>
+    where
+        C: ConnectionTrait,
+    {
         ActiveModel {
             url: Set(url),
             title: Set(title),
@@ -75,13 +97,16 @@ impl Mutation {
         .and_then(|m| m.try_into_model())
     }
 
-    pub async fn update_bookmark(
-        db: &DatabaseConnection,
+    pub async fn update_bookmark<C>(
+        db: &C,
         id: i32,
         url: String,
         title: Option<String>,
         description: Option<String>,
-    ) -> Result<Option<Model>, DbErr> {
+    ) -> Result<Option<Model>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
         let model = Entity::find_by_id(id)
             .one(db)
             .await?
@@ -97,7 +122,10 @@ impl Mutation {
         }
     }
 
-    pub async fn delete_bookmark(db: &DatabaseConnection, id: i32) -> Result<Option<()>, DbErr> {
+    pub async fn delete_bookmark<C>(db: &C, id: i32) -> Result<Option<()>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
         if Entity::delete_by_id(id).exec(db).await?.rows_affected == 1 {
             return Ok(Some(()));
         }

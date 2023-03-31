@@ -7,17 +7,16 @@ use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use chrono::Utc;
+use entity::bookmark::Model as BookmarkModel;
+use entity::tag::Model as TagModel;
 use qrcode_generator::QrCodeEcc;
-use rest_api::bookmarks::create::{
-    CreateBookmarkRequest, CreateBookmarkResponse, CreateBookmarkResult,
-};
+use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
 use rest_api::bookmarks::delete::DeleteBookmarkResult;
 use rest_api::bookmarks::get_many::{GetBookmarksResponse, GetBookmarksResult};
 use rest_api::bookmarks::get_one::{GetBookmarkResponse, GetBookmarkResult};
-use rest_api::bookmarks::update::{
-    UpdateBookmarkRequest, UpdateBookmarkResponse, UpdateBookmarkResult,
-};
+use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
 use rest_api::bookmarks::Access;
+use sea_orm::{DbErr, TransactionTrait};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -25,6 +24,28 @@ use std::str::FromStr;
 #[derive(Deserialize)]
 pub struct GetBookmarksQueryParams {
     order: Option<String>,
+}
+
+fn into_response(
+    bookmark: BookmarkModel,
+    tags: Vec<TagModel>,
+    user: Option<&UserInfo>,
+) -> GetBookmarkResponse {
+    GetBookmarkResponse {
+        id: bookmark.id,
+        url: bookmark.url,
+        title: bookmark.title,
+        description: bookmark.description,
+        tags: tags.into_iter().map(|e| e.name).collect::<Vec<String>>(),
+        creation_date: bookmark.creation_date.with_timezone(&Utc),
+        update_date: bookmark.update_date.map(|d| d.with_timezone(&Utc)),
+        user_id: bookmark.user_id,
+        access: if user.map(|u| bookmark.user_id == u.id).unwrap_or_default() {
+            Access::Write
+        } else {
+            Access::Read
+        },
+    }
 }
 
 pub async fn get_bookmarks(
@@ -46,25 +67,7 @@ pub async fn get_bookmarks(
         .await
         .map_err(|_| GetBookmarksResult::ServerError)?
         .into_iter()
-        .map(|m| GetBookmarkResponse {
-            id: m.id,
-            url: m.url,
-            title: m.title,
-            description: m.description,
-            tags: vec![],
-            creation_date: m.creation_date.with_timezone(&Utc),
-            update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-            user_id: m.user_id,
-            access: if user_info
-                .as_ref()
-                .map(|u| m.user_id == u.id)
-                .unwrap_or_default()
-            {
-                Access::Write
-            } else {
-                Access::Read
-            },
-        })
+        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
         .collect::<GetBookmarksResponse>();
 
     Ok(GetBookmarksResult::Success(bookmarks))
@@ -78,21 +81,7 @@ pub async fn get_bookmark(
     let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
         .await
         .map_err(|_| GetBookmarkResult::ServerError)?
-        .map(|m| GetBookmarkResponse {
-            id: m.id,
-            url: m.url,
-            title: m.title,
-            description: m.description,
-            tags: vec![],
-            creation_date: m.creation_date.with_timezone(&Utc),
-            update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-            user_id: m.user_id,
-            access: if user_info.map(|u| m.user_id == u.id).unwrap_or_default() {
-                Access::Write
-            } else {
-                Access::Read
-            },
-        })
+        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
         .ok_or(GetBookmarkResult::NotFound(
             bookmark_id,
             format!("Bookmark '{}' not found", bookmark_id),
@@ -120,7 +109,8 @@ pub async fn get_bookmark_qrcode(
             log::error!("{}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .ok_or(StatusCode::NOT_FOUND)?
+        .0;
 
     let bytes =
         qrcode_generator::to_png_to_vec(model.url.as_bytes(), QrCodeEcc::Low, size as usize)
@@ -141,30 +131,43 @@ pub async fn create_bookmark(
     Extension(user_info): Extension<UserInfo>,
     Json(bookmark): Json<CreateBookmarkRequest>,
 ) -> Result<CreateBookmarkResult, CreateBookmarkResult> {
-    let bookmark = database::bookmarks::Mutation::create_bookmark(
-        &state.database,
-        bookmark.url,
-        bookmark.title,
-        bookmark.description,
-        user_info.id,
-    )
-    .await
-    .map_err(|_| CreateBookmarkResult::ServerError)
-    .map(|m| CreateBookmarkResponse {
-        id: m.id,
-        url: m.url,
-        title: m.title,
-        description: m.description,
-        tags: vec![],
-        creation_date: m.creation_date.with_timezone(&Utc),
-        update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-        user_id: m.user_id,
-        access: if user_info.id == m.user_id {
-            Access::Write
-        } else {
-            Access::Read
-        },
-    })?;
+    let bookmark_id = state
+        .database
+        .transaction::<_, i32, DbErr>(|txn| {
+            Box::pin(async move {
+                let tags = {
+                    let mut tags = Vec::new();
+                    for tag in bookmark.tags {
+                        tags.push(database::tags::Mutation::create_tag(txn, tag).await?)
+                    }
+                    tags
+                };
+
+                let bookmark = database::bookmarks::Mutation::create_bookmark(
+                    txn,
+                    bookmark.url,
+                    bookmark.title,
+                    bookmark.description,
+                    user_info.id,
+                )
+                .await?;
+
+                for tag in tags {
+                    database::bookmarks_tags::Mutation::create_link(txn, bookmark.id, tag.id)
+                        .await?;
+                }
+
+                Ok(bookmark.id)
+            })
+        })
+        .await
+        .map_err(|_| CreateBookmarkResult::ServerError)?;
+
+    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+        .await
+        .map_err(|_| CreateBookmarkResult::ServerError)?
+        .map(|m| into_response(m.0, m.1, Some(user_info).as_ref()))
+        .ok_or(CreateBookmarkResult::ServerError)?;
 
     Ok(CreateBookmarkResult::Success(bookmark))
 }
@@ -182,40 +185,57 @@ pub async fn update_bookmark(
             bookmark_id,
             format!("Bookmark '{}' not found", bookmark_id),
         ))?
+        .0
         .user_id
         != user_info.id
     {
         return Err(UpdateBookmarkResult::Forbidden);
     }
 
-    let bookmark = database::bookmarks::Mutation::update_bookmark(
-        &state.database,
-        bookmark_id,
-        bookmark.url,
-        bookmark.title,
-        bookmark.description,
-    )
-    .await
-    .map_err(|_| UpdateBookmarkResult::ServerError)?
-    .map(|m| UpdateBookmarkResponse {
-        id: bookmark_id,
-        url: m.url,
-        title: m.title,
-        description: m.description,
-        tags: vec![],
-        creation_date: m.creation_date.with_timezone(&Utc),
-        update_date: m.update_date.map(|d| d.with_timezone(&Utc)),
-        user_id: m.user_id,
-        access: if user_info.id == m.user_id {
-            Access::Write
-        } else {
-            Access::Read
-        },
-    })
-    .ok_or(UpdateBookmarkResult::NotFound(
-        bookmark_id,
-        format!("Bookmark '{}' not found", bookmark_id),
-    ))?;
+    state
+        .database
+        .transaction::<_, (), DbErr>(|txn| {
+            Box::pin(async move {
+                let tags = {
+                    let mut tags = Vec::new();
+                    for tag in bookmark.tags {
+                        tags.push(database::tags::Mutation::create_tag(txn, tag).await?)
+                    }
+                    tags
+                };
+
+                database::bookmarks_tags::Mutation::delete_all_links(txn, bookmark_id).await?;
+
+                for tag in tags {
+                    database::bookmarks_tags::Mutation::create_link(txn, bookmark_id, tag.id)
+                        .await?;
+                }
+
+                database::tags::Mutation::delete_orphans(txn).await?;
+
+                database::bookmarks::Mutation::update_bookmark(
+                    txn,
+                    bookmark_id,
+                    bookmark.url,
+                    bookmark.title,
+                    bookmark.description,
+                )
+                .await?;
+
+                Ok(())
+            })
+        })
+        .await
+        .map_err(|_| UpdateBookmarkResult::ServerError)?;
+
+    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
+        .await
+        .map_err(|_| UpdateBookmarkResult::ServerError)?
+        .map(|m| into_response(m.0, m.1, Some(user_info).as_ref()))
+        .ok_or(UpdateBookmarkResult::NotFound(
+            bookmark_id,
+            format!("Bookmark '{}' not found", bookmark_id),
+        ))?;
 
     Ok(UpdateBookmarkResult::Success(bookmark))
 }
@@ -232,18 +252,25 @@ pub async fn delete_bookmark(
             bookmark_id,
             format!("Bookmark '{}' not found", bookmark_id),
         ))?
+        .0
         .user_id
         != user_info.id
     {
         return Err(DeleteBookmarkResult::Forbidden);
     };
 
-    database::bookmarks::Mutation::delete_bookmark(&state.database, bookmark_id)
+    state
+        .database
+        .transaction::<_, (), DbErr>(|txn| {
+            Box::pin(async move {
+                database::bookmarks_tags::Mutation::delete_all_links(txn, bookmark_id).await?;
+                database::tags::Mutation::delete_orphans(txn).await?;
+                database::bookmarks::Mutation::delete_bookmark(txn, bookmark_id).await?;
+                Ok(())
+            })
+        })
         .await
-        .map_err(|_| DeleteBookmarkResult::ServerError)?
-        .map(|_| DeleteBookmarkResult::Success)
-        .ok_or(DeleteBookmarkResult::NotFound(
-            bookmark_id,
-            format!("Bookmark '{}' not found", bookmark_id),
-        ))
+        .map_err(|_| DeleteBookmarkResult::ServerError)?;
+
+    Ok(DeleteBookmarkResult::Success)
 }

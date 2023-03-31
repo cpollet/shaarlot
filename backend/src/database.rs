@@ -1,6 +1,8 @@
 pub mod accounts;
 pub mod bookmarks;
+pub mod bookmarks_tags;
 pub mod password_recoveries;
+pub mod tags;
 
 use sea_orm::{ConnectOptions, Database, DatabaseConnection, DbErr};
 

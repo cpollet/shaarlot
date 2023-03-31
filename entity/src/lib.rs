@@ -4,4 +4,6 @@ pub mod prelude;
 
 pub mod account;
 pub mod bookmark;
+pub mod bookmark_tag;
 pub mod password_recovery;
+pub mod tag;

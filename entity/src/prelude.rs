@@ -2,4 +2,6 @@
 
 pub use super::account::Entity as Account;
 pub use super::bookmark::Entity as Bookmark;
+pub use super::bookmark_tag::Entity as BookmarkTag;
 pub use super::password_recovery::Entity as PasswordRecovery;
+pub use super::tag::Entity as Tag;

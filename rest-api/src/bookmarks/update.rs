@@ -1,6 +1,5 @@
-use crate::bookmarks::Access;
+use crate::bookmarks::get_one::GetBookmarkResponse;
 use crate::error_response::ErrorResponse;
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "frontend")]
 use std::str::FromStr;
@@ -10,20 +9,10 @@ pub struct UpdateBookmarkRequest {
     pub url: String,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub tags: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct UpdateBookmarkResponse {
-    pub id: i32,
-    pub url: String,
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub tags: Vec<String>,
-    pub creation_date: DateTime<Utc>,
-    pub update_date: Option<DateTime<Utc>>,
-    pub user_id: i32,
-    pub access: Access,
-}
+pub type UpdateBookmarkResponse = GetBookmarkResponse;
 
 pub enum UpdateBookmarkResult {
     Success(UpdateBookmarkResponse),

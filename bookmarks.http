@@ -17,7 +17,10 @@ content-type: application/json
 {
   "url": "https://docs.rs",
   "title": "Docs.rs",
-  "description": "Rust docs"
+  "description": "Rust docs",
+  "tags": [
+    "rust", "doc"
+  ]
 }
 
 ### Create bookmark minimal
@@ -35,11 +38,15 @@ content-type: application/json
 {
   "url": "https://gogole.com",
   "title": "Google",
-  "description": "Google search engine"
+  "description": "Google search engine",
+  "tags": ["search_engine"]
 }
 
 ### Delete bookmark
-DELETE http://localhost:3000/api/bookmarks/1
+DELETE http://localhost:3000/api/bookmarks/8
+
+### Get available tags
+GET http://localhost:3000/api/tags
 
 ### Get URL info
 GET http://localhost:3000/api/urls/http%3A%2F%2Fdocs.rs

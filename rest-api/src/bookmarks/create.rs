@@ -1,5 +1,4 @@
-use crate::bookmarks::Access;
-use chrono::{DateTime, Utc};
+use crate::bookmarks::get_one::GetBookmarkResponse;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -7,20 +6,10 @@ pub struct CreateBookmarkRequest {
     pub url: String,
     pub title: Option<String>,
     pub description: Option<String>,
+    pub tags: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct CreateBookmarkResponse {
-    pub id: i32,
-    pub url: String,
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub tags: Vec<String>,
-    pub creation_date: DateTime<Utc>,
-    pub update_date: Option<DateTime<Utc>>,
-    pub user_id: i32,
-    pub access: Access,
-}
+pub type CreateBookmarkResponse = GetBookmarkResponse;
 
 pub enum CreateBookmarkResult {
     Success(CreateBookmarkResponse),
