@@ -1,10 +1,13 @@
 use entity::tag::{ActiveModel, Column, Entity, Model};
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend,  DbErr, EntityTrait, QueryFilter, QueryOrder, QuerySelect, RelationTrait, Statement, TryIntoModel};
-use migration::JoinType;
-use sea_orm::FromQueryResult;
-use sea_orm::sea_query::SimpleExpr;
 use entity::{bookmark, bookmark_tag};
+use migration::JoinType;
+use sea_orm::sea_query::SimpleExpr;
+use sea_orm::ActiveValue::Set;
+use sea_orm::FromQueryResult;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend, DbErr, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, RelationTrait, Statement, TryIntoModel,
+};
 
 pub struct Query;
 
@@ -23,15 +26,23 @@ impl Query {
         Entity::find().filter(Column::Name.eq(name)).one(db).await
     }
 
-    pub async fn find_by_user_id<C>(db:&C, user_id:Option<i32>)->Result<Vec<TagsAndCount>, DbErr> where C: ConnectionTrait
+    pub async fn find_by_user_id<C>(
+        db: &C,
+        user_id: Option<i32>,
+    ) -> Result<Vec<TagsAndCount>, DbErr>
+    where
+        C: ConnectionTrait,
     {
         Entity::find()
             .column_as(Column::Id.count(), "count")
             .join_rev(JoinType::Join, bookmark_tag::Relation::Tag.def())
-            .join_rev(JoinType::Join, bookmark::Entity::belongs_to(bookmark_tag::Entity)
-                .from(bookmark::Column::Id)
-                .to(bookmark_tag::Column::BookmarkId)
-                .into())
+            .join_rev(
+                JoinType::Join,
+                bookmark::Entity::belongs_to(bookmark_tag::Entity)
+                    .from(bookmark::Column::Id)
+                    .to(bookmark_tag::Column::BookmarkId)
+                    .into(),
+            )
             .filter(bookmark::Column::UserId.eq(user_id.unwrap_or(-1)))
             .group_by(Column::Id)
             .group_by(Column::Name)

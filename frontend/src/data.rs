@@ -11,6 +11,7 @@ pub struct Bookmark {
     pub url: AttrValue,
     pub title: Option<AttrValue>,
     pub description: Option<AttrValue>,
+    pub tags: Vec<AttrValue>,
     pub creation_date: DateTime<Local>,
     pub update_date: Option<DateTime<Local>>,
     pub access: Access,
@@ -23,6 +24,7 @@ impl Default for Bookmark {
             url: AttrValue::from(""),
             title: None,
             description: None,
+            tags: Vec::default(),
             creation_date: DateTime::default(),
             update_date: None,
             access: Access::Read,
@@ -37,6 +39,11 @@ impl From<GetBookmarkResponse> for Bookmark {
             url: AttrValue::from(value.url),
             title: value.title.map(AttrValue::from),
             description: value.description.map(AttrValue::from),
+            tags: value
+                .tags
+                .into_iter()
+                .map(AttrValue::from)
+                .collect::<Vec<AttrValue>>(),
             creation_date: DateTime::from(value.creation_date),
             update_date: value.update_date.map(DateTime::from),
             access: value.access,
@@ -50,7 +57,11 @@ impl From<&Bookmark> for UpdateBookmarkRequest {
             url: bookmark.url.to_string(),
             title: bookmark.title.as_ref().map(|v| v.to_string()),
             description: bookmark.description.as_ref().map(|v| v.to_string()),
-            tags: vec![], // todo
+            tags: bookmark
+                .tags
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>(),
         }
     }
 }
@@ -61,7 +72,28 @@ impl From<&Bookmark> for CreateBookmarkRequest {
             url: bookmark.url.to_string(),
             title: bookmark.title.as_ref().map(|v| v.to_string()),
             description: bookmark.description.as_ref().map(|v| v.to_string()),
-            tags: vec![], // todo
+            tags: bookmark
+                .tags
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>(),
         }
     }
 }
+
+#[derive(Clone, PartialEq)]
+pub struct Tag {
+    pub name: AttrValue,
+    pub count: i32,
+}
+
+impl From<rest_api::tags::Tag> for Tag {
+    fn from(value: rest_api::tags::Tag) -> Self {
+        Self {
+            name: AttrValue::from(value.name),
+            count: value.count,
+        }
+    }
+}
+
+pub type Tags = Vec<Tag>;

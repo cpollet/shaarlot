@@ -5,7 +5,7 @@ use yew::prelude::*;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub tags: Vec<AttrValue>,
-    pub available_tags: Option<Vec<AttrValue>>,
+    pub available_tags: Option<Rc<Vec<AttrValue>>>,
     pub onupdate: Callback<Vec<AttrValue>>,
 }
 
@@ -32,7 +32,10 @@ struct State {
 pub fn tag_input(props: &Props) -> Html {
     let state = use_state(|| State {
         tags: props.tags.clone(),
-        available_tags: Rc::new(props.available_tags.clone().unwrap_or_default()),
+        available_tags: match &props.available_tags {
+            None => Rc::new(vec![]),
+            Some(tags) => tags.clone(),
+        },
         matches: Vec::default(),
         selected_match: Option::default(),
         selected_tag: Option::default(),
@@ -46,7 +49,14 @@ pub fn tag_input(props: &Props) -> Html {
         let state = state.clone();
         let props = props.clone();
         Callback::from(move |e: KeyboardEvent| {
-            if e.key() == "Enter" || e.key() == " " || e.key() == "Spacebar" {
+            if (e.key() == "Enter"
+                && !e
+                    .target_unchecked_into::<HtmlInputElement>()
+                    .value()
+                    .is_empty())
+                || e.key() == " "
+                || e.key() == "Spacebar"
+            {
                 e.prevent_default();
                 let value: String = e.target_unchecked_into::<HtmlInputElement>().value();
                 let mut new_state = (*state).clone();
@@ -208,23 +218,28 @@ pub fn tag_input(props: &Props) -> Html {
             let mut new_state = (*state).clone();
             new_state.tags.retain(|e| e != &tag);
 
-            new_state.selected_match= None;
-            new_state.matches= compute_matches(&state.available_tags, &new_state.tags, state.string.as_str(), state.selected_match).1;
+            new_state.selected_match = None;
+            new_state.matches = compute_matches(
+                &state.available_tags,
+                &new_state.tags,
+                state.string.as_str(),
+                state.selected_match,
+            )
+            .1;
 
             let _ = input_ref.cast::<HtmlInputElement>().unwrap().focus();
             props.onupdate.emit(new_state.tags.clone());
             state.set(new_state);
-
         })
     };
 
-    let click={
+    let click = {
         let state = state.clone();
         let input_ref = input_ref.clone();
         Callback::from(move |tag_index: usize| {
             let mut new_state = (*state).clone();
 
-            new_state.selected_tag= Some(tag_index);
+            new_state.selected_tag = Some(tag_index);
 
             let _ = input_ref.cast::<HtmlInputElement>().unwrap().focus();
             state.set(new_state);

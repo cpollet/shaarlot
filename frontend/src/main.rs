@@ -12,13 +12,15 @@ mod recover_password;
 mod recover_password_form;
 mod signup;
 mod signup_success;
+mod tag_input;
+mod tags_provider;
 mod validate_email;
 
 use crate::bookmark_provider::BookmarkProvider;
 use crate::bookmarks::bookmark::BookmarkHOC;
 use crate::bookmarks::bookmarks_provider::BookmarksProvider;
 use crate::bookmarks::BookmarksHOC;
-use crate::create_bookmark::CreateBookmark;
+use crate::create_bookmark::CreateBookmarkHOC;
 use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
@@ -27,6 +29,7 @@ use crate::recover_password::RecoverPassword;
 use crate::recover_password_form::RecoverPasswordFormHOC;
 use crate::signup::Signup;
 use crate::signup_success::SignupSuccess;
+use crate::tags_provider::TagsProvider;
 use crate::validate_email::ValidateEmail;
 use gloo_net::http::Request;
 use login::Login;
@@ -174,7 +177,9 @@ fn app() -> Html {
                             Route::AddBookmark => {
                                 // todo prevent display when not logged
                                 html! {
-                                    <CreateBookmark />
+                                    <TagsProvider>
+                                        <CreateBookmarkHOC />
+                                    </TagsProvider>
                                 }
                             }
                             Route::ViewBookmark { id } => {
@@ -196,7 +201,9 @@ fn app() -> Html {
                                 // todo prevent display when not logged
                                 html! {
                                     <BookmarkProvider {id}>
-                                        <EditBookmarkHOC />
+                                        <TagsProvider>
+                                            <EditBookmarkHOC />
+                                        </TagsProvider>
                                     </BookmarkProvider>
                                 }
                             }

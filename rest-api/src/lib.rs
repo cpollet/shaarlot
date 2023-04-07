@@ -6,10 +6,10 @@ pub mod bookmarks;
 pub mod error_response;
 pub mod password_recoveries;
 pub mod sessions;
+pub mod tags;
 pub mod urls;
 pub mod users;
 pub mod validate_email;
-pub mod tags;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct RestPassword(pub String);

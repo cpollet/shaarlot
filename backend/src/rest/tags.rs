@@ -1,25 +1,24 @@
-use axum::Extension;
-use axum::extract::State;
-use rest_api::tags::{GetTagsResult, Tag};
-use crate::AppState;
 use crate::database::tags::Query;
 use crate::sessions::session::UserInfo;
+use crate::AppState;
+use axum::extract::State;
+use axum::Extension;
+use rest_api::tags::{GetTagsResult, Tag};
 
 pub async fn get_tags(
     Extension(user_info): Extension<Option<UserInfo>>,
     State(state): State<AppState>,
-) -> Result<GetTagsResult, GetTagsResult>{
-    let tags = Query::find_by_user_id(&state.database, user_info.map(|u|u.id)).await
+) -> Result<GetTagsResult, GetTagsResult> {
+    let tags = Query::find_by_user_id(&state.database, user_info.map(|u| u.id))
+        .await
         .map_err(|e| {
             tracing::error!("{}", e);
             GetTagsResult::ServerError
         })?
         .into_iter()
-        .map(|t| {
-            Tag{
-                name: t.name,
-                count: t.count as i32,
-            }
+        .map(|t| Tag {
+            name: t.name,
+            count: t.count as i32,
         })
         .collect::<Vec<Tag>>();
 

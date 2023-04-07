@@ -1,20 +1,33 @@
 use crate::create_bookmark::Error::Forbidden;
-use crate::data::Bookmark;
+use crate::data::{Bookmark, Tags};
+use crate::tag_input::TagInput;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
 use rest_api::bookmarks::URL_BOOKMARKS;
 use rest_api::urls::{GetUrlResult, URL_URLS};
+use std::rc::Rc;
 use urlencoding::encode;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
 
+#[derive(Properties, PartialEq, Clone)]
+pub struct Props {
+    tags: Rc<Tags>,
+}
+
 #[derive(Copy, Clone, PartialEq)]
 enum Step {
     Init,
     Details,
+}
+
+impl Default for Step {
+    fn default() -> Self {
+        Self::Init
+    }
 }
 
 #[derive(Clone, PartialEq)]
@@ -23,7 +36,7 @@ enum Error {
     Other,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 struct State {
     focused: bool,
     in_progress: bool,
@@ -32,20 +45,8 @@ struct State {
     error: Option<Error>,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self {
-            focused: false,
-            in_progress: false,
-            step: Step::Init,
-            bookmark: Bookmark::default(),
-            error: None,
-        }
-    }
-}
-
 #[function_component(CreateBookmark)]
-pub fn create_bookmark() -> Html {
+pub fn create_bookmark(props: &Props) -> Html {
     let state = use_state(State::default);
     let navigator = use_navigator().unwrap();
     let url_input_ref = use_node_ref();
@@ -184,6 +185,14 @@ pub fn create_bookmark() -> Html {
             state.set(new_state);
         })
     };
+    let onupdate_tags = {
+        let state = state.clone();
+        Callback::from(move |tags: Vec<AttrValue>| {
+            let mut new_state = (*state).clone();
+            new_state.bookmark.tags = tags;
+            state.set(new_state);
+        })
+    };
 
     html! {
         <div class="centered-box">
@@ -230,6 +239,18 @@ pub fn create_bookmark() -> Html {
                         oninput={oninput_description}
                     />
                 </p>
+                <p>
+                    <TagInput
+                        tags={vec![]}
+                        available_tags={Some(Rc::new(
+                            props.tags
+                                .iter()
+                                .map(|t| t.name.clone())
+                                .collect::<Vec<AttrValue>>()
+                        ))}
+                        onupdate={onupdate_tags}
+                    />
+                </p>
                 }
                 <p class="centered-box__buttons">
                     <button class={match state.in_progress {
@@ -241,5 +262,14 @@ pub fn create_bookmark() -> Html {
                 </p>
             </form>
         </div>
+    }
+}
+
+#[function_component(CreateBookmarkHOC)]
+pub fn create_bookmark_hoc() -> Html {
+    let tags = use_context::<Rc<Tags>>().expect("no ctx found");
+
+    html! {
+        <CreateBookmark {tags}/>
     }
 }

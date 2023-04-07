@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub const URL_TAGS: &str = "/api/tags";
 
@@ -45,9 +45,7 @@ impl axum::response::IntoResponse for GetTagsResult {
     fn into_response(self) -> axum::response::Response {
         match self {
             GetTagsResult::Success(payload) => axum::Json(payload).into_response(),
-            GetTagsResult::ServerError => {
-                http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
-            }
+            GetTagsResult::ServerError => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
             _ => panic!(),
         }
     }

@@ -1,4 +1,5 @@
-use crate::data::Bookmark;
+use crate::data::{Bookmark, Tags};
+use crate::tag_input::TagInput;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
@@ -12,6 +13,7 @@ use yew_router::prelude::*;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub bookmark: Rc<Bookmark>,
+    pub tags: Rc<Tags>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -132,6 +134,14 @@ pub fn edit_bookmark(props: &Props) -> Html {
             state.set(new_state);
         })
     };
+    let onupdate_tags = {
+        let state = state.clone();
+        Callback::from(move |tags: Vec<AttrValue>| {
+            let mut new_state = (*state).clone();
+            new_state.bookmark.tags = tags;
+            state.set(new_state);
+        })
+    };
 
     match state.bookmark.access {
         Access::Read => html! {
@@ -188,6 +198,20 @@ pub fn edit_bookmark(props: &Props) -> Html {
                             oninput={oninput_description}
                         />
                     </p>
+                    <p>
+                        <TagInput
+                            tags={
+                                state.bookmark.tags.clone()
+                            }
+                            available_tags={Some(Rc::new(
+                                props.tags
+                                    .iter()
+                                    .map(|t| t.name.clone())
+                                    .collect::<Vec<AttrValue>>()
+                            ))}
+                            onupdate={onupdate_tags}
+                        />
+                    </p>
                     <p class="centered-box__buttons">
                         <button type="button" onclick={onclick_cancel} class="button--safe">{"Cancel"}</button>
                         {" "}
@@ -202,7 +226,9 @@ pub fn edit_bookmark(props: &Props) -> Html {
 #[function_component(EditBookmarkHOC)]
 pub fn edit_bookmark_hoc() -> Html {
     let bookmark = use_context::<Rc<Bookmark>>().expect("no ctx found");
+    let tags = use_context::<Rc<Tags>>().expect("no ctx found");
+
     html! {
-        <EditBookmark bookmark={bookmark} />
+        <EditBookmark {bookmark} {tags} />
     }
 }

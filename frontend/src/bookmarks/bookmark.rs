@@ -60,9 +60,13 @@ pub fn bookmark(props: &Props) -> Html {
                 <div class="bookmark__description">{d.clone()}</div>
             })}
             <div class="bookmark__footer">
-                <div class="bookmark__tags-list">
-                {"todo\u{00a0}·\u{00a0}tags"}
-                </div>
+                <ul class="bookmark__tags-list">
+                {
+                    props.bookmark.tags.as_slice().iter().map(|t| html! {
+                        <li>{t}</li>
+                    }).collect::<Html>()
+                }
+                </ul>
                 <div class="bookmark__actions">
                     {display_date(&props.bookmark)}
                     {"\u{00a0}\u{ff5c}\u{00a0}"}
