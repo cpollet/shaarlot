@@ -226,6 +226,7 @@ pub fn tag_input(props: &Props) -> Html {
                 state.selected_match,
             )
             .1;
+            new_state.selected_tag = None;
 
             let _ = input_ref.cast::<HtmlInputElement>().unwrap().focus();
             props.onupdate.emit(new_state.tags.clone());
@@ -303,10 +304,6 @@ pub fn tag_input(props: &Props) -> Html {
                                 } else {
                                     "input-tag__tag"
                             } }
-                            onclick={
-                                let click=click.clone();
-                                move |_| click.emit(i)
-                            }
                         >
                            <span
                                 class="material-icons-outlined input-tag__delete"
@@ -316,7 +313,14 @@ pub fn tag_input(props: &Props) -> Html {
                                     move |_| delete.emit(tag.clone())
                                 }
                             >{"clear"}</span>
-                            {"\u{00a0}"}{tag}
+                            {"\u{00a0}"}
+                            <span
+                                onclick={
+                                    let click = click.clone();
+                                    move |_| click.emit(i)
+                                }>
+                                {tag}
+                            </span>
                         </span>
                     }).collect::<Html>()
                 }
