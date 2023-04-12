@@ -27,7 +27,7 @@ sea-orm-migration = "0.11.1"
 secrecy = "0.8.0"
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.94"
-tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread", "signal"] }
 tower = "0.4.13"
 tower-http = { version = "0.4.0", features = ["trace", "fs", "compression-full" ] }
 tracing = "0.1.37"
