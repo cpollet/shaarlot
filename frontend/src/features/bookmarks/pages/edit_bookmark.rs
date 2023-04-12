@@ -1,5 +1,5 @@
-use crate::data::{Bookmark, Tags};
-use crate::tag_input::TagInput;
+use super::super::data::{Bookmark, Tags};
+use crate::components::tag_input::TagInput;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};

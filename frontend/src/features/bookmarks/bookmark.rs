@@ -1,5 +1,5 @@
-use crate::bookmarks::qr_code::QrCode;
-use crate::data::Bookmark as BookmarkData;
+use super::data::Bookmark as BookmarkData;
+use super::qr_code::QrCode;
 use crate::Route;
 use chrono::{DateTime, Local};
 use rest_api::bookmarks::Access;
@@ -129,29 +129,5 @@ fn display_date(bookmark: &BookmarkData) -> Html {
                 </span>
             }
         }
-    }
-}
-
-#[function_component(BookmarkHOC)]
-pub fn bookmark_hoc() -> Html {
-    let bookmark = use_context::<Rc<BookmarkData>>().expect("no ctx found");
-    let navigator = use_navigator().unwrap();
-
-    let onclick = Callback::from(move |e: MouseEvent| {
-        e.prevent_default();
-        navigator.push(&Route::Bookmarks);
-    });
-
-    html! {
-        <div>
-            <div class="bookmarks-header">
-                <a {onclick} class="material-icons-outlined md-18" href={Route::Bookmarks.to_path()} >{"home"}</a>
-            </div>
-            <ul class="bookmarks">
-                <li>
-                    <Bookmark bookmark={bookmark.clone()} />
-                </li>
-            </ul>
-        </div>
     }
 }

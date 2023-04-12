@@ -29,8 +29,8 @@ struct State {
     error: Option<Error>,
 }
 
-#[function_component(Signup)]
-pub fn signup() -> Html {
+#[function_component(SignupForm)]
+pub fn signup_form() -> Html {
     let navigator = use_navigator().unwrap();
     let state = use_state(State::default);
     let email_input_ref = use_node_ref();

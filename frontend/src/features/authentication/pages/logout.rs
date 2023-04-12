@@ -36,7 +36,7 @@ pub fn logout(props: &Props) -> Html {
 
     html! {
         <div class="centered-box">
-            <h1 class="centered-box__title">{"Logout...n"}</h1>
+            <h1 class="centered-box__title">{"Logout..."}</h1>
         </div>
     }
 }

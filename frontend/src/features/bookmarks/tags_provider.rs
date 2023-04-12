@@ -1,4 +1,4 @@
-use crate::data::{Tag, Tags};
+use super::data::{Tag, Tags};
 use gloo_net::http::Request;
 use rest_api::tags::{GetTagsResult, URL_TAGS};
 use std::rc::Rc;

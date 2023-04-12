@@ -1,41 +1,26 @@
-mod bookmark_provider;
-mod bookmarks;
-mod create_bookmark;
-mod data;
-mod delete_bookmark;
-mod edit_bookmark;
-mod login;
-mod logout;
+mod components;
+mod features;
 mod menu;
-mod profile;
-mod protected;
-mod recover_password;
-mod recover_password_form;
-mod signup;
-mod signup_success;
-mod tag_input;
-mod tags_provider;
-mod validate_email;
 
-use crate::bookmark_provider::BookmarkProvider;
-use crate::bookmarks::bookmark::BookmarkHOC;
-use crate::bookmarks::bookmarks_provider::BookmarksProvider;
-use crate::bookmarks::BookmarksHOC;
-use crate::create_bookmark::CreateBookmarkHOC;
-use crate::delete_bookmark::DeleteBookmarkHOC;
-use crate::edit_bookmark::EditBookmarkHOC;
+use crate::components::protected::Protected;
+use crate::features::authentication::pages::login::Login;
+use crate::features::authentication::pages::logout::Logout;
+use crate::features::authentication::pages::recover_password_form::RecoverPasswordFormHOC;
+use crate::features::authentication::pages::recover_password_start::RecoverPasswordStart;
+use crate::features::bookmarks::bookmark_provider::BookmarkProvider;
+use crate::features::bookmarks::bookmarks_provider::BookmarksProvider;
+use crate::features::bookmarks::pages::bookmarks::BookmarksHOC;
+use crate::features::bookmarks::pages::create_bookmark::CreateBookmarkHOC;
+use crate::features::bookmarks::pages::delete_bookmark::DeleteBookmarkHOC;
+use crate::features::bookmarks::pages::edit_bookmark::EditBookmarkHOC;
+use crate::features::bookmarks::pages::view_bookmark::ViewBookmarkHOC;
+use crate::features::bookmarks::tags_provider::TagsProvider;
+use crate::features::profile::pages::profile::Profile;
+use crate::features::profile::pages::validate_email::ValidateEmail;
+use crate::features::signup::pages::signup_form::SignupForm;
+use crate::features::signup::pages::signup_success::SignupSuccess;
 use crate::menu::Menu;
-use crate::profile::Profile;
-use crate::protected::Protected;
-use crate::recover_password::RecoverPassword;
-use crate::recover_password_form::RecoverPasswordFormHOC;
-use crate::signup::Signup;
-use crate::signup_success::SignupSuccess;
-use crate::tags_provider::TagsProvider;
-use crate::validate_email::ValidateEmail;
 use gloo_net::http::Request;
-use login::Login;
-use logout::Logout;
 use rest_api::application::{GetApplicationResult, URL_APPLICATION};
 use rest_api::sessions::{CreateSessionResult, URL_SESSIONS_CURRENT};
 use yew::platform::spawn_local;
@@ -74,7 +59,7 @@ pub enum Route {
     Tools,
 
     #[at("/signup")]
-    Signup,
+    SignupForm,
 
     #[at("/signup/success")]
     SignupSuccess,
@@ -83,7 +68,7 @@ pub enum Route {
     Login,
 
     #[at("/recover-password")]
-    RecoverPassword,
+    RecoverPasswordStart,
 
     #[at("/recover-password/:id")]
     RecoverPasswordForm { id: String },
@@ -188,7 +173,7 @@ fn app() -> Html {
                             Route::ViewBookmark { id } => {
                                 html! {
                                     <BookmarkProvider {id}>
-                                        <BookmarkHOC />
+                                        <ViewBookmarkHOC />
                                     </BookmarkProvider>
                                 }
                             }
@@ -224,9 +209,9 @@ fn app() -> Html {
                                     </Protected>
                                 }
                             }
-                            Route::Signup => {
+                            Route::SignupForm => {
                                 html! {
-                                    <Signup />
+                                    <SignupForm />
                                 }
                             }
                             Route::SignupSuccess => {
@@ -239,9 +224,9 @@ fn app() -> Html {
                                     <Login {logged_in} onlogin={onlogin.clone()} />
                                 }
                             }
-                            Route::RecoverPassword => {
+                            Route::RecoverPasswordStart => {
                                 html! {
-                                    <RecoverPassword />
+                                    <RecoverPasswordStart />
                                 }
                             }
                             Route::RecoverPasswordForm { id } => {

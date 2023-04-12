@@ -1,5 +1,5 @@
-use crate::bookmarks::Props as BookmarksContext;
-use crate::data::Bookmark;
+use super::data::Bookmark;
+use super::pages::bookmarks::Props as BookmarksContext;
 use gloo_net::http::Request;
 use rest_api::bookmarks::get_many::GetBookmarksResult;
 use rest_api::bookmarks::URL_BOOKMARKS;

@@ -1,13 +1,8 @@
-use crate::bookmarks::bookmark::Bookmark;
-use crate::bookmarks::bookmarks_provider::Order;
-use crate::data::Bookmark as BookmarkData;
+use super::super::bookmark::Bookmark;
+use super::super::data::Bookmark as BookmarkData;
+use crate::features::bookmarks::bookmarks_provider::Order;
 use std::rc::Rc;
 use yew::prelude::*;
-
-pub mod bookmark;
-pub mod bookmarks_provider;
-mod qr_code;
-mod qr_code_overlay;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {

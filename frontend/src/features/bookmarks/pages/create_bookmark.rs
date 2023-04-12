@@ -1,6 +1,5 @@
-use crate::create_bookmark::Error::Forbidden;
-use crate::data::{Bookmark, Tags};
-use crate::tag_input::TagInput;
+use super::super::data::{Bookmark, Tags};
+use crate::components::tag_input::TagInput;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
@@ -133,7 +132,7 @@ pub fn create_bookmark(props: &Props) -> Html {
                             }
                             Some(CreateBookmarkResult::Forbidden) => {
                                 let mut new_state = (*state).clone();
-                                new_state.error = Some(Forbidden);
+                                new_state.error = Some(Error::Forbidden);
                                 state.set(new_state);
                             }
                             _ => {
@@ -198,7 +197,7 @@ pub fn create_bookmark(props: &Props) -> Html {
         <div class="centered-box">
             <h1 class="centered-box__title">{"Create bookmark"}</h1>
             { match state.error {
-                Some(Forbidden) => html! {
+                Some(Error::Forbidden) => html! {
                     <div class="centered-box__error">
                         {"You don't have the right to create bookmarks"}
                     </div>

@@ -28,8 +28,8 @@ impl Default for Status {
     }
 }
 
-#[function_component(RecoverPassword)]
-pub fn recover_password() -> Html {
+#[function_component(RecoverPasswordStart)]
+pub fn recover_password_start() -> Html {
     let state = use_state(State::default);
     let username_input_ref = use_node_ref();
 
