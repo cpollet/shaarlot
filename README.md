@@ -58,7 +58,7 @@ The URL to use is http://localhost:8001.
   * [ ] Implement login throttling
   * [ ] Implement MFA
 * [x] Link bookmarks to users
-* [ ] Tags on bookmarks
+* [x] Tags on bookmarks
 * [ ] Private bookmarks
 * [ ] Pagination
 * [ ] Search & filtering
