@@ -2627,9 +2627,9 @@ dependencies = [
 
 [[package]]
 name = "qrcode-generator"
-version = "4.1.7"
+version = "4.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b934d178dc39cff2837fbcb9c1e7901367cb1ce02dc4488cdc877460a51c59"
+checksum = "fc713c23eb7e1a5f18b84e72be88b82a617ee25783a524a38f0caa4c986b2d76"
 dependencies = [
  "html-escape",
  "image",
