@@ -50,31 +50,39 @@ pub fn menu(props: &Props) -> Html {
                         }
                     }} class="menu__item" href={Route::TagCloud.to_path()}>{"Tag cloud"}</a>
                 </li>
-                <li>
-                    <a onclick={{
-                        let navigator = navigator.clone();
-                        let menu_expanded = menu_expanded.clone();
-                        move |e:MouseEvent| {
-                            e.prevent_default();
-                            menu_expanded.set(false);
-                            navigator.push(&Route::AddBookmark);
-                        }
-                    }} class="menu__item" href={Route::AddBookmark.to_path()}>{"Add"}</a>
-                </li>
-                <li>
-                    <a onclick={{
-                        let navigator = navigator.clone();
-                        let menu_expanded = menu_expanded.clone();
-                        move |e:MouseEvent| {
-                            e.prevent_default();
-                            menu_expanded.set(false);
-                            navigator.push(&Route::Tools);
-                        }
-                    }} class="menu__item" href={Route::Tools.to_path()}>{"Tools"}</a>
-                </li>
+                { if props.username.is_some() {
+                    html! {
+                        <>
+                            <li>
+                                <a onclick={{
+                                    let navigator = navigator.clone();
+                                    let menu_expanded = menu_expanded.clone();
+                                    move |e:MouseEvent| {
+                                        e.prevent_default();
+                                        menu_expanded.set(false);
+                                        navigator.push(&Route::AddBookmark);
+                                    }
+                                }} class="menu__item" href={Route::AddBookmark.to_path()}>{"Add"}</a>
+                            </li>
+                            <li>
+                                <a onclick={{
+                                    let navigator = navigator.clone();
+                                    let menu_expanded = menu_expanded.clone();
+                                    move |e:MouseEvent| {
+                                        e.prevent_default();
+                                        menu_expanded.set(false);
+                                        navigator.push(&Route::Tools);
+                                    }
+                                }} class="menu__item" href={Route::Tools.to_path()}>{"Tools"}</a>
+                            </li>
+                        </>
+                    }
+                } else {
+                    html! { <></> }
+                } }
             </ul>
             <div class="menu__right-submenu">
-                {if let Some(_username) = &props.username {
+                { if props.username.is_some() {
                     html!{
                         <>
                             <a onclick={{let navigator = navigator.clone(); move |e:MouseEvent| {

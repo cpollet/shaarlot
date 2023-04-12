@@ -8,6 +8,7 @@ mod login;
 mod logout;
 mod menu;
 mod profile;
+mod protected;
 mod recover_password;
 mod recover_password_form;
 mod signup;
@@ -25,6 +26,7 @@ use crate::delete_bookmark::DeleteBookmarkHOC;
 use crate::edit_bookmark::EditBookmarkHOC;
 use crate::menu::Menu;
 use crate::profile::Profile;
+use crate::protected::Protected;
 use crate::recover_password::RecoverPassword;
 use crate::recover_password_form::RecoverPasswordFormHOC;
 use crate::signup::Signup;
@@ -175,11 +177,12 @@ fn app() -> Html {
                                 }
                             }
                             Route::AddBookmark => {
-                                // todo prevent display when not logged
                                 html! {
-                                    <TagsProvider>
-                                        <CreateBookmarkHOC />
-                                    </TagsProvider>
+                                    <Protected {logged_in}>
+                                        <TagsProvider>
+                                            <CreateBookmarkHOC />
+                                        </TagsProvider>
+                                    </Protected>
                                 }
                             }
                             Route::ViewBookmark { id } => {
@@ -190,21 +193,23 @@ fn app() -> Html {
                                 }
                             }
                             Route::DeleteBookmark { id } => {
-                                // todo prevent display when not logged
                                 html! {
-                                    <BookmarkProvider {id}>
-                                        <DeleteBookmarkHOC />
-                                    </BookmarkProvider>
+                                    <Protected {logged_in}>
+                                        <BookmarkProvider {id}>
+                                            <DeleteBookmarkHOC />
+                                        </BookmarkProvider>
+                                    </Protected>
                                 }
                             }
                             Route::EditBookmark { id } => {
-                                // todo prevent display when not logged
                                 html! {
-                                    <BookmarkProvider {id}>
-                                        <TagsProvider>
-                                            <EditBookmarkHOC />
-                                        </TagsProvider>
-                                    </BookmarkProvider>
+                                    <Protected {logged_in}>
+                                        <BookmarkProvider {id}>
+                                            <TagsProvider>
+                                                <EditBookmarkHOC />
+                                            </TagsProvider>
+                                        </BookmarkProvider>
+                                    </Protected>
                                 }
                             }
                             Route::TagCloud => {
@@ -213,9 +218,10 @@ fn app() -> Html {
                                 }
                             }
                             Route::Tools => {
-                                // todo prevent display when not logged
                                 html! {
-                                    {"todo: tools"}
+                                    <Protected {logged_in}>
+                                        {"todo: tools"}
+                                    </Protected>
                                 }
                             }
                             Route::Signup => {
@@ -250,9 +256,11 @@ fn app() -> Html {
                             }
                             Route::Profile => {
                                 html! {
-                                    <Profile />
-                                    }
+                                    <Protected {logged_in}>
+                                        <Profile />
+                                    </Protected>
                                 }
+                            }
                             Route::Logout => {
                                 html! {
                                     <Logout onlogout={onlogout.clone()} />
