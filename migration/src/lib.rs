@@ -11,6 +11,7 @@ mod m20230312_124742_create_table_password_recovery;
 mod m20230314_214602_rename_user_to_account;
 mod m20230314_225232_add_user_id_to_bookmark;
 mod m20230331_194725_create_tags_tables;
+mod m20230414_180807_add_private_to_bookmark;
 
 pub struct Migrator;
 
@@ -29,6 +30,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230314_214602_rename_user_to_account::Migration),
             Box::new(m20230314_225232_add_user_id_to_bookmark::Migration),
             Box::new(m20230331_194725_create_tags_tables::Migration),
+            Box::new(m20230414_180807_add_private_to_bookmark::Migration),
         ]
     }
 }

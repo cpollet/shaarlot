@@ -59,7 +59,7 @@ The URL to use is http://localhost:8001.
   * [ ] Implement MFA
 * [x] Link bookmarks to users
 * [x] Tags on bookmarks
-* [ ] Private bookmarks
+* [x] Private bookmarks
 * [ ] Pagination
 * [ ] Search & filtering
 * [ ] Tag cloud

@@ -142,6 +142,14 @@ pub fn edit_bookmark(props: &Props) -> Html {
             state.set(new_state);
         })
     };
+    let onclick_private = {
+        let state = state.clone();
+        Callback::from(move |_| {
+            let mut new_state = (*state).clone();
+            new_state.bookmark.private = !new_state.bookmark.private;
+            state.set(new_state);
+        })
+    };
 
     match state.bookmark.access {
         Access::Read => html! {
@@ -211,6 +219,15 @@ pub fn edit_bookmark(props: &Props) -> Html {
                             ))}
                             onupdate={onupdate_tags}
                         />
+                    </p>
+                    <p>
+                        <input
+                            type="checkbox"
+                            id="private"
+                            checked={state.bookmark.private}
+                            onclick={onclick_private}
+                        />
+                        <label for="private">{"Private"}</label>
                     </p>
                     <p class="centered-box__buttons">
                         <button type="button" onclick={onclick_cancel} class="button--safe">{"Cancel"}</button>

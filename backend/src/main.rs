@@ -38,6 +38,7 @@ static STATIC_DIR: include_dir::Dir<'_> =
 async fn main() {
     let filter = filter::Targets::new()
         .with_target("sqlx::postgres::notice", Level::WARN)
+        // .with_target("sqlx::query", Level::DEBUG)
         .with_target("tower_http::trace::on_response", Level::DEBUG)
         .with_target("tower_http::trace::on_request", Level::INFO)
         .with_target("tower_http::trace::make_span", Level::TRACE)

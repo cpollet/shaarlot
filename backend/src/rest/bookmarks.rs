@@ -45,6 +45,7 @@ fn into_response(
         } else {
             Access::Read
         },
+        private: bookmark.private,
     }
 }
 
@@ -63,12 +64,16 @@ pub async fn get_bookmarks(
             )
         })?;
 
-    let bookmarks = database::bookmarks::Query::find_all_order_by(&state.database, order)
-        .await
-        .map_err(|_| GetBookmarksResult::ServerError)?
-        .into_iter()
-        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
-        .collect::<GetBookmarksResponse>();
+    let bookmarks = database::bookmarks::Query::find_all_visible_order_by(
+        &state.database,
+        user_info.as_ref().map(|u| u.id),
+        order,
+    )
+    .await
+    .map_err(|_| GetBookmarksResult::ServerError)?
+    .into_iter()
+    .map(|m| into_response(m.0, m.1, user_info.as_ref()))
+    .collect::<GetBookmarksResponse>();
 
     Ok(GetBookmarksResult::Success(bookmarks))
 }
@@ -78,20 +83,25 @@ pub async fn get_bookmark(
     Extension(user_info): Extension<Option<UserInfo>>,
     Path(bookmark_id): Path<i32>,
 ) -> Result<GetBookmarkResult, GetBookmarkResult> {
-    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|_| GetBookmarkResult::ServerError)?
-        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
-        .ok_or(GetBookmarkResult::NotFound(
-            bookmark_id,
-            format!("Bookmark '{}' not found", bookmark_id),
-        ))?;
+    let bookmark = database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        user_info.as_ref().map(|u| u.id),
+    )
+    .await
+    .map_err(|_| GetBookmarkResult::ServerError)?
+    .map(|m| into_response(m.0, m.1, user_info.as_ref()))
+    .ok_or(GetBookmarkResult::NotFound(
+        bookmark_id,
+        format!("Bookmark '{}' not found", bookmark_id),
+    ))?;
 
     Ok(GetBookmarkResult::Success(bookmark))
 }
 
 pub async fn get_bookmark_qrcode(
     State(state): State<AppState>,
+    Extension(user_info): Extension<Option<UserInfo>>,
     Path(bookmark_id): Path<i32>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<impl IntoResponse, StatusCode> {
@@ -103,14 +113,18 @@ pub async fn get_bookmark_qrcode(
             StatusCode::BAD_REQUEST
         })?;
 
-    let model = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|e| {
-            log::error!("{}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?
-        .ok_or(StatusCode::NOT_FOUND)?
-        .0;
+    let model = database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        user_info.as_ref().map(|u| u.id),
+    )
+    .await
+    .map_err(|e| {
+        log::error!("{}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?
+    .ok_or(StatusCode::NOT_FOUND)?
+    .0;
 
     let bytes =
         qrcode_generator::to_png_to_vec(model.url.as_bytes(), QrCodeEcc::Low, size as usize)
@@ -149,6 +163,7 @@ pub async fn create_bookmark(
                     bookmark.title,
                     bookmark.description,
                     user_info.id,
+                    bookmark.private,
                 )
                 .await?;
 
@@ -219,6 +234,7 @@ pub async fn update_bookmark(
                     bookmark.url,
                     bookmark.title,
                     bookmark.description,
+                    bookmark.private,
                 )
                 .await?;
 

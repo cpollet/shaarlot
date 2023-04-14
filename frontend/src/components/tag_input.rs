@@ -327,6 +327,7 @@ pub fn tag_input(props: &Props) -> Html {
             </div>
             <div class="input-tag__input">
                 <input
+                    type="text"
                     value={state.string.clone()}
                     ref={input_ref}
                     {onfocus} {onblur}

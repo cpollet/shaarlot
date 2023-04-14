@@ -15,7 +15,6 @@ body {
   background-color: #d0d0d0;
   padding: 0;
   margin: 0;
-  font-size: 1em;
 }
 
 a {
@@ -137,6 +136,12 @@ a.material-icons-outlined {
   padding-right: 0.5em;
 }
 
+.bookmark__title-private-icon {
+  color: sandybrown;
+  float: right;
+  cursor: default;
+}
+
 .bookmark__description {
   padding-bottom: 0.5em;
   padding-left: 1em;
@@ -231,7 +236,8 @@ a.material-icons-outlined {
   color: darkgreen;
 }
 
-input,
+input[type="text"],
+input[type="password"],
 textarea,
 .input-tag {
   border: solid 1px #d8d8d8;

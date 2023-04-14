@@ -15,6 +15,7 @@ pub struct Bookmark {
     pub creation_date: DateTime<Local>,
     pub update_date: Option<DateTime<Local>>,
     pub access: Access,
+    pub private: bool,
 }
 
 impl Default for Bookmark {
@@ -28,6 +29,7 @@ impl Default for Bookmark {
             creation_date: DateTime::default(),
             update_date: None,
             access: Access::Read,
+            private: true,
         }
     }
 }
@@ -47,6 +49,7 @@ impl From<GetBookmarkResponse> for Bookmark {
             creation_date: DateTime::from(value.creation_date),
             update_date: value.update_date.map(DateTime::from),
             access: value.access,
+            private: value.private,
         }
     }
 }
@@ -62,6 +65,7 @@ impl From<&Bookmark> for UpdateBookmarkRequest {
                 .iter()
                 .map(|v| v.to_string())
                 .collect::<Vec<String>>(),
+            private: bookmark.private,
         }
     }
 }
@@ -77,6 +81,7 @@ impl From<&Bookmark> for CreateBookmarkRequest {
                 .iter()
                 .map(|v| v.to_string())
                 .collect::<Vec<String>>(),
+            private: bookmark.private,
         }
     }
 }

@@ -16,6 +16,7 @@ pub struct GetBookmarkResponse {
     pub update_date: Option<DateTime<Utc>>,
     pub user_id: i32,
     pub access: Access,
+    pub private: bool,
 }
 
 pub enum GetBookmarkResult {

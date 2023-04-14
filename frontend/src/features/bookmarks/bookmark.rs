@@ -55,6 +55,11 @@ pub fn bookmark(props: &Props) -> Html {
                 <a href={props.bookmark.url.clone()}>
                     <span class="material-icons-outlined bookmark__title-icon">{"open_in_new"}</span> {props.bookmark.title.clone().unwrap_or_else(|| props.bookmark.url.clone())}
                 </a>
+                { if props.bookmark.private {
+                    html! { <span class="material-icons-outlined bookmark__title-private-icon" title="private">{"lock"}</span> }
+                } else {
+                    html! { <></> }
+                } }
             </div>
             { props.bookmark.description.as_ref().map(|d| html! {
                 <div class="bookmark__description">{d.clone()}</div>
