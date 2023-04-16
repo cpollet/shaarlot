@@ -1,11 +1,13 @@
+use crate::database;
 use chrono::Utc;
 use entity::bookmark::{ActiveModel, Entity};
 use entity::bookmark::{Column, Model};
+use migration::Expr;
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, Order,
-    QueryFilter, QueryOrder, Select, TryIntoModel,
+    QueryFilter, QueryOrder, QuerySelect, Select, TryIntoModel,
 };
 
 pub enum SortOrder {
@@ -14,7 +16,7 @@ pub enum SortOrder {
 }
 
 impl SortOrder {
-    fn add_clause(self, select: Select<Entity>) -> Select<Entity> {
+    fn add_clause(&self, select: Select<Entity>) -> Select<Entity> {
         match self {
             SortOrder::CreationDateDesc => select.order_by(Column::CreationDate, Order::Desc),
             SortOrder::CreationDateAsc => select.order_by(Column::CreationDate, Order::Asc),
@@ -44,19 +46,33 @@ impl Query {
         Entity::find().all(db).await
     }
 
-    pub async fn find_all_visible_order_by<C>(
+    pub async fn find_count_visible_on_page_order_by<C>(
         db: &C,
         user_id: Option<i32>,
+        count: u64,
+        page: u64,
         order: SortOrder,
     ) -> Result<Vec<(Model, Vec<entity::tag::Model>)>, DbErr>
     where
         C: ConnectionTrait,
     {
-        order
-            .add_clause(Entity::find().filter(Self::visible_condition(user_id)))
-            .find_with_related(entity::tag::Entity) // fixme improve?
-            .all(db)
-            .await
+        tracing::info!("count:{}", count);
+
+        let mut select = Entity::find()
+            .filter(Self::visible_condition(user_id))
+            .offset(page)
+            .limit(count);
+        select = order.add_clause(select);
+
+        let bookmarks = select.all(db).await?;
+
+        let mut tagged_bookmarks = Vec::with_capacity(bookmarks.len());
+        for bookmark in bookmarks {
+            let tags = database::tags::Query::find_by_bookmark_id(db, bookmark.id).await?;
+            tagged_bookmarks.push((bookmark, tags));
+        }
+
+        Ok(tagged_bookmarks)
     }
 
     fn visible_condition(user_id: Option<i32>) -> Condition {
@@ -68,6 +84,20 @@ impl Query {
             visible
         };
         visible
+    }
+
+    pub async fn count_visible<C>(db: &C, user_id: Option<i32>) -> Result<i64, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        let r: Option<i64> = Entity::find()
+            .select_only()
+            .column_as(Expr::col(Column::Id).count(), "count")
+            .filter(Self::visible_condition(user_id))
+            .into_tuple()
+            .one(db)
+            .await?;
+        Ok(r.unwrap_or_default())
     }
 
     pub async fn find_visible_by_id<C>(

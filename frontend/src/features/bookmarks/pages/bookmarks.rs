@@ -1,5 +1,7 @@
 use super::super::bookmark::Bookmark;
 use super::super::data::Bookmark as BookmarkData;
+use crate::components::nav::Nav;
+use crate::components::page_size::PageSize;
 use crate::features::bookmarks::bookmarks_provider::Order;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -8,7 +10,13 @@ use yew::prelude::*;
 pub struct Props {
     pub bookmarks: Rc<Vec<BookmarkData>>,
     pub order: Order,
+    pub page: u64,
+    pub page_count: u64,
+    pub page_size: u64,
     pub on_change_order: Callback<Order>,
+    pub on_previous: Callback<()>,
+    pub on_next: Callback<()>,
+    pub on_change_page_size: Callback<u64>,
 }
 
 struct State {
@@ -54,8 +62,24 @@ pub fn bookmarks(props: &Props) -> Html {
     html! {
         <div>
             <div class="bookmarks-header">
-                {"sort:"}
-                <a {onclick} class="material-icons-outlined md-18" href="#" >{state.order.icon()}</a>
+                <div class="bookmarks__filter">
+                </div>
+                <Nav
+                    page={props.page + 1}
+                    page_count={props.page_count}
+                    on_previous={props.on_previous.clone()}
+                    on_next={props.on_next.clone()}
+                />
+                <PageSize
+                    page_size={props.page_size}
+                    on_change_page_size={props.on_change_page_size.clone()}
+                />
+                <div class="bookmarks__sort">
+                    {"sort:"}
+                    <a {onclick} class="material-icons-outlined md-18" href="#">
+                        {state.order.icon()}
+                    </a>
+                </div>
             </div>
             <ul class="bookmarks">
             {
@@ -64,6 +88,22 @@ pub fn bookmarks(props: &Props) -> Html {
                 }).collect::<Html>()
             }
             </ul>
+            <div class="bookmarks-footer">
+                    <div class="bookmarks__filter">
+                    </div>
+                    <Nav
+                        page={props.page + 1}
+                        page_count={props.page_count}
+                        on_previous={props.on_previous.clone()}
+                        on_next={props.on_next.clone()}
+                    />
+                    <PageSize
+                        page_size={props.page_size}
+                        on_change_page_size={props.on_change_page_size.clone()}
+                    />
+                    <div class="bookmarks__sort">
+                    </div>
+                </div>
         </div>
     }
 }

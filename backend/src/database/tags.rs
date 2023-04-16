@@ -51,6 +51,17 @@ impl Query {
             .all(db)
             .await
     }
+
+    pub async fn find_by_bookmark_id<C>(db: &C, bookmark_id: i32) -> Result<Vec<Model>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Entity::find()
+            .join_rev(JoinType::Join, bookmark_tag::Relation::Tag.def())
+            .filter(bookmark_tag::Column::BookmarkId.eq(bookmark_id))
+            .all(db)
+            .await
+    }
 }
 
 pub struct Mutation;

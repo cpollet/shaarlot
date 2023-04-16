@@ -24,6 +24,8 @@ use std::str::FromStr;
 #[derive(Deserialize)]
 pub struct GetBookmarksQueryParams {
     order: Option<String>,
+    page: Option<u64>,
+    count: Option<u64>,
 }
 
 fn into_response(
@@ -64,18 +66,31 @@ pub async fn get_bookmarks(
             )
         })?;
 
-    let bookmarks = database::bookmarks::Query::find_all_visible_order_by(
+    let bookmarks = database::bookmarks::Query::find_count_visible_on_page_order_by(
         &state.database,
         user_info.as_ref().map(|u| u.id),
+        query.count.unwrap_or(20).min(100),
+        query.page.unwrap_or_default(),
         order,
     )
     .await
     .map_err(|_| GetBookmarksResult::ServerError)?
     .into_iter()
     .map(|m| into_response(m.0, m.1, user_info.as_ref()))
-    .collect::<GetBookmarksResponse>();
+    .collect::<Vec<GetBookmarkResponse>>();
 
-    Ok(GetBookmarksResult::Success(bookmarks))
+    let bookmarks_count = database::bookmarks::Query::count_visible(
+        &state.database,
+        user_info.as_ref().map(|u| u.id),
+    )
+    .await
+    .map_err(|_| GetBookmarksResult::ServerError)?;
+
+    Ok(GetBookmarksResult::Success(GetBookmarksResponse {
+        bookmarks,
+        pages_count: (bookmarks_count as f64 / query.count.unwrap_or(20).min(100) as f64).ceil()
+            as u64,
+    }))
 }
 
 pub async fn get_bookmark(

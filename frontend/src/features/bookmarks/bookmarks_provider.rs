@@ -33,11 +33,27 @@ impl Order {
     }
 }
 
-#[derive(Clone, Default, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct State {
     order: Order,
+    page: u64,
+    pages_count: u64,
+    page_size: u64,
+    bookmarks: Option<Rc<Vec<Bookmark>>>,
     loading: bool,
-    context: Option<BookmarksContext>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            order: Order::default(),
+            page: 0,
+            pages_count: 0,
+            page_size: 20,
+            bookmarks: None,
+            loading: false,
+        }
+    }
 }
 
 #[function_component(BookmarksProvider)]
@@ -49,16 +65,66 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         Callback::from(move |order: Order| {
             state.set(State {
                 order,
+                page: 0,
+                pages_count: state.pages_count,
+                page_size: state.page_size,
                 loading: false,
-                context: None,
+                bookmarks: None,
             });
+        })
+    };
+
+    let on_previous = {
+        let state = state.clone();
+        Callback::from(move |_| {
+            if state.loading {
+                return;
+            }
+            let mut new_state = (*state).clone();
+            new_state.page = state.page.checked_sub(1).unwrap_or_default();
+            new_state.loading = false;
+            new_state.bookmarks = None;
+            state.set(new_state);
+        })
+    };
+
+    let on_next = {
+        let state = state.clone();
+        Callback::from(move |_| {
+            if state.loading {
+                return;
+            }
+            let mut new_state = (*state).clone();
+            new_state.page = state
+                .pages_count
+                .checked_sub(1)
+                .unwrap_or_default()
+                .min(state.page + 1);
+            new_state.loading = false;
+            new_state.bookmarks = None;
+            state.set(new_state);
+        })
+    };
+
+    let on_change_page_size = {
+        let state = state.clone();
+        Callback::from(move |page_size: u64| {
+            if state.loading {
+                return;
+            }
+            let mut new_state = (*state).clone();
+            new_state.page = u64::default();
+            new_state.page_size = page_size;
+            new_state.loading = false;
+            new_state.bookmarks = None;
+            state.set(new_state);
         })
     };
 
     {
         let state = state.clone();
         use_effect(move || {
-            if state.context.is_none() && !state.loading {
+            if state.bookmarks.is_none() && !state.loading {
                 let state = state.clone();
 
                 {
@@ -68,9 +134,10 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 }
 
                 spawn_local(async move {
-                    let bookmarks = fetch_bookmarks(&state.order, on_change_order).await;
+                    let bookmarks = fetch_bookmarks(&state).await;
                     let mut new_state = (*state).clone();
-                    new_state.context = Some(bookmarks);
+                    new_state.bookmarks = Some(Rc::new(bookmarks.0));
+                    new_state.pages_count = bookmarks.1;
                     new_state.loading = false;
                     state.set(new_state);
                 });
@@ -78,40 +145,53 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         });
     }
 
-    match state.context.as_ref() {
-        Some(bookmarks) => html! {
-            <ContextProvider<BookmarksContext> context={(*bookmarks).clone()}>
-                { props.children.clone() }
-            </ContextProvider<BookmarksContext >>
-        },
+    match state.bookmarks.as_ref() {
+        Some(bookmarks) => {
+            let context = BookmarksContext {
+                bookmarks: bookmarks.clone(),
+                order: state.order.clone(),
+                page: state.page,
+                page_count: state.pages_count,
+                page_size: state.page_size,
+                on_change_order,
+                on_previous,
+                on_next,
+                on_change_page_size,
+            };
+            html! {
+                <ContextProvider<BookmarksContext> {context}>
+                    { props.children.clone() }
+                </ContextProvider<BookmarksContext >>
+            }
+        }
         None => html! {
             <div></div>
         },
     }
 }
 
-async fn fetch_bookmarks(order: &Order, callback: Callback<Order>) -> BookmarksContext {
-    let bookmarks = match GetBookmarksResult::from(
-        Request::get(URL_BOOKMARKS)
-            .query([("order", format!("creation_date:{}", order.query_param()))])
-            .send()
-            .await,
-    )
-    .await
-    {
-        Some(GetBookmarksResult::Success(bookmarks)) => bookmarks
-            .into_iter()
-            .map(Bookmark::from)
-            .collect::<Vec<Bookmark>>(),
+async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
+    let params = vec![
+        (
+            "order",
+            format!("creation_date:{}", state.order.query_param()),
+        ),
+        ("page", format!("{}", state.page)),
+        ("count", state.page_size.to_string()),
+    ];
+
+    match GetBookmarksResult::from(Request::get(URL_BOOKMARKS).query(params).send().await).await {
+        Some(GetBookmarksResult::Success(response)) => (
+            response
+                .bookmarks
+                .into_iter()
+                .map(Bookmark::from)
+                .collect::<Vec<Bookmark>>(),
+            response.pages_count,
+        ),
         _ => {
             // todo handle errors
-            vec![]
+            (vec![], 0)
         }
-    };
-
-    BookmarksContext {
-        bookmarks: Rc::new(bookmarks),
-        order: order.clone(),
-        on_change_order: callback,
     }
 }

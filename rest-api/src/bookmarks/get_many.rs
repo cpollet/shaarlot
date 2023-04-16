@@ -1,7 +1,12 @@
 use crate::bookmarks::get_one::GetBookmarkResponse;
 use crate::error_response::ErrorResponse;
+use serde::{Deserialize, Serialize};
 
-pub type GetBookmarksResponse = Vec<GetBookmarkResponse>;
+#[derive(Serialize, Deserialize)]
+pub struct GetBookmarksResponse {
+    pub bookmarks: Vec<GetBookmarkResponse>,
+    pub pages_count: u64,
+}
 
 pub enum GetBookmarksResult {
     Success(GetBookmarksResponse),
