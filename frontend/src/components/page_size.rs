@@ -11,45 +11,53 @@ pub fn page_size(props: &Props) -> Html {
     html! {
         <div class="bookmarks__page-size">
             {"links per page:\u{00a0}"}
-            <a
-                href="#"
-                class={match props.page_size {
-                    20 => "bookmarks__page-size-item--selected",
-                    _ => "bookmarks__page-size-item"
-                }}
-                onclick={
-                    let on_change_page_size = props.on_change_page_size.clone();
-                    Callback::from(move |_| on_change_page_size.emit(20))
-                }
-            >
-                {"20"}
-            </a>
-            <a
-                href="#"
-                class={match props.page_size {
-                    50 => "bookmarks__page-size-item--selected",
-                    _ => "bookmarks__page-size-item"
-                }}
-                onclick={
-                    let on_change_page_size = props.on_change_page_size.clone();
-                    Callback::from(move |_| on_change_page_size.emit(50))
-                }
-            >
-                {"50"}
-            </a>
-            <a
-                href="#"
-                class={match props.page_size {
-                    100 => "bookmarks__page-size-item--selected",
-                    _ => "bookmarks__page-size-item"
-                }}
-                onclick={
-                    let on_change_page_size = props.on_change_page_size.clone();
-                    Callback::from(move |_| on_change_page_size.emit(100))
-                }
-            >
-                {"100"}
-            </a>
+            <PageSizeItem
+                size={20}
+                selected={props.page_size == 20}
+                onclick={props.on_change_page_size.clone()}
+            />
+            <PageSizeItem
+                size={50}
+                selected={props.page_size == 50}
+                onclick={props.on_change_page_size.clone()}
+            />
+            <PageSizeItem
+                size={100}
+                selected={props.page_size == 100}
+                onclick={props.on_change_page_size.clone()}
+            />
         </div>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+struct ItemProps {
+    selected: bool,
+    size: u64,
+    onclick: Callback<u64>,
+}
+
+#[function_component(PageSizeItem)]
+fn page_size_item(props: &ItemProps) -> Html {
+    let onclick = {
+        let props = props.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            props.onclick.emit(props.size);
+        })
+    };
+
+    html! {
+        <a
+            href="#"
+            class={if props.selected {
+                "bookmarks__page-size-item--selected"
+            } else {
+                "bookmarks__page-size-item"
+            } }
+            {onclick}
+        >
+            {props.size}
+        </a>
     }
 }
