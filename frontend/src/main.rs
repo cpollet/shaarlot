@@ -157,7 +157,9 @@ fn app() -> Html {
                             Route::Index | Route::Bookmarks => {
                                 html! {
                                     <BookmarksProvider>
-                                        <BookmarksHOC />
+                                        <TagsProvider>
+                                            <BookmarksHOC />
+                                        </TagsProvider>
                                     </BookmarksProvider>
                                 }
                             }

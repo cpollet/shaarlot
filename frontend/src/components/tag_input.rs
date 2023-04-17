@@ -161,7 +161,7 @@ pub fn tag_input(props: &Props) -> Html {
                 let mut new_state = (*state).clone();
                 new_state.selected_tag = None;
                 new_state.selected_match = None;
-                if  state.selected_match.is_none() {
+                if state.selected_match.is_none() {
                     new_state.matches = Vec::default();
                 }
                 state.set(new_state);

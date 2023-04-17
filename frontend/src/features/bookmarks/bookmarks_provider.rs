@@ -176,6 +176,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         Some(bookmarks) => {
             let context = BookmarksContext {
                 bookmarks: bookmarks.clone(),
+                tags: Rc::new(Vec::new()),
                 order: state.order.clone(),
                 page: state.page,
                 page_count: state.pages_count,

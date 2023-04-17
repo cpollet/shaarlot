@@ -4,12 +4,14 @@ use crate::components::nav::Nav;
 use crate::components::page_size::PageSize;
 use crate::components::tag_input::TagInput;
 use crate::features::bookmarks::bookmarks_provider::Order;
+use crate::features::bookmarks::data::Tags;
 use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub bookmarks: Rc<Vec<BookmarkData>>,
+    pub tags: Rc<Tags>,
     pub order: Order,
     pub page: u64,
     pub page_count: u64,
@@ -66,10 +68,11 @@ pub fn bookmarks(props: &Props) -> Html {
     html! {
         <div>
             <div class="bookmarks__search">
+                // todo do not auto refresh after a new tag is added by typing
                 <TagInput
                     placeholder="filter by tag"
                     tags={(*props.selected_tags).clone()}
-                    available_tags={None}
+                    available_tags={Rc::new(props.tags.iter().map(|t| t.name.clone()).collect::<Vec<AttrValue>>())}
                     onupdate={props.on_change_tags.clone()}
                 />
             </div>
@@ -127,7 +130,8 @@ pub fn bookmarks(props: &Props) -> Html {
 #[function_component(BookmarksHOC)]
 pub fn bookmarks_hoc() -> Html {
     let bookmarks = use_context::<Props>().expect("no ctx found");
+    let tags = use_context::<Rc<Tags>>().expect("no ctx found");
     html! {
-        <Bookmarks ..bookmarks />
+        <Bookmarks tags={tags} ..bookmarks />
     }
 }
