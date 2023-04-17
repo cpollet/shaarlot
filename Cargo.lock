@@ -438,6 +438,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "urlencoding",
  "uuid",
  "vergen",
  "webpage",

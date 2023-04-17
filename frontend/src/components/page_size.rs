@@ -48,8 +48,7 @@ fn page_size_item(props: &ItemProps) -> Html {
     };
 
     html! {
-        <a
-            href="#"
+        <span
             class={if props.selected {
                 "bookmarks__page-size-item--selected"
             } else {
@@ -58,6 +57,6 @@ fn page_size_item(props: &ItemProps) -> Html {
             {onclick}
         >
             {props.size}
-        </a>
+        </span>
     }
 }

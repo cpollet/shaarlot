@@ -11,6 +11,7 @@ use yew_router::Routable;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub bookmark: Rc<BookmarkData>,
+    pub on_select_tag_filter: Callback<AttrValue>,
 }
 
 #[function_component(Bookmark)]
@@ -68,7 +69,21 @@ pub fn bookmark(props: &Props) -> Html {
                 <ul class="bookmark__tags-list">
                 {
                     props.bookmark.tags.as_slice().iter().map(|t| html! {
-                        <li>{t}</li>
+                        <li>
+                            <a
+                                href="#"
+                                onclick={
+                                    let t = t.clone();
+                                    let on_select_tag_filter = props.on_select_tag_filter.clone();
+                                    Callback::from(move |e: MouseEvent| {
+                                        e.prevent_default();
+                                        on_select_tag_filter.emit(t.clone());
+                                    })
+                                }
+                            >
+                                {t}
+                            </a>
+                        </li>
                     }).collect::<Html>()
                 }
                 </ul>

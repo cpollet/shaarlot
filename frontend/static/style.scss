@@ -113,7 +113,16 @@ a.material-icons-outlined {
 .bookmarks-footer {
   font-size: 0.8rem;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
+  margin: 0.5em 0;
+}
+
+.bookmarks__search {
+  font-size: 0.8rem;
+  width: 50%;
+  margin: auto;
+  padding-bottom: 1em;
 }
 
 .bookmarks__filter {
@@ -135,19 +144,24 @@ a.material-icons-outlined {
   text-align: right;
 }
 
+.bookmarks__sort-toggle {
+  cursor: pointer;
+}
+
 .bookmarks__nav--prev,
 .bookmarks__nav--next {
   cursor: pointer;
 }
 
-a.bookmarks__page-size-item {
+.bookmarks__page-size-item {
   padding: 0.3em;
   margin: 0.15em;
   background-color: #f5f5f5;
   text-decoration: none;
+  cursor: pointer;
 }
 
-a.bookmarks__page-size-item--selected {
+.bookmarks__page-size-item--selected {
   @extend .bookmarks__page-size-item;
   background-color: darkgreen;
   color: #f5f5f5;

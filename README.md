@@ -61,7 +61,9 @@ The URL to use is http://localhost:8001.
 * [x] Tags on bookmarks
 * [x] Private bookmarks
 * [x] Pagination
-* [ ] Search & filtering
+* [x] Tag search
+* [ ] Filtering
+* [ ] Full text search
 * [ ] Tag cloud
 * [ ] Export & Import bookmarks (incl. from Shaarli)
 * [ ] Markdown support in bookmarks description

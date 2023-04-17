@@ -208,6 +208,7 @@ pub fn edit_bookmark(props: &Props) -> Html {
                     </p>
                     <p>
                         <TagInput
+                            placeholder="tags"
                             tags={
                                 state.bookmark.tags.clone()
                             }

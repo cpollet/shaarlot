@@ -3,7 +3,9 @@ use super::pages::bookmarks::Props as BookmarksContext;
 use gloo_net::http::Request;
 use rest_api::bookmarks::get_many::GetBookmarksResult;
 use rest_api::bookmarks::URL_BOOKMARKS;
+use std::borrow::Cow;
 use std::rc::Rc;
+use urlencoding::encode;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
@@ -39,6 +41,7 @@ pub struct State {
     page: u64,
     pages_count: u64,
     page_size: u64,
+    tags: Rc<Vec<AttrValue>>,
     bookmarks: Option<Rc<Vec<Bookmark>>>,
     loading: bool,
 }
@@ -50,6 +53,7 @@ impl Default for State {
             page: 0,
             pages_count: 0,
             page_size: 20,
+            tags: Rc::new(Vec::new()),
             bookmarks: None,
             loading: false,
         }
@@ -63,14 +67,12 @@ pub fn bookmarks_provider(props: &Props) -> Html {
     let on_change_order = {
         let state = state.clone();
         Callback::from(move |order: Order| {
-            state.set(State {
-                order,
-                page: 0,
-                pages_count: state.pages_count,
-                page_size: state.page_size,
-                loading: false,
-                bookmarks: None,
-            });
+            let mut new_state = (*state).clone();
+            new_state.order = order;
+            new_state.page = 0;
+            new_state.loading = false;
+            new_state.bookmarks = None;
+            state.set(new_state);
         })
     };
 
@@ -121,6 +123,33 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         })
     };
 
+    let on_select_tag_filter = {
+        let state = state.clone();
+        Callback::from(move |t: AttrValue| {
+            if !state.tags.contains(&t) {
+                let mut new_tags = (*state.tags).clone();
+                new_tags.push(t.clone());
+
+                let mut new_state = (*state).clone();
+                new_state.tags = Rc::new(new_tags);
+                new_state.bookmarks = None;
+
+                state.set(new_state);
+            }
+        })
+    };
+
+    let on_change_tags = {
+        let state = state.clone();
+        Callback::from(move |tags| {
+            let mut new_state = (*state).clone();
+            new_state.tags = Rc::new(tags);
+            new_state.bookmarks = None;
+
+            state.set(new_state);
+        })
+    };
+
     {
         let state = state.clone();
         use_effect(move || {
@@ -153,10 +182,13 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 page: state.page,
                 page_count: state.pages_count,
                 page_size: state.page_size,
+                selected_tags: state.tags.clone(),
                 on_change_order,
                 on_previous,
                 on_next,
                 on_change_page_size,
+                on_select_tag_filter,
+                on_change_tags,
             };
             html! {
                 <ContextProvider<BookmarksContext> {context}>
@@ -178,6 +210,16 @@ async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
         ),
         ("page", format!("{}", state.page)),
         ("count", state.page_size.to_string()),
+        (
+            "tags",
+            state
+                .tags
+                .iter()
+                .map(|tag| encode(tag.as_str()))
+                .reduce(|a, b| Cow::Owned(format!("{}+{}", a, b)))
+                .unwrap_or_default()
+                .to_string(),
+        ),
     ];
 
     match GetBookmarksResult::from(Request::get(URL_BOOKMARKS).query(params).send().await).await {

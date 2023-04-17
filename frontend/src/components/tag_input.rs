@@ -4,6 +4,7 @@ use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
+    pub placeholder: Option<AttrValue>,
     pub tags: Vec<AttrValue>,
     pub available_tags: Option<Rc<Vec<AttrValue>>>,
     pub onupdate: Callback<Vec<AttrValue>>,
@@ -327,6 +328,13 @@ pub fn tag_input(props: &Props) -> Html {
             </div>
             <div class="input-tag__input">
                 <input
+                    placeholder={
+                        if state.tags.is_empty() {
+                            props.placeholder.clone()
+                        } else {
+                            None
+                        }
+                    }
                     type="text"
                     value={state.string.clone()}
                     ref={input_ref}

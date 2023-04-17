@@ -2,6 +2,7 @@ use super::super::bookmark::Bookmark;
 use super::super::data::Bookmark as BookmarkData;
 use crate::components::nav::Nav;
 use crate::components::page_size::PageSize;
+use crate::components::tag_input::TagInput;
 use crate::features::bookmarks::bookmarks_provider::Order;
 use std::rc::Rc;
 use yew::prelude::*;
@@ -13,10 +14,13 @@ pub struct Props {
     pub page: u64,
     pub page_count: u64,
     pub page_size: u64,
+    pub selected_tags: Rc<Vec<AttrValue>>,
     pub on_change_order: Callback<Order>,
     pub on_previous: Callback<()>,
     pub on_next: Callback<()>,
     pub on_change_page_size: Callback<u64>,
+    pub on_select_tag_filter: Callback<AttrValue>,
+    pub on_change_tags: Callback<Vec<AttrValue>>,
 }
 
 struct State {
@@ -61,6 +65,14 @@ pub fn bookmarks(props: &Props) -> Html {
 
     html! {
         <div>
+            <div class="bookmarks__search">
+                <TagInput
+                    placeholder="filter by tag"
+                    tags={(*props.selected_tags).clone()}
+                    available_tags={None}
+                    onupdate={props.on_change_tags.clone()}
+                />
+            </div>
             <div class="bookmarks-header">
                 <div class="bookmarks__filter">
                 </div>
@@ -76,15 +88,19 @@ pub fn bookmarks(props: &Props) -> Html {
                 />
                 <div class="bookmarks__sort">
                     {"sort:"}
-                    <a {onclick} class="material-icons-outlined md-18" href="#">
+                    <span {onclick} class="bookmarks__sort-toggle material-icons-outlined md-18">
                         {state.order.icon()}
-                    </a>
+                    </span>
                 </div>
             </div>
             <ul class="bookmarks">
             {
                 props.bookmarks.as_slice().iter().map(|b| html! {
-                    <Bookmark key={b.id} bookmark={Rc::new(b.clone())} />
+                    <Bookmark
+                        key={b.id}
+                        bookmark={Rc::new(b.clone())}
+                        on_select_tag_filter={props.on_select_tag_filter.clone()}
+                    />
                 }).collect::<Html>()
             }
             </ul>

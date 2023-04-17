@@ -27,7 +27,7 @@ pub fn view_bookmark(props: &Props) -> Html {
             </div>
             <ul class="bookmarks">
                 <li>
-                    <Bookmark bookmark={props.bookmark.clone()} />
+                    <Bookmark bookmark={props.bookmark.clone()} on_select_tag_filter={Callback::from(move |_| {})} />
                 </li>
             </ul>
         </div>

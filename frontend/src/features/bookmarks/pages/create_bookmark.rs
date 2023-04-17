@@ -248,6 +248,7 @@ pub fn create_bookmark(props: &Props) -> Html {
                 </p>
                 <p>
                     <TagInput
+                        placeholder="tags"
                         tags={vec![]}
                         available_tags={Some(Rc::new(
                             props.tags

@@ -20,12 +20,14 @@ use sea_orm::{DbErr, TransactionTrait};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::str::FromStr;
+use urlencoding::decode;
 
 #[derive(Deserialize)]
 pub struct GetBookmarksQueryParams {
     order: Option<String>,
     page: Option<u64>,
     count: Option<u64>,
+    tags: Option<String>,
 }
 
 fn into_response(
@@ -66,10 +68,23 @@ pub async fn get_bookmarks(
             )
         })?;
 
-    let bookmarks = database::bookmarks::Query::find_count_visible_on_page_order_by(
+    let tags = query
+        .tags
+        .map(|tags| {
+            tags.split("+")
+                .map(|t| decode(t))
+                .map(|t| t.unwrap_or_default())
+                .filter(|t| !t.is_empty())
+                .map(|t| t.to_string())
+                .collect::<Vec<String>>()
+        })
+        .unwrap_or_default();
+
+    let bookmarks = database::bookmarks::Query::find_count_visible_with_tags_on_page_order_by(
         &state.database,
         user_info.as_ref().map(|u| u.id),
         query.count.unwrap_or(20).min(100),
+        tags,
         query.page.unwrap_or_default(),
         order,
     )
