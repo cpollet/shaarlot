@@ -77,13 +77,10 @@ impl Query {
     }
 
     fn visible_condition(user_id: Option<i32>) -> Condition {
-        let visible = {
-            let mut visible = Condition::any().add(Column::Private.eq(false));
-            if let Some(user_id) = user_id {
-                visible = visible.add(Column::UserId.eq(user_id));
-            }
-            visible
-        };
+        let mut visible = Condition::any().add(Column::Private.eq(false));
+        if let Some(user_id) = user_id {
+            visible = visible.add(Column::UserId.eq(user_id));
+        }
         visible
     }
 

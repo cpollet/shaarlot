@@ -161,7 +161,7 @@ pub fn tag_input(props: &Props) -> Html {
                 let mut new_state = (*state).clone();
                 new_state.selected_tag = None;
                 new_state.selected_match = None;
-                if let None = state.selected_match {
+                if  state.selected_match.is_none() {
                     new_state.matches = Vec::default();
                 }
                 state.set(new_state);
@@ -265,21 +265,21 @@ pub fn tag_input(props: &Props) -> Html {
     };
 
     fn compute_matches(
-        tags: &Vec<AttrValue>,
-        used_tags: &Vec<AttrValue>,
+        tags: &[AttrValue],
+        used_tags: &[AttrValue],
         pattern: &str,
         current_selection: Option<usize>,
     ) -> (Option<usize>, Vec<Match>) {
         let matches = tags
-            .into_iter()
+            .iter()
             .map(|e| (e.find(pattern), e))
             .filter(|e| e.0.is_some())
             .map(|e| (e.0.unwrap(), e.1))
-            .filter(|(_, e)| !used_tags.contains(&e))
+            .filter(|(_, e)| !used_tags.contains(e))
             .map(|e| Match {
-                prefix: AttrValue::from((&e.1[..e.0]).to_owned()),
-                matched: AttrValue::from((&e.1[e.0..e.0 + pattern.bytes().len()]).to_owned()),
-                suffix: AttrValue::from((&e.1[e.0 + pattern.bytes().len()..]).to_owned()),
+                prefix: AttrValue::from((e.1[..e.0]).to_owned()),
+                matched: AttrValue::from((e.1[e.0..e.0 + pattern.bytes().len()]).to_owned()),
+                suffix: AttrValue::from((e.1[e.0 + pattern.bytes().len()..]).to_owned()),
                 full: e.1.clone(),
             })
             .collect::<Vec<Match>>();
@@ -294,7 +294,7 @@ pub fn tag_input(props: &Props) -> Html {
     }
 
     html! {
-        <div class={classes!("input-tag", state.focus.then(|| Some("input-tag--focus")))}>
+        <div class={classes!("input-tag", state.focus.then_some("input-tag--focus"))}>
             <div class="input-tag__tags">
                 {
                     state.tags.iter().enumerate().map(|(i,tag)| html! {

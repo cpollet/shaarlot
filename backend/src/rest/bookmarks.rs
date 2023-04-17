@@ -71,8 +71,8 @@ pub async fn get_bookmarks(
     let tags = query
         .tags
         .map(|tags| {
-            tags.split("+")
-                .map(|t| decode(t))
+            tags.split('+')
+                .map(decode)
                 .map(|t| t.unwrap_or_default())
                 .filter(|t| !t.is_empty())
                 .map(|t| t.to_string())

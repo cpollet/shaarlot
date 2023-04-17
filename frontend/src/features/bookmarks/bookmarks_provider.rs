@@ -128,7 +128,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         Callback::from(move |t: AttrValue| {
             if !state.tags.contains(&t) {
                 let mut new_tags = (*state.tags).clone();
-                new_tags.push(t.clone());
+                new_tags.push(t);
 
                 let mut new_state = (*state).clone();
                 new_state.tags = Rc::new(new_tags);
@@ -154,8 +154,6 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         let state = state.clone();
         use_effect(move || {
             if state.bookmarks.is_none() && !state.loading {
-                let state = state.clone();
-
                 {
                     let mut new_state = (*state).clone();
                     new_state.loading = true;
