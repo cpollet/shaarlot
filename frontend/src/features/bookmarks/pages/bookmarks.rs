@@ -40,14 +40,14 @@ impl State {
 impl Order {
     fn invert(&self) -> Self {
         match self {
-            Order::Asc => Order::Desc,
-            Order::Desc => Order::Asc,
+            Order::CreationDateAsc => Order::CreationDateDesc,
+            Order::CreationDateDesc => Order::CreationDateAsc,
         }
     }
     fn icon(&self) -> &str {
         match self {
-            Order::Asc => "expand_less",
-            Order::Desc => "expand_more",
+            Order::CreationDateAsc => "expand_less",
+            Order::CreationDateDesc => "expand_more",
         }
     }
 }

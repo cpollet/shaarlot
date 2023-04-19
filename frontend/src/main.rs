@@ -9,6 +9,7 @@ use crate::features::authentication::pages::recover_password_form::RecoverPasswo
 use crate::features::authentication::pages::recover_password_start::RecoverPasswordStart;
 use crate::features::bookmarks::bookmark_provider::BookmarkProvider;
 use crate::features::bookmarks::bookmarks_provider::BookmarksProvider;
+use crate::features::bookmarks::bookmarks_query::BookmarksQuery;
 use crate::features::bookmarks::pages::bookmarks::BookmarksHOC;
 use crate::features::bookmarks::pages::create_bookmark::CreateBookmarkHOC;
 use crate::features::bookmarks::pages::delete_bookmark::DeleteBookmarkHOC;
@@ -39,6 +40,9 @@ pub enum Route {
 
     #[at("/bookmarks")]
     Bookmarks,
+
+    #[at("/bookmarks/~search")]
+    BookmarksSearch,
 
     #[at("/bookmarks/~add")]
     AddBookmark,
@@ -161,6 +165,17 @@ fn app() -> Html {
                                             <BookmarksHOC />
                                         </TagsProvider>
                                     </BookmarksProvider>
+                                }
+                            }
+                            Route::BookmarksSearch => {
+                                html! {
+                                    <BookmarksQuery>
+                                        <BookmarksProvider>
+                                            <TagsProvider>
+                                                <BookmarksHOC />
+                                            </TagsProvider>
+                                        </BookmarksProvider>
+                                    </BookmarksQuery>
                                 }
                             }
                             Route::AddBookmark => {

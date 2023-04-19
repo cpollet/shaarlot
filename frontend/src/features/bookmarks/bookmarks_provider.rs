@@ -1,5 +1,7 @@
 use super::data::Bookmark;
 use super::pages::bookmarks::Props as BookmarksContext;
+use crate::features::bookmarks::bookmarks_query::search;
+use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::get_many::GetBookmarksResult;
 use rest_api::bookmarks::URL_BOOKMARKS;
@@ -8,68 +10,144 @@ use std::rc::Rc;
 use urlencoding::encode;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_router::prelude::*;
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub children: Children,
+    pub params: Option<Params>,
+    pub on_change: Option<Callback<(Route, Params)>>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
+pub struct Params {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub tags: Option<Vec<AttrValue>>,
+    pub order: Option<Order>,
+}
+
+#[derive(Clone, Copy, PartialEq)]
 pub enum Order {
-    Asc,
-    Desc,
+    CreationDateDesc,
+    CreationDateAsc,
 }
 
 impl Default for Order {
     fn default() -> Self {
-        Order::Desc
+        Order::CreationDateDesc
     }
 }
 
 impl Order {
     fn query_param(&self) -> &str {
         match self {
-            Order::Asc => "asc",
-            Order::Desc => "desc",
+            Order::CreationDateAsc => "creation_date:asc",
+            Order::CreationDateDesc => "creation_date:desc",
         }
     }
 }
 
-#[derive(Clone, PartialEq)]
-pub struct State {
-    order: Order,
-    page: u64,
+#[derive(Clone, PartialEq, Default)]
+struct State {
+    params: StateParams,
     pages_count: u64,
-    page_size: u64,
-    tags: Rc<Vec<AttrValue>>,
     bookmarks: Option<Rc<Vec<Bookmark>>>,
     loading: bool,
 }
 
-impl Default for State {
+#[derive(Clone, PartialEq)]
+struct StateParams {
+    order: Order,
+    page: u64,
+    page_size: u64,
+    tags: Rc<Vec<AttrValue>>,
+}
+
+impl Default for StateParams {
     fn default() -> Self {
         Self {
             order: Order::default(),
             page: 0,
-            pages_count: 0,
             page_size: 20,
             tags: Rc::new(Vec::new()),
-            bookmarks: None,
-            loading: false,
         }
+    }
+}
+
+impl StateParams {
+    fn is_default(&self) -> bool {
+        self.order == Order::default()
+            && self.page == 0
+            && self.page_size == 20
+            && self.tags.is_empty()
+    }
+}
+
+impl From<&StateParams> for Params {
+    fn from(params: &StateParams) -> Self {
+        Self {
+            page: match params.page {
+                0 => None,
+                x => Some(x),
+            },
+            page_size: match params.page_size {
+                20 => None,
+                x => Some(x),
+            },
+            tags: if params.tags.is_empty() {
+                None
+            } else {
+                Some((*params.tags).clone())
+            },
+            order: match params.order {
+                Order::CreationDateDesc => None,
+                Order::CreationDateAsc => Some(params.order.clone()),
+            },
+        }
+    }
+}
+
+impl From<Option<&Params>> for StateParams {
+    fn from(value: Option<&Params>) -> Self {
+        let mut state_params = StateParams::default();
+        if let None = value {
+            return state_params;
+        }
+        let value = value.unwrap();
+
+        if let Some(page) = value.page {
+            state_params.page = page;
+        }
+        if let Some(page_size) = value.page_size {
+            state_params.page_size = page_size;
+        }
+        if let Some(tags) = &value.tags {
+            if !tags.is_empty() {
+                state_params.tags = Rc::new(tags.clone());
+            }
+        }
+        if let Some(order) = value.order {
+            state_params.order = order;
+        }
+        state_params
     }
 }
 
 #[function_component(BookmarksProvider)]
 pub fn bookmarks_provider(props: &Props) -> Html {
-    let state = use_state(State::default);
+    let state = use_state(|| {
+        let mut state = State::default();
+        state.params = StateParams::from(props.params.as_ref());
+        state
+    });
 
     let on_change_order = {
         let state = state.clone();
         Callback::from(move |order: Order| {
             let mut new_state = (*state).clone();
-            new_state.order = order;
-            new_state.page = 0;
+            new_state.params.order = order;
+            new_state.params.page = 0;
             new_state.loading = false;
             new_state.bookmarks = None;
             state.set(new_state);
@@ -83,7 +161,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 return;
             }
             let mut new_state = (*state).clone();
-            new_state.page = state.page.checked_sub(1).unwrap_or_default();
+            new_state.params.page = state.params.page.checked_sub(1).unwrap_or_default();
             new_state.loading = false;
             new_state.bookmarks = None;
             state.set(new_state);
@@ -97,11 +175,11 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 return;
             }
             let mut new_state = (*state).clone();
-            new_state.page = state
+            new_state.params.page = state
                 .pages_count
                 .checked_sub(1)
                 .unwrap_or_default()
-                .min(state.page + 1);
+                .min(state.params.page + 1);
             new_state.loading = false;
             new_state.bookmarks = None;
             state.set(new_state);
@@ -115,8 +193,8 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 return;
             }
             let mut new_state = (*state).clone();
-            new_state.page = u64::default();
-            new_state.page_size = page_size;
+            new_state.params.page = u64::default();
+            new_state.params.page_size = page_size;
             new_state.loading = false;
             new_state.bookmarks = None;
             state.set(new_state);
@@ -126,12 +204,12 @@ pub fn bookmarks_provider(props: &Props) -> Html {
     let on_select_tag_filter = {
         let state = state.clone();
         Callback::from(move |t: AttrValue| {
-            if !state.tags.contains(&t) {
-                let mut new_tags = (*state.tags).clone();
+            if !state.params.tags.contains(&t) {
+                let mut new_tags = (*state.params.tags).clone();
                 new_tags.push(t);
 
                 let mut new_state = (*state).clone();
-                new_state.tags = Rc::new(new_tags);
+                new_state.params.tags = Rc::new(new_tags);
                 new_state.bookmarks = None;
 
                 state.set(new_state);
@@ -143,7 +221,8 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |tags| {
             let mut new_state = (*state).clone();
-            new_state.tags = Rc::new(tags);
+            new_state.params.tags = Rc::new(tags);
+            new_state.loading = false;
             new_state.bookmarks = None;
 
             state.set(new_state);
@@ -152,12 +231,29 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
     {
         let state = state.clone();
+        let props = props.clone();
+        let navigator = use_navigator().unwrap();
         use_effect(move || {
             if state.bookmarks.is_none() && !state.loading {
                 {
                     let mut new_state = (*state).clone();
                     new_state.loading = true;
                     state.set(new_state);
+                }
+
+                // this is not beautiful but it works
+                if state.params.is_default() {
+                    navigator.push(&Route::Bookmarks);
+                } else {
+                    if let Some(callback) = props.on_change {
+                        callback.emit((Route::BookmarksSearch, Params::from(&state.params)));
+                    } else {
+                        search(
+                            &navigator,
+                            Route::BookmarksSearch,
+                            Params::from(&state.params),
+                        );
+                    }
                 }
 
                 spawn_local(async move {
@@ -177,11 +273,11 @@ pub fn bookmarks_provider(props: &Props) -> Html {
             let context = BookmarksContext {
                 bookmarks: bookmarks.clone(),
                 tags: Rc::new(Vec::new()),
-                order: state.order.clone(),
-                page: state.page,
+                order: state.params.order.clone(),
+                page: state.params.page,
+                page_size: state.params.page_size,
+                selected_tags: state.params.tags.clone(),
                 page_count: state.pages_count,
-                page_size: state.page_size,
-                selected_tags: state.tags.clone(),
                 on_change_order,
                 on_previous,
                 on_next,
@@ -203,15 +299,13 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
 async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
     let params = vec![
-        (
-            "order",
-            format!("creation_date:{}", state.order.query_param()),
-        ),
-        ("page", format!("{}", state.page)),
-        ("count", state.page_size.to_string()),
+        ("order", state.params.order.query_param().to_string()),
+        ("page", state.params.page.to_string()),
+        ("count", state.params.page_size.to_string()),
         (
             "tags",
             state
+                .params
                 .tags
                 .iter()
                 .map(|tag| encode(tag.as_str()))
