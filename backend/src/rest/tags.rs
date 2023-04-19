@@ -17,7 +17,7 @@ pub async fn get_tags(
         })?
         .into_iter()
         .map(|t| Tag {
-            name: t.name,
+            name: t.name.to_lowercase(),
             count: t.count as i32,
         })
         .collect::<Vec<Tag>>();

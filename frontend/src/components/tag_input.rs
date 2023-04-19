@@ -66,7 +66,7 @@ pub fn tag_input(props: &Props) -> Html {
                         .tags
                         .push(state.matches.get(selected_match).unwrap().full.clone())
                 } else if !value.is_empty() {
-                    new_state.tags.push(AttrValue::from(value));
+                    new_state.tags.push(AttrValue::from(value.to_lowercase()));
                 }
                 new_state.string = AttrValue::default();
                 new_state.matches = Vec::default();
@@ -272,7 +272,7 @@ pub fn tag_input(props: &Props) -> Html {
     ) -> (Option<usize>, Vec<Match>) {
         let matches = tags
             .iter()
-            .map(|e| (e.find(pattern), e))
+            .map(|e| (e.find(&pattern.to_lowercase()), e))
             .filter(|e| e.0.is_some())
             .map(|e| (e.0.unwrap(), e.1))
             .filter(|(_, e)| !used_tags.contains(e))
