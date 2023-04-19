@@ -3,7 +3,7 @@ use entity::{bookmark, bookmark_tag};
 use migration::JoinType;
 use sea_orm::sea_query::SimpleExpr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::FromQueryResult;
+use sea_orm::{Condition, FromQueryResult};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend, DbErr, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, RelationTrait, Statement, TryIntoModel,
@@ -43,13 +43,21 @@ impl Query {
                     .to(bookmark_tag::Column::BookmarkId)
                     .into(),
             )
-            .filter(bookmark::Column::UserId.eq(user_id.unwrap_or(-1)))
+            .filter(Self::visible_condition(user_id))
             .group_by(Column::Id)
             .group_by(Column::Name)
             .order_by_desc(SimpleExpr::Custom("\"count\"".to_owned()))
             .into_model::<TagsAndCount>()
             .all(db)
             .await
+    }
+
+    fn visible_condition(user_id: Option<i32>) -> Condition {
+        let mut visible = Condition::any().add(bookmark::Column::Private.eq(false));
+        if let Some(user_id) = user_id {
+            visible = visible.add(bookmark::Column::UserId.eq(user_id));
+        }
+        visible
     }
 
     pub async fn find_by_bookmark_id<C>(db: &C, bookmark_id: i32) -> Result<Vec<Model>, DbErr>
