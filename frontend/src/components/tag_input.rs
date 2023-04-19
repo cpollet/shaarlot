@@ -204,9 +204,15 @@ pub fn tag_input(props: &Props) -> Html {
 
     let onblur = {
         let state = state.clone();
+        let input_ref = input_ref.clone();
         Callback::from(move |_| {
+            let input = input_ref.cast::<HtmlInputElement>().unwrap();
+
             let mut new_state = (*state).clone();
             new_state.focus = false;
+            new_state.string = AttrValue::default();
+            new_state.selected_match = None;
+            new_state.tags.push(AttrValue::from(input.value().to_lowercase()));
             state.set(new_state);
         })
     };
