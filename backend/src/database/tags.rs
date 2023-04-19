@@ -3,11 +3,11 @@ use entity::{bookmark, bookmark_tag};
 use migration::JoinType;
 use sea_orm::sea_query::SimpleExpr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::{Condition, FromQueryResult};
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend, DbErr, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, RelationTrait, Statement, TryIntoModel,
 };
+use sea_orm::{Condition, FromQueryResult};
 
 pub struct Query;
 

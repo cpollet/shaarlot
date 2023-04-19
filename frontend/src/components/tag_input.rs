@@ -212,7 +212,9 @@ pub fn tag_input(props: &Props) -> Html {
             new_state.focus = false;
             new_state.string = AttrValue::default();
             new_state.selected_match = None;
-            new_state.tags.push(AttrValue::from(input.value().to_lowercase()));
+            new_state
+                .tags
+                .push(AttrValue::from(input.value().to_lowercase()));
             state.set(new_state);
         })
     };

@@ -182,7 +182,9 @@ pub async fn create_bookmark(
                 let tags = {
                     let mut tags = Vec::new();
                     for tag in bookmark.tags {
-                        tags.push(database::tags::Mutation::create_tag(txn, tag.to_lowercase()).await?)
+                        tags.push(
+                            database::tags::Mutation::create_tag(txn, tag.to_lowercase()).await?,
+                        )
                     }
                     tags
                 };
@@ -244,7 +246,9 @@ pub async fn update_bookmark(
                 let tags = {
                     let mut tags = Vec::new();
                     for tag in bookmark.tags {
-                        tags.push(database::tags::Mutation::create_tag(txn, tag.to_lowercase()).await?)
+                        tags.push(
+                            database::tags::Mutation::create_tag(txn, tag.to_lowercase()).await?,
+                        )
                     }
                     tags
                 };
