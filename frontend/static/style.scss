@@ -234,6 +234,8 @@ a.material-icons-outlined {
   width: 50%;
   box-sizing: border-box;
   text-align: right;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .bookmark__date--updated {
