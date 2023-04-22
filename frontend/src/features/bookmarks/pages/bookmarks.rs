@@ -31,9 +31,7 @@ struct State {
 
 impl State {
     fn from(props: &Props) -> Self {
-        Self {
-            order: props.order.clone(),
-        }
+        Self { order: props.order }
     }
 }
 

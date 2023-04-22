@@ -117,8 +117,10 @@ where
 async fn get_url(Path(url): Path<String>) -> Result<GetUrlResult, GetUrlResult> {
     log::info!("Fetching metadata about {}", &url);
 
-    let mut options = WebpageOptions::default();
-    options.allow_insecure = true;
+    let options = WebpageOptions {
+        allow_insecure: true,
+        ..WebpageOptions::default()
+    };
 
     let webpage = Webpage::from_url(&url, options).map_err(|e| {
         log::error!("Error while fetching metadata about {}: {}", &url, e);

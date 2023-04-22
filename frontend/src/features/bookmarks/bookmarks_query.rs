@@ -85,8 +85,7 @@ mod serialize_tags {
                 &vec.iter()
                     .map(|tag| encode(tag.as_str()))
                     .reduce(|a, b| Cow::Owned(format!("{}+{}", a, b)))
-                    .unwrap_or_default()
-                    .to_string(),
+                    .unwrap_or_default(),
             ),
         }
     }
@@ -113,11 +112,7 @@ mod serialize_tags {
             where
                 E: Error,
             {
-                let tags = v
-                    .split("+")
-                    .into_iter()
-                    .map(|s| decode(s))
-                    .collect::<Vec<_>>();
+                let tags = v.split('+').map(decode).collect::<Vec<_>>();
 
                 if tags.iter().any(|i| i.is_err()) {
                     return Err(Error::custom("not a valid UTF-8 string"));
@@ -146,7 +141,6 @@ pub fn search(nav: &Navigator, route: Route, params: Params) {
 
 #[function_component(BookmarksQuery)]
 pub fn bookmarks_query(props: &Props) -> Html {
-    let navigator = use_navigator().unwrap();
     let query_params = use_location()
         .unwrap()
         .query::<QueryParams>()
@@ -154,7 +148,7 @@ pub fn bookmarks_query(props: &Props) -> Html {
         .unwrap_or_default();
 
     let on_update = {
-        let navigator = navigator.clone();
+        let navigator = use_navigator().unwrap();
         Callback::from(move |p: (Route, Params)| {
             search(&navigator, p.0, p.1);
         })

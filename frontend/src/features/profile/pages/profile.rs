@@ -10,16 +10,11 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_hooks::use_effect_once;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 enum Status {
+    #[default]
     Default,
     InProgress,
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Status::Default
-    }
 }
 
 // todo merge with status

@@ -27,16 +27,11 @@ pub struct Params {
     pub order: Option<Order>,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Default)]
 pub enum Order {
+    #[default]
     CreationDateDesc,
     CreationDateAsc,
-}
-
-impl Default for Order {
-    fn default() -> Self {
-        Order::CreationDateDesc
-    }
 }
 
 impl Order {
@@ -102,7 +97,7 @@ impl From<&StateParams> for Params {
             },
             order: match params.order {
                 Order::CreationDateDesc => None,
-                Order::CreationDateAsc => Some(params.order.clone()),
+                Order::CreationDateAsc => Some(params.order),
             },
         }
     }
@@ -111,9 +106,11 @@ impl From<&StateParams> for Params {
 impl From<Option<&Params>> for StateParams {
     fn from(value: Option<&Params>) -> Self {
         let mut state_params = StateParams::default();
-        if let None = value {
+
+        if value.is_none() {
             return state_params;
         }
+
         let value = value.unwrap();
 
         if let Some(page) = value.page {
@@ -130,16 +127,16 @@ impl From<Option<&Params>> for StateParams {
         if let Some(order) = value.order {
             state_params.order = order;
         }
+
         state_params
     }
 }
 
 #[function_component(BookmarksProvider)]
 pub fn bookmarks_provider(props: &Props) -> Html {
-    let state = use_state(|| {
-        let mut state = State::default();
-        state.params = StateParams::from(props.params.as_ref());
-        state
+    let state = use_state(|| State {
+        params: StateParams::from(props.params.as_ref()),
+        ..Default::default()
     });
 
     let on_change_order = {
@@ -244,16 +241,14 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 // this is not beautiful but it works
                 if state.params.is_default() {
                     navigator.push(&Route::Bookmarks);
+                } else if let Some(callback) = props.on_change {
+                    callback.emit((Route::BookmarksSearch, Params::from(&state.params)));
                 } else {
-                    if let Some(callback) = props.on_change {
-                        callback.emit((Route::BookmarksSearch, Params::from(&state.params)));
-                    } else {
-                        search(
-                            &navigator,
-                            Route::BookmarksSearch,
-                            Params::from(&state.params),
-                        );
-                    }
+                    search(
+                        &navigator,
+                        Route::BookmarksSearch,
+                        Params::from(&state.params),
+                    );
                 }
 
                 spawn_local(async move {
@@ -273,7 +268,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
             let context = BookmarksContext {
                 bookmarks: bookmarks.clone(),
                 tags: Rc::new(Vec::new()),
-                order: state.params.order.clone(),
+                order: state.params.order,
                 page: state.params.page,
                 page_size: state.params.page_size,
                 selected_tags: state.params.tags.clone(),
