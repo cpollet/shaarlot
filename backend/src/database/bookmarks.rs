@@ -51,7 +51,7 @@ impl Query {
         db: &C,
         user_id: Option<i32>,
         count: u64,
-        tags: Vec<String>,
+        tags: &Vec<String>,
         page: u64,
         order: SortOrder,
     ) -> Result<Vec<(Model, Vec<tag::Model>)>, DbErr>
@@ -84,14 +84,14 @@ impl Query {
         visible
     }
 
-    fn tags_condition(tags: Vec<String>) -> Condition {
+    fn tags_condition(tags: &Vec<String>) -> Condition {
         let mut tags_condition = Condition::all();
 
         if tags.is_empty() {
             return tags_condition;
         }
 
-        for expr in tags.into_iter().map(|t| {
+        for expr in tags.iter().map(|t| {
             Column::Id.in_subquery(
                 bookmark_tag::Entity::find()
                     .select_only()
@@ -114,7 +114,11 @@ impl Query {
         tags_condition
     }
 
-    pub async fn count_visible<C>(db: &C, user_id: Option<i32>) -> Result<i64, DbErr>
+    pub async fn count_visible_with_tags<C>(
+        db: &C,
+        user_id: Option<i32>,
+        tags: &Vec<String>,
+    ) -> Result<i64, DbErr>
     where
         C: ConnectionTrait,
     {
@@ -122,6 +126,7 @@ impl Query {
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
             .filter(Self::visible_condition(user_id))
+            .filter(Self::tags_condition(tags))
             .into_tuple()
             .one(db)
             .await?;

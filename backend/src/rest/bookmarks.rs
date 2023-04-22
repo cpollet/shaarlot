@@ -84,7 +84,7 @@ pub async fn get_bookmarks(
         &state.database,
         user_info.as_ref().map(|u| u.id),
         query.count.unwrap_or(20).min(100),
-        tags,
+        &tags,
         query.page.unwrap_or_default(),
         order,
     )
@@ -94,9 +94,10 @@ pub async fn get_bookmarks(
     .map(|m| into_response(m.0, m.1, user_info.as_ref()))
     .collect::<Vec<GetBookmarkResponse>>();
 
-    let bookmarks_count = database::bookmarks::Query::count_visible(
+    let bookmarks_count = database::bookmarks::Query::count_visible_with_tags(
         &state.database,
         user_info.as_ref().map(|u| u.id),
+        &tags,
     )
     .await
     .map_err(|_| GetBookmarksResult::ServerError)?;
