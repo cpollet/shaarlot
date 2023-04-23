@@ -1,4 +1,4 @@
-use super::data::Bookmark;
+use super::super::super::data::Bookmark;
 use gloo_net::http::Request;
 use rest_api::bookmarks::get_one::GetBookmarkResult;
 use rest_api::bookmarks::URL_BOOKMARK;

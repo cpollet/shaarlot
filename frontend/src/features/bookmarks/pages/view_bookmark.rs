@@ -1,5 +1,5 @@
+use super::super::super::super::data::Bookmark as BookmarkData;
 use super::super::bookmark::Bookmark;
-use super::super::data::Bookmark as BookmarkData;
 use crate::Route;
 use std::rc::Rc;
 use yew::prelude::*;

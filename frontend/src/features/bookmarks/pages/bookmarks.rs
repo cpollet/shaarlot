@@ -1,10 +1,10 @@
+use super::super::super::super::data::Bookmark as BookmarkData;
+use super::super::super::super::data::Tags;
 use super::super::bookmark::Bookmark;
-use super::super::data::Bookmark as BookmarkData;
 use crate::components::nav::Nav;
 use crate::components::page_size::PageSize;
 use crate::components::tag_input::TagInput;
 use crate::features::bookmarks::bookmarks_provider::Order;
-use crate::features::bookmarks::data::Tags;
 use std::rc::Rc;
 use yew::prelude::*;
 

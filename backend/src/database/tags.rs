@@ -4,11 +4,37 @@ use entity::{bookmark, bookmark_tag};
 use migration::JoinType;
 use sea_orm::sea_query::SimpleExpr;
 use sea_orm::ActiveValue::Set;
-use sea_orm::FromQueryResult;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseBackend, DbErr, EntityTrait,
     QueryFilter, QueryOrder, QuerySelect, RelationTrait, Statement, TryIntoModel,
 };
+use sea_orm::{FromQueryResult, Order, Select};
+
+pub enum SortOrder {
+    Name,
+    Count,
+}
+
+impl SortOrder {
+    fn add_clause(&self, select: Select<Entity>) -> Select<Entity> {
+        match self {
+            SortOrder::Name => select.order_by(Column::Name, Order::Asc),
+            SortOrder::Count => select.order_by_desc(SimpleExpr::Custom("\"count\"".to_owned())),
+        }
+    }
+}
+
+impl TryFrom<&str> for SortOrder {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "name" => Ok(SortOrder::Name),
+            "count" => Ok(SortOrder::Count),
+            _ => Err(format!("{} is not valid", value)),
+        }
+    }
+}
 
 pub struct Query;
 
@@ -27,14 +53,15 @@ impl Query {
         Entity::find().filter(Column::Name.eq(name)).one(db).await
     }
 
-    pub async fn find_by_user_id<C>(
+    pub async fn find_by_user_id_order_by<C>(
         db: &C,
         user_id: Option<i32>,
+        order: SortOrder,
     ) -> Result<Vec<TagsAndCount>, DbErr>
     where
         C: ConnectionTrait,
     {
-        Entity::find()
+        let mut select = Entity::find()
             .column_as(Column::Id.count(), "count")
             .join_rev(JoinType::Join, bookmark_tag::Relation::Tag.def())
             .join_rev(
@@ -46,11 +73,10 @@ impl Query {
             )
             .filter(bookmarks::Query::visible_condition(user_id))
             .group_by(Column::Id)
-            .group_by(Column::Name)
-            .order_by_desc(SimpleExpr::Custom("\"count\"".to_owned()))
-            .into_model::<TagsAndCount>()
-            .all(db)
-            .await
+            .group_by(Column::Name);
+        select = order.add_clause(select);
+
+        select.into_model::<TagsAndCount>().all(db).await
     }
 
     pub async fn find_by_bookmark_id<C>(db: &C, bookmark_id: i32) -> Result<Vec<Model>, DbErr>

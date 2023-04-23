@@ -1,3 +1,4 @@
+use crate::error_response::ErrorResponse;
 use serde::{Deserialize, Serialize};
 
 pub const URL_TAGS: &str = "/api/tags";
@@ -13,6 +14,7 @@ pub type GetTagsResponse = Vec<Tag>;
 pub enum GetTagsResult {
     Success(GetTagsResponse),
     ServerError,
+    InvalidParameter(String),
 
     #[cfg(feature = "frontend")]
     BrowserError,
@@ -30,6 +32,15 @@ impl GetTagsResult {
                     Err(_) => Some(GetTagsResult::DeserializationError),
                     Ok(payload) => Some(GetTagsResult::Success(payload)),
                 },
+                400 => match response.json::<ErrorResponse>().await {
+                    Err(_) => Some(GetTagsResult::DeserializationError),
+                    Ok(payload) => match payload.code() {
+                        "INVALID_PARAMETER" => Some(GetTagsResult::InvalidParameter(
+                            payload.message().to_owned(),
+                        )),
+                        _ => Some(GetTagsResult::DeserializationError),
+                    },
+                },
                 500 => Some(GetTagsResult::ServerError),
                 _ => {
                     // todo add log
@@ -46,6 +57,11 @@ impl axum::response::IntoResponse for GetTagsResult {
         match self {
             GetTagsResult::Success(payload) => axum::Json(payload).into_response(),
             GetTagsResult::ServerError => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+            GetTagsResult::InvalidParameter(message) => (
+                http::StatusCode::BAD_REQUEST,
+                axum::Json(ErrorResponse::new("INVALID_PARAMETER", &message)),
+            )
+                .into_response(),
             _ => panic!(),
         }
     }

@@ -1,4 +1,4 @@
-use super::data::Bookmark;
+use super::super::super::data::Bookmark;
 use super::pages::bookmarks::Props as BookmarksContext;
 use crate::features::bookmarks::bookmarks_query::search;
 use crate::Route;
@@ -319,6 +319,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 }
 
 async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
+    // todo review query param serialization and struct shared with API
     let params = vec![
         ("order", state.params.order.query_param().to_string()),
         ("page", state.params.page.to_string()),

@@ -1,8 +1,10 @@
 mod components;
+mod data;
 mod features;
 mod menu;
 
 use crate::components::protected::Protected;
+use crate::components::tags_provider::{Order, TagsProvider};
 use crate::features::authentication::pages::login::Login;
 use crate::features::authentication::pages::logout::Logout;
 use crate::features::authentication::pages::recover_password_form::RecoverPasswordFormHOC;
@@ -15,11 +17,11 @@ use crate::features::bookmarks::pages::create_bookmark::CreateBookmarkHOC;
 use crate::features::bookmarks::pages::delete_bookmark::DeleteBookmarkHOC;
 use crate::features::bookmarks::pages::edit_bookmark::EditBookmarkHOC;
 use crate::features::bookmarks::pages::view_bookmark::ViewBookmarkHOC;
-use crate::features::bookmarks::tags_provider::TagsProvider;
 use crate::features::profile::pages::profile::Profile;
 use crate::features::profile::pages::validate_email::ValidateEmail;
 use crate::features::signup::pages::signup_form::SignupForm;
 use crate::features::signup::pages::signup_success::SignupSuccess;
+use crate::features::tag_cloud::pages::tag_cloud::TagCloudHOC;
 use crate::menu::Menu;
 use gloo_net::http::Request;
 use rest_api::application::{GetApplicationResult, URL_APPLICATION};
@@ -216,7 +218,9 @@ fn app() -> Html {
                             }
                             Route::TagCloud => {
                                 html! {
-                                    {"todo: tag cloud"}
+                                    <TagsProvider order={Order::Name}>
+                                        <TagCloudHOC />
+                                    </TagsProvider>
                                 }
                             }
                             Route::Tools => {

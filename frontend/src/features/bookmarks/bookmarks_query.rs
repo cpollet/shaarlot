@@ -36,6 +36,8 @@ impl From<&QueryOrder> for Order {
     }
 }
 
+// todo review query param serialization and struct shared with API (less relevant as this is
+//  front-end only)
 #[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
 struct QueryParams {
     page: Option<u64>,

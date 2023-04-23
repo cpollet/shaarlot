@@ -1,4 +1,4 @@
-use super::super::data::{Bookmark, Tags};
+use super::super::super::super::data::{Bookmark, Tags};
 use crate::components::tag_input::TagInput;
 use crate::Route;
 use gloo_net::http::Request;

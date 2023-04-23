@@ -22,6 +22,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use urlencoding::decode;
 
+// todo review query param serialization and struct shared with API
 #[derive(Deserialize)]
 pub struct GetBookmarksQueryParams {
     order: Option<String>,
@@ -60,6 +61,7 @@ pub async fn get_bookmarks(
 ) -> Result<GetBookmarksResult, GetBookmarksResult> {
     let order = query
         .order
+        // todo: no manual deserialize
         .map(|v| SortOrder::try_from(v.as_str()))
         .unwrap_or(Ok(SortOrder::CreationDateDesc))
         .map_err(|_| {

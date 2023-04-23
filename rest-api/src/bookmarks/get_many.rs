@@ -31,7 +31,7 @@ impl GetBookmarksResult {
                 Err(_) => Some(GetBookmarksResult::DeserializationError),
                 Ok(payload) => Some(GetBookmarksResult::Success(payload)),
             },
-            401 => match response.json::<ErrorResponse>().await {
+            400 => match response.json::<ErrorResponse>().await {
                 Err(_) => Some(GetBookmarksResult::DeserializationError),
                 Ok(payload) => match payload.code() {
                     "INVALID_PARAMETER" => Some(GetBookmarksResult::InvalidParameter(

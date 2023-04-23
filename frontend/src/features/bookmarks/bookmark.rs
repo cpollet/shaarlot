@@ -1,4 +1,4 @@
-use super::data::Bookmark as BookmarkData;
+use super::super::super::data::Bookmark as BookmarkData;
 use super::qr_code::QrCode;
 use crate::Route;
 use chrono::{DateTime, Local};
