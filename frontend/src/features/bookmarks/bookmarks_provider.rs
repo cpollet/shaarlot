@@ -233,6 +233,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         let state = state.clone();
         let props = props.clone();
         let navigator = use_navigator().unwrap();
+        let location = use_location().unwrap();
         use_effect(move || {
             if state.stats.is_none() {
                 let state = state.clone();
@@ -251,7 +252,9 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
                 // this is not beautiful but it works
                 if state.params.is_default() {
-                    navigator.push(&Route::Bookmarks);
+                    if location.path() != &Route::Bookmarks.to_path() {
+                        navigator.push(&Route::Bookmarks);
+                    }
                 } else if let Some(callback) = props.on_change {
                     callback.emit((Route::BookmarksSearch, Params::from(&state.params)));
                 } else {
@@ -259,6 +262,8 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                         &navigator,
                         Route::BookmarksSearch,
                         Params::from(&state.params),
+                        &location,
+                        None,
                     );
                 }
 

@@ -135,8 +135,19 @@ mod serialize_tags {
     }
 }
 
-pub fn search(nav: &Navigator, route: Route, params: Params) {
-    let _ = nav.push_with_query(&route, &QueryParams::from(params));
+pub fn search(
+    nav: &Navigator,
+    route: Route,
+    params: Params,
+    curr_location: &Location,
+    curr_params: Option<&Params>,
+) {
+    if curr_location.path() != &route.to_path()
+        || curr_params.is_none()
+        || curr_params != Some(&params)
+    {
+        let _ = nav.push_with_query(&route, &QueryParams::from(params));
+    }
 }
 
 #[function_component(BookmarksQuery)]
@@ -149,8 +160,10 @@ pub fn bookmarks_query(props: &Props) -> Html {
 
     let on_update = {
         let navigator = use_navigator().unwrap();
+        let location = use_location().unwrap();
+        let params = Some(Params::from(&query_params));
         Callback::from(move |p: (Route, Params)| {
-            search(&navigator, p.0, p.1);
+            search(&navigator, p.0, p.1, &location, params.as_ref());
         })
     };
 
