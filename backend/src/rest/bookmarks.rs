@@ -15,7 +15,7 @@ use rest_api::bookmarks::delete::DeleteBookmarkResult;
 use rest_api::bookmarks::get_many::{GetBookmarksResponse, GetBookmarksResult};
 use rest_api::bookmarks::get_one::{GetBookmarkResponse, GetBookmarkResult};
 use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
-use rest_api::bookmarks::Access;
+use rest_api::bookmarks::{Access, GetBookmarksStatsResponse, GetBookmarksStatsResult};
 use sea_orm::{DbErr, TransactionTrait};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -324,4 +324,32 @@ pub async fn delete_bookmark(
         .map_err(|_| DeleteBookmarkResult::ServerError)?;
 
     Ok(DeleteBookmarkResult::Success)
+}
+
+pub async fn get_bookmarks_stats(
+    Extension(user_info): Extension<Option<UserInfo>>,
+    State(state): State<AppState>,
+) -> Result<GetBookmarksStatsResult, GetBookmarksStatsResult> {
+    let user_id = user_info.map(|u| u.id);
+    let no_tags = vec![];
+
+    let visible =
+        database::bookmarks::Query::count_visible_with_tags(&state.database, user_id, &no_tags)
+            .await
+            .map_err(|_| GetBookmarksStatsResult::ServerError)?;
+
+    let private = database::bookmarks::Query::count_private_visible_with_tags(
+        &state.database,
+        user_id,
+        &no_tags,
+    )
+    .await
+    .map_err(|_| GetBookmarksStatsResult::ServerError)?;
+
+    Ok(GetBookmarksStatsResult::Success(
+        GetBookmarksStatsResponse {
+            count_total: visible as u64,
+            count_private: private as u64,
+        },
+    ))
 }

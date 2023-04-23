@@ -4,7 +4,9 @@ use crate::features::bookmarks::bookmarks_query::search;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::bookmarks::get_many::GetBookmarksResult;
-use rest_api::bookmarks::URL_BOOKMARKS;
+use rest_api::bookmarks::{
+    GetBookmarksStatsResponse, GetBookmarksStatsResult, URL_BOOKMARKS, URL_BOOKMARKS_STATS,
+};
 use std::borrow::Cow;
 use std::rc::Rc;
 use urlencoding::encode;
@@ -49,6 +51,7 @@ struct State {
     pages_count: u64,
     bookmarks: Option<Rc<Vec<Bookmark>>>,
     loading: bool,
+    stats: Option<GetBookmarksStatsResponse>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -231,6 +234,14 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         let props = props.clone();
         let navigator = use_navigator().unwrap();
         use_effect(move || {
+            if state.stats.is_none() {
+                let state = state.clone();
+                spawn_local(async move {
+                    let mut new_state = (*state).clone();
+                    new_state.stats = Some(fetch_stats().await);
+                    state.set(new_state);
+                });
+            }
             if state.bookmarks.is_none() && !state.loading {
                 {
                     let mut new_state = (*state).clone();
@@ -279,6 +290,16 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 on_change_page_size,
                 on_select_tag_filter,
                 on_change_tags,
+                links: state
+                    .stats
+                    .as_ref()
+                    .map(|s| s.count_total)
+                    .unwrap_or_default(),
+                private_links: state
+                    .stats
+                    .as_ref()
+                    .map(|s| s.count_private)
+                    .unwrap_or_default(),
             };
             html! {
                 <ContextProvider<BookmarksContext> {context}>
@@ -322,6 +343,19 @@ async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
         _ => {
             // todo handle errors
             (vec![], 0)
+        }
+    }
+}
+
+async fn fetch_stats() -> GetBookmarksStatsResponse {
+    match GetBookmarksStatsResult::from(Request::get(URL_BOOKMARKS_STATS).send().await).await {
+        Some(GetBookmarksStatsResult::Success(response)) => response,
+        _ => {
+            // todo handle errors
+            GetBookmarksStatsResponse {
+                count_total: 0,
+                count_private: 0,
+            }
         }
     }
 }

@@ -76,7 +76,7 @@ impl Query {
         Ok(tagged_bookmarks)
     }
 
-    fn visible_condition(user_id: Option<i32>) -> Condition {
+    pub fn visible_condition(user_id: Option<i32>) -> Condition {
         let mut visible = Condition::any().add(Column::Private.eq(false));
         if let Some(user_id) = user_id {
             visible = visible.add(Column::UserId.eq(user_id));
@@ -126,6 +126,26 @@ impl Query {
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
             .filter(Self::visible_condition(user_id))
+            .filter(Self::tags_condition(tags))
+            .into_tuple()
+            .one(db)
+            .await?;
+        Ok(r.unwrap_or_default())
+    }
+
+    pub async fn count_private_visible_with_tags<C>(
+        db: &C,
+        user_id: Option<i32>,
+        tags: &Vec<String>,
+    ) -> Result<i64, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        let r: Option<i64> = Entity::find()
+            .select_only()
+            .column_as(Expr::col(Column::Id).count(), "count")
+            .filter(Self::visible_condition(user_id))
+            .filter(Column::Private.eq(true))
             .filter(Self::tags_condition(tags))
             .into_tuple()
             .one(db)

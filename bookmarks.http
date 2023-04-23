@@ -10,6 +10,9 @@ GET http://localhost:3000/api/bookmarks?
     page=0&
     count=20
 
+### Get bookmarks stats
+GET http://localhost:3000/api/bookmarks-stats
+
 ### Get one bookmark
 GET http://localhost:3000/api/bookmarks/1
 

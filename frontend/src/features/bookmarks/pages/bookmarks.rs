@@ -23,6 +23,8 @@ pub struct Props {
     pub on_change_page_size: Callback<u64>,
     pub on_select_tag_filter: Callback<AttrValue>,
     pub on_change_tags: Callback<Vec<AttrValue>>,
+    pub links: u64,
+    pub private_links: u64,
 }
 
 struct State {
@@ -65,14 +67,23 @@ pub fn bookmarks(props: &Props) -> Html {
 
     html! {
         <div>
-            <div class="bookmarks__search">
-                // todo do not auto refresh after a new tag is added by typing
-                <TagInput
-                    placeholder="filter by tag"
-                    tags={(*props.selected_tags).clone()}
-                    available_tags={Rc::new(props.tags.iter().map(|t| t.name.clone()).collect::<Vec<AttrValue>>())}
-                    onupdate={props.on_change_tags.clone()}
-                />
+            <div class="bookmarks-header">
+                <div class="bookmarks__stats">
+                    <ul>
+                        <li>{props.links}{" links"}</li>
+                        <li>{props.private_links}{" private links"}</li>
+                    </ul>
+                </div>
+                <div class="bookmarks__search">
+                    // todo do not auto refresh after a new tag is added by typing
+                    <TagInput
+                        placeholder="filter by tag"
+                        tags={(*props.selected_tags).clone()}
+                        available_tags={Rc::new(props.tags.iter().map(|t| t.name.clone()).collect::<Vec<AttrValue>>())}
+                        onupdate={props.on_change_tags.clone()}
+                    />
+                </div>
+                <div class="bookmarks__stats"></div>
             </div>
             <div class="bookmarks-header">
                 <div class="bookmarks__filter">

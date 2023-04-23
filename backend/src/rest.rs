@@ -23,7 +23,7 @@ use axum::Router;
 use axum_sessions::async_session::SessionStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
 use rest_api::application::URL_APPLICATION;
-use rest_api::bookmarks::URL_BOOKMARK;
+use rest_api::bookmarks::{URL_BOOKMARK, URL_BOOKMARKS_STATS};
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
 use rest_api::password_recoveries::URL_PASSWORD_RECOVERIES;
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
@@ -76,6 +76,7 @@ where
                 .route(URL_USERS, post(create_user))
                 .route(URL_EMAIL, put(update_email))
                 .route(URL_TAGS, get(get_tags))
+                .route(URL_BOOKMARKS_STATS, get(get_bookmarks_stats))
                 .layer(from_fn(SessionHint::supported))
                 .layer(
                     SessionLayer::new(
