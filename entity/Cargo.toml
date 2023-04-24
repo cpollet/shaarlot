@@ -7,4 +7,4 @@ publish = false
 [lib]
 
 [dependencies]
-sea-orm = { version = "0.11.2" }
+sea-orm = { version = "0.11.3" }
