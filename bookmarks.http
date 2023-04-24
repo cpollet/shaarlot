@@ -113,3 +113,12 @@ GET http://localhost:3000/api/sessions/current
 
 ### Destroy session
 DELETE http://localhost:3000/api/sessions/current
+
+### Import Shaarli API
+POST http://localhost:3000/api/shaarli-import-api
+content-type: application/json
+
+{
+  "url": "{{shaarli_url}}",
+  "key": "{{shaarli_key}}"
+}

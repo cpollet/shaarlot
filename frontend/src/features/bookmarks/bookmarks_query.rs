@@ -144,7 +144,7 @@ pub fn search(
     curr_location: &Location,
     curr_params: Option<&Params>,
 ) {
-    if curr_location.path() != &route.to_path()
+    if curr_location.path() != route.to_path()
         || curr_params.is_none()
         || curr_params != Some(&params)
     {

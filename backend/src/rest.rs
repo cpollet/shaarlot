@@ -4,6 +4,7 @@ mod emails;
 mod json;
 mod password_recoveries;
 mod sessions;
+mod shaarli_import_api;
 mod tags;
 mod users;
 
@@ -12,6 +13,7 @@ use crate::rest::bookmarks::*;
 use crate::rest::emails::update_email;
 use crate::rest::password_recoveries::{create_password_recovery, update_password_recovery};
 use crate::rest::sessions::*;
+use crate::rest::shaarli_import_api::shaarli_import_api;
 use crate::rest::tags::get_tags;
 use crate::rest::users::*;
 use crate::sessions::session::SessionHint;
@@ -25,6 +27,7 @@ use axum_sessions::{PersistencePolicy, SessionLayer};
 use rest_api::application::URL_APPLICATION;
 use rest_api::bookmarks::{URL_BOOKMARK, URL_BOOKMARKS_STATS};
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
+use rest_api::import_shaarli_api::URL_SHAARLI_IMPORT_API;
 use rest_api::password_recoveries::URL_PASSWORD_RECOVERIES;
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::tags::URL_TAGS;
@@ -59,6 +62,7 @@ where
                 .route(URL_BOOKMARK, delete(delete_bookmark))
                 .route(URL_BOOKMARK, put(update_bookmark))
                 .route(URL_URLS, get(get_url))
+                .route(URL_SHAARLI_IMPORT_API, post(shaarli_import_api))
                 .layer(from_fn(SessionHint::required))
                 .layer(
                     SessionLayer::new(
@@ -123,6 +127,7 @@ async fn get_url(Path(url): Path<String>) -> Result<GetUrlResult, GetUrlResult> 
         ..WebpageOptions::default()
     };
 
+    // todo use reqwest to fetch HTML instead of curl
     let webpage = Webpage::from_url(&url, options).map_err(|e| {
         log::error!("Error while fetching metadata about {}: {}", &url, e);
         GetUrlResult::ServerError

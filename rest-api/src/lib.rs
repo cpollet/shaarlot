@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub mod application;
 pub mod bookmarks;
 pub mod error_response;
+pub mod import_shaarli_api;
 pub mod password_recoveries;
 pub mod sessions;
 pub mod tags;

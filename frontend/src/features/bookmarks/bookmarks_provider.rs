@@ -252,7 +252,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
 
                 // this is not beautiful but it works
                 if state.params.is_default() {
-                    if location.path() != &Route::Bookmarks.to_path() {
+                    if location.path() != Route::Bookmarks.to_path() {
                         navigator.push(&Route::Bookmarks);
                     }
                 } else if let Some(callback) = props.on_change {

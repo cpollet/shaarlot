@@ -22,6 +22,8 @@ use crate::features::profile::pages::validate_email::ValidateEmail;
 use crate::features::signup::pages::signup_form::SignupForm;
 use crate::features::signup::pages::signup_success::SignupSuccess;
 use crate::features::tag_cloud::pages::tag_cloud::TagCloudHOC;
+use crate::features::tools::pages::import_shaarli_api::ToolImportShaarliApi;
+use crate::features::tools::pages::tools::Tools;
 use crate::menu::Menu;
 use gloo_net::http::Request;
 use rest_api::application::{GetApplicationResult, URL_APPLICATION};
@@ -63,6 +65,9 @@ pub enum Route {
 
     #[at("/tools")]
     Tools,
+
+    #[at("/tools/shaarli-api-import")]
+    ToolImportShaarliApi,
 
     #[at("/signup")]
     SignupForm,
@@ -226,10 +231,17 @@ fn app() -> Html {
                             Route::Tools => {
                                 html! {
                                     <Protected {logged_in}>
-                                        {"todo: tools"}
+                                        <Tools />
                                     </Protected>
                                 }
-                            }
+                            },
+                            Route::ToolImportShaarliApi => {
+                                html! {
+                                    <Protected {logged_in}>
+                                        <ToolImportShaarliApi />
+                                    </Protected>
+                                }
+                            },
                             Route::SignupForm => {
                                 html! {
                                     <SignupForm />

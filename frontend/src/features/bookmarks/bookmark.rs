@@ -91,7 +91,7 @@ pub fn bookmark(props: &Props) -> Html {
                     {display_date(&props.bookmark)}
                     {"\u{00a0}\u{ff5c}\u{00a0}"}
                     <a
-                         class="material-icons-outlined md-16"
+                        class="material-icons-outlined md-16"
                         onclick={onclick_permalink}
                         href={Route::ViewBookmark {id: props.bookmark.id}.to_path()}
                     >
