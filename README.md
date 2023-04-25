@@ -1,5 +1,8 @@
 # Rust bookmark manager
 
+## Build
+Needs openssl: see https://docs.rs/openssl/latest/openssl/
+
 ## Running
 ### Development mode
 In this mode, both the front-end and back-end changes are compiled whenever the sources files are saved. Execute
