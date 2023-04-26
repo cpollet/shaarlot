@@ -61,7 +61,7 @@ impl Query {
         let mut select = Entity::find()
             .filter(Self::visible_condition(user_id))
             .filter(Self::tags_condition(tags))
-            .offset(page)
+            .offset(count * page)
             .limit(count);
         select = order.add_clause(select);
 
