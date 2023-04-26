@@ -22,7 +22,7 @@ pub fn tag_cloud(props: &Props) -> Html {
     let max_count = props.tags.iter().map(|t|t.count).max().unwrap_or_default() as f32;
     let min_count = props.tags.iter().map(|t|t.count).min().unwrap_or_default() as f32;
 
-    let font_step = (9 - 1) as f32 / (max_count - min_count);
+    let font_step = (19 - 1) as f32 / (max_count - min_count);
 
     html! {
         <div class="centered-box">

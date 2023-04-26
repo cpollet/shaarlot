@@ -449,6 +449,16 @@ textarea {
   a[data-weight="7"] { --size: 7; }
   a[data-weight="8"] { --size: 8; }
   a[data-weight="9"] { --size: 9; }
+  a[data-weight="10"] { --size: 10; }
+  a[data-weight="11"] { --size: 11; }
+  a[data-weight="12"] { --size: 12; }
+  a[data-weight="13"] { --size: 13; }
+  a[data-weight="14"] { --size: 14; }
+  a[data-weight="15"] { --size: 15; }
+  a[data-weight="16"] { --size: 16; }
+  a[data-weight="17"] { --size: 17; }
+  a[data-weight="18"] { --size: 18; }
+  a[data-weight="19"] { --size: 19; }
 
   a {
     color: darkgreen;
@@ -456,9 +466,7 @@ textarea {
     padding: 0.125rem 0.25rem;
     text-decoration: none;
     position: relative;
-    //font-size: 1.5rem;
 
-    //--size: 4;
     font-size: calc(var(--size) * 0.25rem + 0.5rem);
 
     span {
