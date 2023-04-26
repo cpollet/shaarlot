@@ -11,7 +11,7 @@ pub const URL_BOOKMARK: &str = "/api/bookmarks/:id";
 pub const URL_BOOKMARK_QRCODE: &str = "/api/bookmarks/:id/qrcode";
 pub const URL_BOOKMARKS_STATS: &str = "/api/bookmarks-stats";
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub enum Access {
     #[serde(rename = "read")]
     Read,

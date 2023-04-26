@@ -31,18 +31,34 @@ struct State {
 
 #[function_component(TagInput)]
 pub fn tag_input(props: &Props) -> Html {
-    let state = use_state(|| State {
-        tags: props.tags.clone(),
-        available_tags: match &props.available_tags {
-            None => Rc::new(vec![]),
-            Some(tags) => tags.clone(),
-        },
-        matches: Vec::default(),
-        selected_match: Option::default(),
-        selected_tag: Option::default(),
-        string: Default::default(),
-        focus: false,
+    // gloo_console::info!("render tag_input ", props.tags.len());
+    let state = use_state(|| {
+        // gloo_console::info!("use_state tag_input");
+        State {
+            tags: props.tags.clone(),
+            available_tags: match &props.available_tags {
+                None => Rc::new(vec![]),
+                Some(tags) => tags.clone(),
+            },
+            matches: Vec::default(),
+            selected_match: Option::default(),
+            selected_tag: Option::default(),
+            string: Default::default(),
+            focus: false,
+        }
     });
+
+    {
+        let state = state.clone();
+        use_effect_with_deps(
+            move |tags| {
+                let mut new_state = (*state).clone();
+                new_state.tags = tags.clone();
+                state.set(new_state);
+            },
+            props.tags.clone(),
+        );
+    }
 
     let input_ref = use_node_ref();
 
@@ -280,6 +296,9 @@ pub fn tag_input(props: &Props) -> Html {
         pattern: &str,
         current_selection: Option<usize>,
     ) -> (Option<usize>, Vec<Match>) {
+        if pattern.is_empty() {
+            return (None, vec![]);
+        }
         let matches = tags
             .iter()
             .map(|e| (e.find(&pattern.to_lowercase()), e))

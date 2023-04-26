@@ -27,16 +27,6 @@ pub struct Props {
     pub private_links: u64,
 }
 
-struct State {
-    order: Order,
-}
-
-impl State {
-    fn from(props: &Props) -> Self {
-        Self { order: props.order }
-    }
-}
-
 impl Order {
     fn invert(&self) -> Self {
         match self {
@@ -54,14 +44,13 @@ impl Order {
 
 #[function_component(Bookmarks)]
 pub fn bookmarks(props: &Props) -> Html {
-    let state = use_state(|| State::from(props));
+    // gloo_console::info!("render bookmarks");
 
     let onclick = {
-        let state = state.clone();
         let props = props.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
-            props.on_change_order.emit(state.order.invert())
+            props.on_change_order.emit(props.order.invert())
         })
     };
 
@@ -101,7 +90,7 @@ pub fn bookmarks(props: &Props) -> Html {
                 <div class="bookmarks__sort">
                     {"sort:"}
                     <span {onclick} class="bookmarks__sort-toggle material-icons-outlined md-18">
-                        {state.order.icon()}
+                        {props.order.icon()}
                     </span>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 mod components;
 mod data;
+mod eventually;
 mod features;
 mod menu;
 
@@ -45,9 +46,8 @@ pub enum Route {
     #[at("/bookmarks")]
     Bookmarks,
 
-    #[at("/bookmarks/~search")]
-    BookmarksSearch,
-
+    // #[at("/bookmarks/~search")]
+    // BookmarksSearch,
     #[at("/bookmarks/~add")]
     AddBookmark,
 
@@ -167,15 +167,6 @@ fn app() -> Html {
                         move |route| match route {
                             Route::Index | Route::Bookmarks => {
                                 html! {
-                                    <BookmarksProvider>
-                                        <TagsProvider>
-                                            <BookmarksHOC />
-                                        </TagsProvider>
-                                    </BookmarksProvider>
-                                }
-                            }
-                            Route::BookmarksSearch => {
-                                html! {
                                     <BookmarksQuery>
                                         <BookmarksProvider>
                                             <TagsProvider>
@@ -185,6 +176,17 @@ fn app() -> Html {
                                     </BookmarksQuery>
                                 }
                             }
+                            // Route::BookmarksSearch => {
+                            //     html! {
+                            //         <BookmarksQuery>
+                            //             <BookmarksProvider>
+                            //                 <TagsProvider>
+                            //                     <BookmarksHOC />
+                            //                 </TagsProvider>
+                            //             </BookmarksProvider>
+                            //         </BookmarksQuery>
+                            //     }
+                            // }
                             Route::AddBookmark => {
                                 html! {
                                     <Protected {logged_in}>

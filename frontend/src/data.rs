@@ -5,7 +5,7 @@ use rest_api::bookmarks::update::UpdateBookmarkRequest;
 use rest_api::bookmarks::Access;
 use yew::prelude::*;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Bookmark {
     pub id: i32,
     pub url: AttrValue,

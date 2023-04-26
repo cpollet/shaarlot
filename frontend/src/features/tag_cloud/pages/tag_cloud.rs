@@ -34,7 +34,8 @@ pub fn tag_cloud(props: &Props) -> Html {
                         html! {
                             <li>
                                 <a
-                                    href={format!("/bookmarks/~search?tags={}", &t.name)}
+                                    href={format!("{}?tags={}",Route::Bookmarks.to_path(), &t.name)}
+                                    // href={format!("/bookmarks/~search?tags={}", &t.name)}
                                     data-weight={size.to_string()}
                                     onclick={
                                         let navigator = navigator.clone();
@@ -42,7 +43,8 @@ pub fn tag_cloud(props: &Props) -> Html {
                                         Callback::from(move |e: MouseEvent| {
                                             e.prevent_default();
                                             let _ = navigator.push_with_query(
-                                                &Route::BookmarksSearch,
+                                                // &Route::BookmarksSearch,
+                                                &Route::Bookmarks,
                                                 &tag
                                             );
                                         })

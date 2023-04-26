@@ -1,3 +1,4 @@
+use crate::features::bookmarks::bookmarks_query::QueryParams;
 use crate::Route;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
@@ -35,7 +36,7 @@ pub fn menu(props: &Props) -> Html {
                         move |e:MouseEvent| {
                             e.prevent_default();
                             menu_expanded.set(false);
-                            navigator.push(&Route::Bookmarks);
+                            let _ = navigator.push_with_query(&Route::Bookmarks, &QueryParams::default());
                         }
                     }} class="menu__item" href={Route::Bookmarks.to_path()}>{"Bookmarks"}</a>
                 </li>
