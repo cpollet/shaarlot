@@ -57,14 +57,12 @@ pub fn tags_provider(props: &Props) -> Html {
     }
 
     match &state.tags {
-        None => html! {
-            <div>{"loading"}</div>
-        },
         Some(tags) => html! {
             <ContextProvider<Rc<Tags>> context={(*tags).clone()}>
                 { props.children.clone() }
             </ContextProvider<Rc<Tags>>>
         },
+        _ => html! { },
     }
 }
 
