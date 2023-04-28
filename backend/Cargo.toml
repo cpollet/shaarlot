@@ -38,7 +38,7 @@ urlencoding = "2.1.2"
 jwt = "0.16.0"
 hmac = "0.12.1"
 sha2 = "0.10.6"
-reqwest = { version = "0.11.16", features = ["json"] }
+reqwest = { version = "0.11.17", features = ["json"] }
 
 [build-dependencies]
 build-data = "0.1.3"
