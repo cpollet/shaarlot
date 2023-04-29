@@ -62,7 +62,7 @@ pub fn tags_provider(props: &Props) -> Html {
                 { props.children.clone() }
             </ContextProvider<Rc<Tags>>>
         },
-        _ => html! { },
+        _ => html! {},
     }
 }
 

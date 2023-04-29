@@ -148,35 +148,43 @@ async fn main() {
         .credentials(creds)
         .build();
 
-    let mailer = Mailer {
-        smtp: smtp_transport,
-        from: smtp_from.parse::<Mailbox>().unwrap(),
+    let mailer = Mailer::new(
+        smtp_transport,
+        smtp_from.parse::<Mailbox>().unwrap(),
         public_url,
-    };
+    );
 
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
-            api_router(&configuration, AppState { database, mailer })
-                .route("/health", get(health))
-                .layer(CompressionLayer::new())
-                .merge(
-                    static_file_provider(&static_files_path).layer(
-                        SessionLayer::new(
-                            configuration.session_store.clone(),
-                            configuration.cookie_secret.expose_secret().as_slice(),
-                        )
-                        .with_session_ttl(Some(session_ttl))
-                        .with_persistence_policy(PersistencePolicy::Always),
-                    ),
-                )
-                .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
-                .into_make_service(),
+            api_router(
+                &configuration,
+                AppState {
+                    database,
+                    mailer: mailer.clone(),
+                },
+            )
+            .route("/health", get(health))
+            .layer(CompressionLayer::new())
+            .merge(
+                static_file_provider(&static_files_path).layer(
+                    SessionLayer::new(
+                        configuration.session_store.clone(),
+                        configuration.cookie_secret.expose_secret().as_slice(),
+                    )
+                    .with_session_ttl(Some(session_ttl))
+                    .with_persistence_policy(PersistencePolicy::Always),
+                ),
+            )
+            .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
+            .into_make_service(),
         )
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+
+    mailer.stop().await;
 }
 
 fn static_file_provider(static_files_path: &str) -> Router {

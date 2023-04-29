@@ -332,7 +332,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 </ContextProvider<BookmarksContext >>
             }
         }
-        _ => html! { },
+        _ => html! {},
     }
 }
 
