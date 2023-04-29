@@ -1,5 +1,6 @@
 use super::super::super::data::Bookmark as BookmarkData;
 use super::qr_code::QrCode;
+use crate::components::highlight::Highlight;
 use crate::Route;
 use chrono::{DateTime, Local};
 use rest_api::bookmarks::Access;
@@ -11,6 +12,7 @@ use yew_router::Routable;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub bookmark: Rc<BookmarkData>,
+    pub highlight: Option<Rc<Vec<AttrValue>>>,
     pub on_select_tag_filter: Callback<AttrValue>,
 }
 
@@ -54,7 +56,11 @@ pub fn bookmark(props: &Props) -> Html {
         <li class="bookmark">
             <div class="bookmark__title">
                 <a href={props.bookmark.url.clone()}>
-                    <span class="material-icons-outlined bookmark__title-icon">{"open_in_new"}</span> {props.bookmark.title.clone().unwrap_or_else(|| props.bookmark.url.clone())}
+                    <span class="material-icons-outlined bookmark__title-icon">{"open_in_new"}</span>
+                    <Highlight
+                        text={props.bookmark.title.clone().unwrap_or_else(|| props.bookmark.url.clone())}
+                        terms={props.highlight.clone()}
+                    />
                 </a>
                 { if props.bookmark.private {
                     html! { <span class="material-icons-outlined bookmark__title-private-icon" title="private">{"lock"}</span> }
@@ -63,7 +69,9 @@ pub fn bookmark(props: &Props) -> Html {
                 } }
             </div>
             { props.bookmark.description.as_ref().map(|d| html! {
-                <div class="bookmark__description">{d.clone()}</div>
+                <div class="bookmark__description">
+                    <Highlight text={d.clone()} terms={props.highlight.clone()} />
+                </div>
             })}
             <ul class="bookmark__tags-list">
                 {
@@ -124,7 +132,10 @@ pub fn bookmark(props: &Props) -> Html {
                 </div>
                 <div class="bookmark__link">
                     <a href={props.bookmark.url.clone()}>
-                        {props.bookmark.url.clone()}
+                        <Highlight
+                            text={props.bookmark.url.clone()}
+                            terms={props.highlight.clone()}
+                        />
                     </a>
                 </div>
             </div>

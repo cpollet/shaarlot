@@ -5,12 +5,14 @@ use entity::bookmark::{Column, Model};
 use entity::{bookmark_tag, tag};
 use migration::Expr;
 use sea_orm::prelude::DateTimeWithTimeZone;
+use sea_orm::sea_query::extension::postgres::PgExpr;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, Order,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Select, TryIntoModel,
 };
 
+#[derive(Clone, Copy, Debug)]
 pub enum SortOrder {
     CreationDateDesc,
     CreationDateAsc,
@@ -37,8 +39,9 @@ impl TryFrom<&str> for SortOrder {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum Filter {
+    #[default]
     All,
     Private,
     Public,
@@ -59,6 +62,20 @@ impl TryFrom<&str> for Filter {
 
 pub struct Query;
 
+#[derive(Debug, Default)]
+pub struct SearchCriteria {
+    pub user_id: Option<i32>,
+    pub tags: Vec<String>,
+    pub search: Vec<String>,
+    pub filter: Filter,
+}
+
+#[derive(Debug)]
+pub struct Pagination {
+    pub page: u64,
+    pub size: u64,
+}
+
 impl Query {
     pub async fn find_all<C>(db: &C) -> Result<Vec<Model>, DbErr>
     where
@@ -67,23 +84,21 @@ impl Query {
         Entity::find().all(db).await
     }
 
-    pub async fn find_count_visible_with_tags_on_page_order_by<C>(
+    pub async fn find<C>(
         db: &C,
-        user_id: Option<i32>,
-        count: u64,
-        tags: &Vec<String>,
-        page: u64,
+        criteria: &SearchCriteria,
+        page: &Pagination,
         order: SortOrder,
-        filter: Filter,
     ) -> Result<Vec<(Model, Vec<tag::Model>)>, DbErr>
     where
         C: ConnectionTrait,
     {
         let mut select = Entity::find()
-            .filter(Self::visible_condition(user_id, filter))
-            .filter(Self::tags_condition(tags))
-            .offset(count * page)
-            .limit(count);
+            .filter(Self::visible_condition(criteria.user_id, criteria.filter))
+            .filter(Self::tags_condition(&criteria.tags))
+            .filter(Self::search_condition(&criteria.search))
+            .offset(page.size * page.page)
+            .limit(page.size);
         select = order.add_clause(select);
 
         let bookmarks = select.all(db).await?;
@@ -147,39 +162,36 @@ impl Query {
         tags_condition
     }
 
-    pub async fn count_visible_with_tags<C>(
-        db: &C,
-        user_id: Option<i32>,
-        tags: &Vec<String>,
-        filter: Filter,
-    ) -> Result<i64, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        let r: Option<i64> = Entity::find()
-            .select_only()
-            .column_as(Expr::col(Column::Id).count(), "count")
-            .filter(Self::visible_condition(user_id, filter))
-            .filter(Self::tags_condition(tags))
-            .into_tuple()
-            .one(db)
-            .await?;
-        Ok(r.unwrap_or_default())
+    fn search_condition(search: &Vec<String>) -> Condition {
+        let mut search_condition = Condition::all();
+
+        if search.is_empty() {
+            return search_condition;
+        }
+
+        for expr in search.iter().map(|t| {
+            let like_expr = format!("%{}%", t);
+            let inner = Condition::any();
+            let inner = inner.add(Expr::col(Column::Title).ilike(like_expr.as_str()));
+            let inner = inner.add(Expr::col(Column::Description).ilike(like_expr.as_str()));
+            inner.add(Expr::col(Column::Url).ilike(like_expr.as_str()))
+        }) {
+            search_condition = search_condition.add(expr);
+        }
+
+        search_condition
     }
 
-    pub async fn count_private_visible_with_tags<C>(
-        db: &C,
-        user_id: Option<i32>,
-        tags: &Vec<String>,
-    ) -> Result<i64, DbErr>
+    pub async fn count<C>(db: &C, criteria: &SearchCriteria) -> Result<i64, DbErr>
     where
         C: ConnectionTrait,
     {
         let r: Option<i64> = Entity::find()
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
-            .filter(Self::visible_condition(user_id, Filter::Private))
-            .filter(Self::tags_condition(tags))
+            .filter(Self::visible_condition(criteria.user_id, criteria.filter))
+            .filter(Self::tags_condition(&criteria.tags))
+            .filter(Self::search_condition(&criteria.search))
             .into_tuple()
             .one(db)
             .await?;

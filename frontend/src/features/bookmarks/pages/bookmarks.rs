@@ -6,6 +6,7 @@ use crate::components::nav::Nav;
 use crate::components::page_size::PageSize;
 use crate::components::tag_input::TagInput;
 use std::rc::Rc;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
@@ -17,6 +18,7 @@ pub struct Props {
     pub page_count: u64,
     pub page_size: u64,
     pub selected_tags: Rc<Vec<AttrValue>>,
+    pub search_terms: Rc<Vec<AttrValue>>,
     pub filter: Option<Filter>,
     pub on_change_order: Callback<Order>,
     pub on_previous: Callback<()>,
@@ -25,6 +27,7 @@ pub struct Props {
     pub on_select_tag_filter: Callback<AttrValue>,
     pub on_change_tags: Callback<Vec<AttrValue>>,
     pub on_change_filter: Callback<Filter>,
+    pub on_change_search_terms: Callback<Vec<AttrValue>>,
     pub links: u64,
     pub private_links: u64,
 }
@@ -56,6 +59,23 @@ pub fn bookmarks(props: &Props) -> Html {
         })
     };
 
+    let filter_by_text = {
+        let props = props.clone();
+        Callback::from(move |e: KeyboardEvent| {
+            if e.key() == "Enter" {
+                e.prevent_default();
+                let search_text: String = e.target_unchecked_into::<HtmlInputElement>().value();
+                let terms = search_text
+                    .split(' ')
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_owned())
+                    .map(AttrValue::from)
+                    .collect::<Vec<AttrValue>>();
+                props.on_change_search_terms.emit(terms);
+            }
+        })
+    };
+
     html! {
         <div>
             <div class="bookmarks-header">
@@ -64,6 +84,15 @@ pub fn bookmarks(props: &Props) -> Html {
                         <li>{props.links}{" links"}</li>
                         <li>{props.private_links}{" private links"}</li>
                     </ul>
+                </div>
+                <div class="bookmarks__search">
+                    // todo do not auto refresh after a new tag is added by typing
+                    <input
+                        type="text"
+                        placeholder="filter by text"
+                        value={props.search_terms.join(" ")}
+                        onkeydown={filter_by_text}
+                    />
                 </div>
                 <div class="bookmarks__search">
                     // todo do not auto refresh after a new tag is added by typing
@@ -136,6 +165,7 @@ pub fn bookmarks(props: &Props) -> Html {
                     <Bookmark
                         key={b.id}
                         bookmark={Rc::new(b.clone())}
+                        highlight={Some(props.search_terms.clone())}
                         on_select_tag_filter={props.on_select_tag_filter.clone()}
                     />
                 }).collect::<Html>()

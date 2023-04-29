@@ -9,6 +9,7 @@ use rest_api::bookmarks::{
 };
 use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
+use std::ops::Not;
 use std::rc::Rc;
 use urlencoding::encode;
 use yew::platform::spawn_local;
@@ -26,6 +27,7 @@ pub struct Params {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
     pub tags: Option<Vec<AttrValue>>,
+    pub search_terms: Option<Vec<AttrValue>>,
     pub order: Option<Order>,
     pub filter: Option<Filter>,
 }
@@ -67,6 +69,7 @@ pub struct State {
     page: u64,
     page_size: u64,
     tags: Rc<Vec<AttrValue>>,
+    search_terms: Rc<Vec<AttrValue>>,
     filter: Option<Filter>,
     data: Eventually<Data>,
     stats: Eventually<Stats>,
@@ -79,6 +82,7 @@ impl Default for State {
             page: 0,
             page_size: 20,
             tags: Rc::new(Vec::new()),
+            search_terms: Rc::new(Vec::new()),
             filter: None,
             data: Eventually::None,
             stats: Eventually::None,
@@ -97,11 +101,12 @@ impl From<&State> for Params {
                 20 => None,
                 x => Some(x),
             },
-            tags: if state.tags.is_empty() {
-                None
-            } else {
-                Some((*state.tags).clone())
-            },
+            tags: state.tags.is_empty().not().then_some((*state.tags).clone()),
+            search_terms: state
+                .search_terms
+                .is_empty()
+                .not()
+                .then_some((*state.search_terms).clone()),
             order: match state.order {
                 Order::CreationDateDesc => None,
                 Order::CreationDateAsc => Some(state.order),
@@ -130,6 +135,11 @@ impl From<Option<&Params>> for State {
         if let Some(tags) = &value.tags {
             if !tags.is_empty() {
                 state.tags = Rc::new(tags.clone());
+            }
+        }
+        if let Some(search_terms) = &value.search_terms {
+            if !search_terms.is_empty() {
+                state.search_terms = Rc::new(search_terms.clone());
             }
         }
         if let Some(order) = value.order {
@@ -319,6 +329,18 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         })
     };
 
+    let on_change_search_terms = {
+        let state = state.clone();
+        let on_change = props.on_change.clone();
+        Callback::from(move |search_terms: Vec<AttrValue>| {
+            let mut new_state = (*state).clone();
+            new_state.search_terms = Rc::new(search_terms);
+            new_state.data = Eventually::None;
+
+            trigger_update(&on_change, &state, new_state);
+        })
+    };
+
     let on_change_filter = {
         let state = state.clone();
         let on_change = props.on_change.clone();
@@ -343,7 +365,8 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 page: state.page,
                 page_size: state.page_size,
                 selected_tags: state.tags.clone(),
-                filter: state.filter.clone(),
+                search_terms: state.search_terms.clone(),
+                filter: state.filter,
                 page_count: data.pages_count,
                 on_change_order,
                 on_previous,
@@ -351,6 +374,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 on_change_page_size,
                 on_select_tag_filter,
                 on_change_tags,
+                on_change_search_terms,
                 on_change_filter,
                 links: state
                     .stats
@@ -408,6 +432,16 @@ async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
                 .tags
                 .iter()
                 .map(|tag| encode(tag.as_str()))
+                .reduce(|a, b| Cow::Owned(format!("{}+{}", a, b)))
+                .unwrap_or_default()
+                .to_string(),
+        ),
+        (
+            "search",
+            state
+                .search_terms
+                .iter()
+                .map(|term| encode(term.as_str()))
                 .reduce(|a, b| Cow::Owned(format!("{}+{}", a, b)))
                 .unwrap_or_default()
                 .to_string(),

@@ -131,7 +131,7 @@ a.material-icons-outlined {
 
 .bookmarks__search {
   font-size: 0.8rem;
-  flex-basis: 50%;
+  flex-basis: 24%;
   margin: auto;
 }
 
@@ -252,6 +252,10 @@ a.material-icons-outlined {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.highlight {
+  background-color: yellow;
 }
 
 .bookmark__date--updated {

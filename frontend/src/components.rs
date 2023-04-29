@@ -1,3 +1,4 @@
+pub mod highlight;
 pub mod nav;
 pub mod page_size;
 pub mod protected;

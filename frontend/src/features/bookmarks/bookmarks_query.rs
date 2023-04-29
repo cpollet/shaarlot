@@ -69,7 +69,11 @@ pub struct QueryParams {
     page: Option<u64>,
     page_size: Option<u64>,
     #[serde(with = "serialize_tags", default)]
+    // todo should it be String?
     tags: Option<Vec<AttrValue>>,
+    #[serde(with = "serialize_tags", default)]
+    // todo should it be String?
+    terms: Option<Vec<AttrValue>>,
     order: Option<QueryOrder>,
     filter: Option<QueryFilter>,
 }
@@ -80,6 +84,7 @@ impl From<Params> for QueryParams {
             page: value.page,
             page_size: value.page_size,
             tags: value.tags,
+            terms: value.search_terms,
             order: value.order.map(QueryOrder::from),
             filter: value.filter.map(QueryFilter::from),
         }
@@ -92,6 +97,7 @@ impl From<&QueryParams> for Params {
             page: value.page,
             page_size: value.page_size,
             tags: value.tags.clone(),
+            search_terms: value.terms.clone(),
             order: value.order.as_ref().map(Order::from),
             filter: value.filter.as_ref().map(Filter::from),
         }
@@ -101,9 +107,7 @@ impl From<&QueryParams> for Params {
 mod serialize_tags {
     use serde::de::{Error, Visitor};
     use serde::{Deserializer, Serializer};
-    use std::borrow::Cow;
     use std::fmt::Formatter;
-    use urlencoding::{decode, encode};
     use yew::AttrValue;
 
     pub fn serialize<S: Serializer>(
@@ -114,8 +118,8 @@ mod serialize_tags {
             None => serializer.serialize_none(),
             Some(vec) => serializer.serialize_str(
                 &vec.iter()
-                    .map(|tag| encode(tag.as_str()))
-                    .reduce(|a, b| Cow::Owned(format!("{}+{}", a, b)))
+                    .map(|tag| tag.to_string())
+                    .reduce(|a, b| format!("{} {}", a, b))
                     .unwrap_or_default(),
             ),
         }
@@ -143,15 +147,11 @@ mod serialize_tags {
             where
                 E: Error,
             {
-                let tags = v.split('+').map(decode).collect::<Vec<_>>();
-
-                if tags.iter().any(|i| i.is_err()) {
-                    return Err(Error::custom("not a valid UTF-8 string"));
-                }
+                let tags = v.split(' ').collect::<Vec<_>>();
 
                 let tags = tags
                     .into_iter()
-                    .map(|i| i.expect("error should have been returned already"))
+                    // .map(|i| i.expect("error should have been returned already"))
                     .map(|t| AttrValue::from(t.to_string()))
                     .collect::<Vec<AttrValue>>();
 
@@ -163,21 +163,6 @@ mod serialize_tags {
             }
         }
         deserializer.deserialize_str(TagsVisitor::new())
-    }
-}
-
-pub fn search(
-    nav: &Navigator,
-    route: Route,
-    params: Params,
-    curr_location: &Location,
-    curr_params: Option<&Params>,
-) {
-    if curr_location.path() != route.to_path()
-        || curr_params.is_none()
-        || curr_params != Some(&params)
-    {
-        let _ = nav.push_with_query(&route, &QueryParams::from(params));
     }
 }
 
@@ -194,7 +179,16 @@ pub fn bookmarks_query(props: &Props) -> Html {
         let location = use_location().unwrap();
         let params = Some(Params::from(&query_params));
         Callback::from(move |p: (Route, Params)| {
-            search(&navigator, p.0, p.1, &location, params.as_ref());
+            let route = p.0;
+            let new_params = p.1;
+            let curr_params = params.as_ref();
+
+            if location.path() != route.to_path()
+                || curr_params.is_none()
+                || curr_params != Some(&new_params)
+            {
+                let _ = navigator.push_with_query(&route, &QueryParams::from(new_params));
+            }
         })
     };
 

@@ -1,4 +1,4 @@
-use crate::database::bookmarks::{Filter, SortOrder};
+use crate::database::bookmarks::{Filter, Pagination, SearchCriteria, SortOrder};
 use crate::sessions::session::UserInfo;
 use crate::{database, AppState};
 use axum::body::Body;
@@ -29,6 +29,7 @@ pub struct GetBookmarksQueryParams {
     page: Option<u64>,
     count: Option<u64>,
     tags: Option<String>,
+    search: Option<String>,
     filter: Option<String>,
 }
 
@@ -60,6 +61,49 @@ pub async fn get_bookmarks(
     Extension(user_info): Extension<Option<UserInfo>>,
     State(state): State<AppState>,
 ) -> Result<GetBookmarksResult, GetBookmarksResult> {
+    let criteria = SearchCriteria {
+        user_id: user_info.as_ref().map(|u| u.id),
+        tags: query
+            .tags
+            // todo: no manual deserialize
+            .map(|tags| {
+                tags.split('+')
+                    .map(decode)
+                    .map(|t| t.unwrap_or_default())
+                    .filter(|t| !t.is_empty())
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default(),
+        search: query
+            .search
+            // todo: no manual deserialize
+            .map(|tags| {
+                tags.split('+')
+                    .map(decode)
+                    .map(|t| t.unwrap_or_default())
+                    .filter(|t| !t.is_empty())
+                    .map(|t| t.to_string())
+                    .collect::<Vec<String>>()
+            })
+            .unwrap_or_default(),
+        filter: query
+            .filter
+            // todo: no manual deserialize
+            .map(|v| Filter::try_from(v.as_str()))
+            .unwrap_or(Ok(Filter::All))
+            .map_err(|_| {
+                GetBookmarksResult::InvalidParameter(
+                    "Unsupported value provided for the 'sort' query parameter".to_string(),
+                )
+            })?,
+    };
+
+    let page = Pagination {
+        page: query.page.unwrap_or_default(),
+        size: query.count.unwrap_or(20).min(100),
+    };
+
     let order = query
         .order
         // todo: no manual deserialize
@@ -71,60 +115,20 @@ pub async fn get_bookmarks(
             )
         })?;
 
-    let filter = query
-        .filter
-        // todo: no manual deserialize
-        .map(|v| Filter::try_from(v.as_str()))
-        .unwrap_or(Ok(Filter::All))
-        .map_err(|_| {
-            GetBookmarksResult::InvalidParameter(
-                "Unsupported value provided for the 'sort' query parameter".to_string(),
-            )
-        })?;
+    let bookmarks = database::bookmarks::Query::find(&state.database, &criteria, &page, order)
+        .await
+        .map_err(|_| GetBookmarksResult::ServerError)?
+        .into_iter()
+        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
+        .collect::<Vec<GetBookmarkResponse>>();
 
-    let tags = query
-        .tags
-        .map(|tags| {
-            tags.split('+')
-                .map(decode)
-                .map(|t| t.unwrap_or_default())
-                .filter(|t| !t.is_empty())
-                .map(|t| t.to_string())
-                .collect::<Vec<String>>()
-        })
-        .unwrap_or_default();
-
-    let page_size = query.count.unwrap_or(20).min(100);
-    let user_id = user_info.as_ref().map(|u| u.id);
-
-    let bookmarks = database::bookmarks::Query::find_count_visible_with_tags_on_page_order_by(
-        &state.database,
-        user_id,
-        page_size,
-        &tags,
-        query.page.unwrap_or_default(),
-        order,
-        filter,
-    )
-    .await
-    .map_err(|_| GetBookmarksResult::ServerError)?
-    .into_iter()
-    .map(|m| into_response(m.0, m.1, user_info.as_ref()))
-    .collect::<Vec<GetBookmarkResponse>>();
-
-    let bookmarks_count = database::bookmarks::Query::count_visible_with_tags(
-        &state.database,
-        user_id,
-        &tags,
-        filter,
-    )
-    .await
-    .map_err(|_| GetBookmarksResult::ServerError)?;
+    let bookmarks_count = database::bookmarks::Query::count(&state.database, &criteria)
+        .await
+        .map_err(|_| GetBookmarksResult::ServerError)?;
 
     Ok(GetBookmarksResult::Success(GetBookmarksResponse {
         bookmarks,
-        pages_count: (bookmarks_count as f64 / page_size as f64).ceil()
-            as u64,
+        pages_count: (bookmarks_count as f64 / page.size as f64).ceil() as u64,
     }))
 }
 
@@ -350,21 +354,24 @@ pub async fn get_bookmarks_stats(
     State(state): State<AppState>,
 ) -> Result<GetBookmarksStatsResult, GetBookmarksStatsResult> {
     let user_id = user_info.map(|u| u.id);
-    let no_tags = vec![];
 
-    let visible = database::bookmarks::Query::count_visible_with_tags(
+    let visible = database::bookmarks::Query::count(
         &state.database,
-        user_id,
-        &no_tags,
-        Filter::All,
+        &SearchCriteria {
+            user_id,
+            ..SearchCriteria::default()
+        },
     )
     .await
     .map_err(|_| GetBookmarksStatsResult::ServerError)?;
 
-    let private = database::bookmarks::Query::count_private_visible_with_tags(
+    let private = database::bookmarks::Query::count(
         &state.database,
-        user_id,
-        &no_tags,
+        &SearchCriteria {
+            user_id,
+            filter: Filter::Private,
+            ..SearchCriteria::default()
+        },
     )
     .await
     .map_err(|_| GetBookmarksStatsResult::ServerError)?;
