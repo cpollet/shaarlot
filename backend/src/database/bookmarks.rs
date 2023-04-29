@@ -37,6 +37,26 @@ impl TryFrom<&str> for SortOrder {
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum Filter {
+    All,
+    Private,
+    Public,
+}
+
+impl TryFrom<&str> for Filter {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "" => Ok(Filter::All),
+            "private" => Ok(Filter::Private),
+            "public" => Ok(Filter::Public),
+            _ => Err(format!("{} is not valid", value)),
+        }
+    }
+}
+
 pub struct Query;
 
 impl Query {
@@ -54,12 +74,13 @@ impl Query {
         tags: &Vec<String>,
         page: u64,
         order: SortOrder,
+        filter: Filter,
     ) -> Result<Vec<(Model, Vec<tag::Model>)>, DbErr>
     where
         C: ConnectionTrait,
     {
         let mut select = Entity::find()
-            .filter(Self::visible_condition(user_id))
+            .filter(Self::visible_condition(user_id, filter))
             .filter(Self::tags_condition(tags))
             .offset(count * page)
             .limit(count);
@@ -76,12 +97,24 @@ impl Query {
         Ok(tagged_bookmarks)
     }
 
-    pub fn visible_condition(user_id: Option<i32>) -> Condition {
-        let mut visible = Condition::any().add(Column::Private.eq(false));
-        if let Some(user_id) = user_id {
-            visible = visible.add(Column::UserId.eq(user_id));
+    pub fn visible_condition(user_id: Option<i32>, filter: Filter) -> Condition {
+        match filter {
+            Filter::All => {
+                let mut visible = Condition::any().add(Column::Private.eq(false));
+                if let Some(user_id) = user_id {
+                    visible = visible.add(Column::UserId.eq(user_id));
+                }
+                visible
+            }
+            Filter::Private => {
+                let mut visible = Condition::all().add(Column::Private.eq(true));
+                if let Some(user_id) = user_id {
+                    visible = visible.add(Column::UserId.eq(user_id));
+                }
+                visible
+            }
+            Filter::Public => Condition::any().add(Column::Private.eq(false)),
         }
-        visible
     }
 
     fn tags_condition(tags: &Vec<String>) -> Condition {
@@ -118,6 +151,7 @@ impl Query {
         db: &C,
         user_id: Option<i32>,
         tags: &Vec<String>,
+        filter: Filter,
     ) -> Result<i64, DbErr>
     where
         C: ConnectionTrait,
@@ -125,7 +159,7 @@ impl Query {
         let r: Option<i64> = Entity::find()
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
-            .filter(Self::visible_condition(user_id))
+            .filter(Self::visible_condition(user_id, filter))
             .filter(Self::tags_condition(tags))
             .into_tuple()
             .one(db)
@@ -144,8 +178,7 @@ impl Query {
         let r: Option<i64> = Entity::find()
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
-            .filter(Self::visible_condition(user_id))
-            .filter(Column::Private.eq(true))
+            .filter(Self::visible_condition(user_id, Filter::Private))
             .filter(Self::tags_condition(tags))
             .into_tuple()
             .one(db)
@@ -163,7 +196,7 @@ impl Query {
     {
         Ok(Entity::find_by_id(id)
             .find_with_related(tag::Entity)
-            .filter(Self::visible_condition(user_id))
+            .filter(Self::visible_condition(user_id, Filter::All))
             .all(db)
             .await?
             .pop())

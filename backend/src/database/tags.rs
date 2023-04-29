@@ -1,4 +1,5 @@
 use crate::database::bookmarks;
+use crate::database::bookmarks::Filter;
 use entity::tag::{ActiveModel, Column, Entity, Model};
 use entity::{bookmark, bookmark_tag};
 use migration::JoinType;
@@ -71,7 +72,7 @@ impl Query {
                     .to(bookmark_tag::Column::BookmarkId)
                     .into(),
             )
-            .filter(bookmarks::Query::visible_condition(user_id))
+            .filter(bookmarks::Query::visible_condition(user_id, Filter::All))
             .group_by(Column::Id)
             .group_by(Column::Name);
         select = order.add_clause(select);

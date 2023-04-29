@@ -1,4 +1,4 @@
-use crate::features::bookmarks::bookmarks_provider::{BookmarksProvider, Order, Params};
+use crate::features::bookmarks::bookmarks_provider::{BookmarksProvider, Filter, Order, Params};
 use crate::Route;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
@@ -36,6 +36,32 @@ impl From<&QueryOrder> for Order {
     }
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
+enum QueryFilter {
+    #[serde(rename(serialize = "private", deserialize = "private"))]
+    Private,
+    #[serde(rename(serialize = "public", deserialize = "public"))]
+    Public,
+}
+
+impl From<Filter> for QueryFilter {
+    fn from(value: Filter) -> Self {
+        match value {
+            Filter::Private => QueryFilter::Private,
+            Filter::Public => QueryFilter::Public,
+        }
+    }
+}
+
+impl From<&QueryFilter> for Filter {
+    fn from(value: &QueryFilter) -> Self {
+        match value {
+            QueryFilter::Private => Filter::Private,
+            QueryFilter::Public => Filter::Public,
+        }
+    }
+}
+
 // todo review query param serialization and struct shared with API (less relevant as this is
 //  front-end only)
 #[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
@@ -45,6 +71,7 @@ pub struct QueryParams {
     #[serde(with = "serialize_tags", default)]
     tags: Option<Vec<AttrValue>>,
     order: Option<QueryOrder>,
+    filter: Option<QueryFilter>,
 }
 
 impl From<Params> for QueryParams {
@@ -54,6 +81,7 @@ impl From<Params> for QueryParams {
             page_size: value.page_size,
             tags: value.tags,
             order: value.order.map(QueryOrder::from),
+            filter: value.filter.map(QueryFilter::from),
         }
     }
 }
@@ -65,6 +93,7 @@ impl From<&QueryParams> for Params {
             page_size: value.page_size,
             tags: value.tags.clone(),
             order: value.order.as_ref().map(Order::from),
+            filter: value.filter.as_ref().map(Filter::from),
         }
     }
 }

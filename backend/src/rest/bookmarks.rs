@@ -1,4 +1,4 @@
-use crate::database::bookmarks::SortOrder;
+use crate::database::bookmarks::{Filter, SortOrder};
 use crate::sessions::session::UserInfo;
 use crate::{database, AppState};
 use axum::body::Body;
@@ -29,6 +29,7 @@ pub struct GetBookmarksQueryParams {
     page: Option<u64>,
     count: Option<u64>,
     tags: Option<String>,
+    filter: Option<String>,
 }
 
 fn into_response(
@@ -70,6 +71,17 @@ pub async fn get_bookmarks(
             )
         })?;
 
+    let filter = query
+        .filter
+        // todo: no manual deserialize
+        .map(|v| Filter::try_from(v.as_str()))
+        .unwrap_or(Ok(Filter::All))
+        .map_err(|_| {
+            GetBookmarksResult::InvalidParameter(
+                "Unsupported value provided for the 'sort' query parameter".to_string(),
+            )
+        })?;
+
     let tags = query
         .tags
         .map(|tags| {
@@ -89,6 +101,7 @@ pub async fn get_bookmarks(
         &tags,
         query.page.unwrap_or_default(),
         order,
+        filter,
     )
     .await
     .map_err(|_| GetBookmarksResult::ServerError)?
@@ -100,6 +113,7 @@ pub async fn get_bookmarks(
         &state.database,
         user_info.as_ref().map(|u| u.id),
         &tags,
+        filter,
     )
     .await
     .map_err(|_| GetBookmarksResult::ServerError)?;
@@ -335,10 +349,14 @@ pub async fn get_bookmarks_stats(
     let user_id = user_info.map(|u| u.id);
     let no_tags = vec![];
 
-    let visible =
-        database::bookmarks::Query::count_visible_with_tags(&state.database, user_id, &no_tags)
-            .await
-            .map_err(|_| GetBookmarksStatsResult::ServerError)?;
+    let visible = database::bookmarks::Query::count_visible_with_tags(
+        &state.database,
+        user_id,
+        &no_tags,
+        Filter::All,
+    )
+    .await
+    .map_err(|_| GetBookmarksStatsResult::ServerError)?;
 
     let private = database::bookmarks::Query::count_private_visible_with_tags(
         &state.database,

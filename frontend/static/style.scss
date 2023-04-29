@@ -1,6 +1,7 @@
 .material-icons-outlined { vertical-align: bottom; }
 .material-icons-outlined.red { color: darkred; }
 .material-icons-outlined.blue { color: darkblue; }
+.material-icons-outlined.md-14 { font-size: 14px; }
 .material-icons-outlined.md-16 { font-size: 16px; }
 .material-icons-outlined.md-18 { font-size: 18px; }
 .material-icons-outlined.md-24 { font-size: 24px; }
@@ -162,15 +163,18 @@ a.material-icons-outlined {
   cursor: pointer;
 }
 
-.bookmarks__page-size-item {
+.bookmarks__page-size-item,
+.bookmarks__filter-item {
   padding: 0.3em;
   margin: 0.15em;
   background-color: #f5f5f5;
   text-decoration: none;
   cursor: pointer;
+  display: inline;
 }
 
-.bookmarks__page-size-item--selected {
+.bookmarks__page-size-item--selected,
+.bookmarks__filter-item--selected {
   @extend .bookmarks__page-size-item;
   background-color: darkgreen;
   color: #f5f5f5;

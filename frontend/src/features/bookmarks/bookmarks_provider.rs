@@ -27,6 +27,7 @@ pub struct Params {
     pub page_size: Option<u64>,
     pub tags: Option<Vec<AttrValue>>,
     pub order: Option<Order>,
+    pub filter: Option<Filter>,
 }
 
 #[derive(Clone, Copy, PartialEq, Default, Debug)]
@@ -45,12 +46,28 @@ impl Order {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
+pub enum Filter {
+    Public,
+    Private,
+}
+
+impl Filter {
+    fn query_param(&self) -> &str {
+        match self {
+            Filter::Private => "private",
+            Filter::Public => "public",
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct State {
     order: Order,
     page: u64,
     page_size: u64,
     tags: Rc<Vec<AttrValue>>,
+    filter: Option<Filter>,
     data: Eventually<Data>,
     stats: Eventually<Stats>,
 }
@@ -62,6 +79,7 @@ impl Default for State {
             page: 0,
             page_size: 20,
             tags: Rc::new(Vec::new()),
+            filter: None,
             data: Eventually::None,
             stats: Eventually::None,
         }
@@ -88,6 +106,7 @@ impl From<&State> for Params {
                 Order::CreationDateDesc => None,
                 Order::CreationDateAsc => Some(state.order),
             },
+            filter: state.filter,
         }
     }
 }
@@ -116,6 +135,7 @@ impl From<Option<&Params>> for State {
         if let Some(order) = value.order {
             state.order = order;
         }
+        state.filter = value.filter;
 
         state
     }
@@ -299,6 +319,21 @@ pub fn bookmarks_provider(props: &Props) -> Html {
         })
     };
 
+    let on_change_filter = {
+        let state = state.clone();
+        let on_change = props.on_change.clone();
+        Callback::from(move |filter: Filter| {
+            let mut new_state = (*state).clone();
+            new_state.filter = match state.filter {
+                None => Some(filter),
+                Some(current_filter) => (filter != current_filter).then_some(filter),
+            };
+            new_state.data = Eventually::None;
+
+            trigger_update(&on_change, &state, new_state);
+        })
+    };
+
     match state.data.as_ref() {
         Eventually::Some(data) => {
             let context = BookmarksContext {
@@ -308,6 +343,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 page: state.page,
                 page_size: state.page_size,
                 selected_tags: state.tags.clone(),
+                filter: state.filter.clone(),
                 page_count: data.pages_count,
                 on_change_order,
                 on_previous,
@@ -315,6 +351,7 @@ pub fn bookmarks_provider(props: &Props) -> Html {
                 on_change_page_size,
                 on_select_tag_filter,
                 on_change_tags,
+                on_change_filter,
                 links: state
                     .stats
                     .as_ref()
@@ -356,6 +393,15 @@ async fn fetch_bookmarks(state: &State) -> (Vec<Bookmark>, u64) {
         ("order", state.order.query_param().to_string()),
         ("page", state.page.to_string()),
         ("count", state.page_size.to_string()),
+        (
+            "filter",
+            state
+                .filter
+                .as_ref()
+                .map(|f| f.query_param())
+                .unwrap_or_default()
+                .to_string(),
+        ),
         (
             "tags",
             state
