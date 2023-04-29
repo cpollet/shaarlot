@@ -94,10 +94,13 @@ pub async fn get_bookmarks(
         })
         .unwrap_or_default();
 
+    let page_size = query.count.unwrap_or(20).min(100);
+    let user_id = user_info.as_ref().map(|u| u.id);
+
     let bookmarks = database::bookmarks::Query::find_count_visible_with_tags_on_page_order_by(
         &state.database,
-        user_info.as_ref().map(|u| u.id),
-        query.count.unwrap_or(20).min(100),
+        user_id,
+        page_size,
         &tags,
         query.page.unwrap_or_default(),
         order,
@@ -111,7 +114,7 @@ pub async fn get_bookmarks(
 
     let bookmarks_count = database::bookmarks::Query::count_visible_with_tags(
         &state.database,
-        user_info.as_ref().map(|u| u.id),
+        user_id,
         &tags,
         filter,
     )
@@ -120,7 +123,7 @@ pub async fn get_bookmarks(
 
     Ok(GetBookmarksResult::Success(GetBookmarksResponse {
         bookmarks,
-        pages_count: (bookmarks_count as f64 / query.count.unwrap_or(20).min(100) as f64).ceil()
+        pages_count: (bookmarks_count as f64 / page_size as f64).ceil()
             as u64,
     }))
 }
