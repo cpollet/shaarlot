@@ -212,12 +212,14 @@ a.material-icons-outlined {
 
 .bookmark__footer {
   background: #ddd;
+  display: flex;
 }
 
 .bookmark__tags-list {
   font-size: 0.8em;
   padding: 0.5em;
   list-style-type: none;
+  background: #ddd;
 }
 
 .bookmark__tags-list li {
@@ -245,6 +247,7 @@ a.material-icons-outlined {
   text-align: right;
   text-overflow: ellipsis;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .bookmark__date--updated {
