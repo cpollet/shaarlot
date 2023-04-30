@@ -11,7 +11,6 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, Order,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Select, TryIntoModel,
 };
-use sea_orm::sea_query::SimpleExpr;
 
 #[derive(Clone, Copy, Debug)]
 pub enum SortOrder {
