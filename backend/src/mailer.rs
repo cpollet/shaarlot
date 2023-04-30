@@ -26,10 +26,7 @@ enum State {
 
 impl State {
     fn accepts_messages(&self) -> bool {
-        match self {
-            State::Ready => true,
-            _ => false,
-        }
+        matches!(self, State::Ready)
     }
 }
 

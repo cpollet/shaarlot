@@ -110,12 +110,10 @@ pub fn bookmarks(props: &Props) -> Html {
                     <span
                         class={classes!(
                             "material-icons-outlined", "md-14",
-                            props
-                                .filter
-                                .map(|f| f == Filter::Private)
-                                .unwrap_or_default()
-                                .then_some("bookmarks__filter-item--selected")
-                                .unwrap_or("bookmarks__filter-item")
+                            match props.filter {
+                                Some(Filter::Private) => "bookmarks__filter-item--selected",
+                                _ => "bookmarks__filter-item"
+                            }
                         )}
                         onclick={
                             let props = props.clone();
@@ -127,12 +125,10 @@ pub fn bookmarks(props: &Props) -> Html {
                     <span
                         class={classes!(
                             "material-icons-outlined", "md-14", "bookmarks__filter-item",
-                            props
-                                .filter
-                                .map(|f| f == Filter::Public)
-                                .unwrap_or_default()
-                                .then_some("bookmarks__filter-item--selected")
-                                .unwrap_or("bookmarks__filter-item")
+                            match props.filter {
+                                Some(Filter::Public) => "bookmarks__filter-item--selected",
+                                _ => "bookmarks__filter-item"
+                            }
                         )}
                         onclick={
                             let props = props.clone();
