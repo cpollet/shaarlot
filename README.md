@@ -76,5 +76,6 @@ The URL to use is http://localhost:8001.
 * [ ] Read it later flags
 * [ ] Private bookmarks sharing
 * [ ] Dead bookmarks detection & report
+* [ ] Duplicate links report
 * [ ] URL cleanup (utm_source=, fb=)
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
