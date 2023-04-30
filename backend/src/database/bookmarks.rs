@@ -11,6 +11,7 @@ use sea_orm::{
     ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, Order,
     QueryFilter, QueryOrder, QuerySelect, QueryTrait, Select, TryIntoModel,
 };
+use sea_orm::sea_query::SimpleExpr;
 
 #[derive(Clone, Copy, Debug)]
 pub enum SortOrder {
@@ -122,6 +123,10 @@ impl Query {
                 visible
             }
             Filter::Private => {
+                if user_id.is_none() {
+                    return Condition::all().add( Column::UserId.is_null())
+                }
+
                 let mut visible = Condition::all().add(Column::Private.eq(true));
                 if let Some(user_id) = user_id {
                     visible = visible.add(Column::UserId.eq(user_id));
