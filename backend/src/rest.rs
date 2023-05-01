@@ -35,7 +35,7 @@ use rest_api::urls::{GetUrlConflictResponse, GetUrlResponse, GetUrlResult, URL_U
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
-use webpage::{Webpage, WebpageOptions};
+use webpage::HTML;
 
 pub struct Configuration<S>
 where
@@ -133,20 +133,34 @@ async fn get_url(
 
     log::info!("Fetching metadata about {}", &url);
 
-    let options = WebpageOptions {
-        allow_insecure: true,
-        ..WebpageOptions::default()
+    let url = {
+        let mut url = url;
+        if !(url.starts_with("http://") || url.starts_with("https://")) {
+            url = format!("http://{}", url);
+        }
+        url
     };
 
-    // todo use reqwest to fetch HTML instead of curl
-    let webpage = Webpage::from_url(&url, options).map_err(|e| {
-        log::error!("Error while fetching metadata about {}: {}", &url, e);
+    let response = reqwest::get(&url).await.map_err(|e| {
+        log::error!("{:?}", e);
+        GetUrlResult::ServerError
+    })?;
+
+    let url = response.url().to_string();
+
+    let html = response.text().await.map_err(|e| {
+        log::error!("{:?}", e);
+        GetUrlResult::ServerError
+    })?;
+
+    let html = HTML::from_string(html, None).map_err(|e| {
+        log::error!("{:?}", e);
         GetUrlResult::ServerError
     })?;
 
     Ok(GetUrlResult::Success(GetUrlResponse {
-        url: webpage.http.url,
-        title: webpage.html.title,
-        description: webpage.html.description,
+        url,
+        title: html.title,
+        description: html.description,
     }))
 }
