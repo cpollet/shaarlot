@@ -46,8 +46,6 @@ pub enum Route {
     #[at("/bookmarks")]
     Bookmarks,
 
-    // #[at("/bookmarks/~search")]
-    // BookmarksSearch,
     #[at("/bookmarks/~add")]
     AddBookmark,
 
@@ -114,6 +112,7 @@ fn app() -> Html {
         use_effect_once(move || {
             let mut new_state = (*state).clone();
             spawn_local(async move {
+                // todo do not loose page when logging-in or creating session
                 if let Some(CreateSessionResult::Success(session)) =
                     CreateSessionResult::from(Request::get(URL_SESSIONS_CURRENT).send().await).await
                 {
