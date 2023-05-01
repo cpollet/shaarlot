@@ -6,8 +6,8 @@ pub struct CreateBookmarkRequest {
     pub url: String,
     pub title: Option<String>,
     pub description: Option<String>,
-    pub tags: Vec<String>,
-    pub private: bool,
+    pub tags: Option<Vec<String>>,
+    pub private: Option<bool>,
 }
 
 pub type CreateBookmarkResponse = GetBookmarkResponse;

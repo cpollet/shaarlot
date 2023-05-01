@@ -56,7 +56,7 @@ GET http://localhost:3000/api/tags?
     order=name
 
 ### Get URL info
-GET http://localhost:3000/api/urls/http%3A%2F%2Fdocs.rs
+GET http://localhost:3000/api/urls/https%3A%2F%2Fdocs.rs
 
 ### Create user
 POST http://localhost:3000/api/users

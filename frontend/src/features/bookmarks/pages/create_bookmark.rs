@@ -89,6 +89,7 @@ pub fn create_bookmark(props: &Props) -> Html {
             }
             match state.step {
                 Step::Init => {
+                    let navigator = navigator.clone();
                     let state = state.clone();
                     spawn_local(async move {
                         let url =
@@ -97,6 +98,10 @@ pub fn create_bookmark(props: &Props) -> Html {
                         let payload =
                             match GetUrlResult::from(Request::get(&url).send().await).await {
                                 Some(GetUrlResult::Success(payload)) => Some(payload),
+                                Some(GetUrlResult::Conflict(payload)) => {
+                                    navigator.push(&Route::EditBookmark { id: payload.id });
+                                    None
+                                }
                                 _ => None,
                             };
 

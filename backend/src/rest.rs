@@ -16,12 +16,12 @@ use crate::rest::sessions::*;
 use crate::rest::shaarli_import_api::shaarli_import_api;
 use crate::rest::tags::get_tags;
 use crate::rest::users::*;
-use crate::sessions::session::SessionHint;
-use crate::AppState;
-use axum::extract::Path;
+use crate::sessions::session::{SessionHint, UserInfo};
+use crate::{database, AppState};
+use axum::extract::{Path, State};
 use axum::middleware::from_fn;
 use axum::routing::{delete, get, post, put};
-use axum::Router;
+use axum::{Extension, Router};
 use axum_sessions::async_session::SessionStore;
 use axum_sessions::{PersistencePolicy, SessionLayer};
 use rest_api::application::URL_APPLICATION;
@@ -31,7 +31,7 @@ use rest_api::import_shaarli_api::URL_SHAARLI_IMPORT_API;
 use rest_api::password_recoveries::URL_PASSWORD_RECOVERIES;
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::tags::URL_TAGS;
-use rest_api::urls::{GetUrlResponse, GetUrlResult, URL_URLS};
+use rest_api::urls::{GetUrlConflictResponse, GetUrlResponse, GetUrlResult, URL_URLS};
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
@@ -119,7 +119,18 @@ where
         .with_state(state)
 }
 
-async fn get_url(Path(url): Path<String>) -> Result<GetUrlResult, GetUrlResult> {
+async fn get_url(
+    Extension(user_info): Extension<UserInfo>,
+    Path(url): Path<String>,
+    State(state): State<AppState>,
+) -> Result<GetUrlResult, GetUrlResult> {
+    if let Some(id) = database::bookmarks::Query::find_by_url(&state.database, user_info.id, &url)
+        .await
+        .map_err(|_| GetUrlResult::ServerError)?
+    {
+        return Ok(GetUrlResult::Conflict(GetUrlConflictResponse { id }));
+    }
+
     log::info!("Fetching metadata about {}", &url);
 
     let options = WebpageOptions {

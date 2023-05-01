@@ -205,7 +205,7 @@ pub async fn create_bookmark(
             Box::pin(async move {
                 let tags = {
                     let mut tags = Vec::new();
-                    for tag in bookmark.tags {
+                    for tag in bookmark.tags.unwrap_or_default() {
                         tags.push(
                             database::tags::Mutation::create_tag(txn, tag.to_lowercase()).await?,
                         )
@@ -219,7 +219,7 @@ pub async fn create_bookmark(
                     bookmark.title,
                     bookmark.description,
                     user_info.id,
-                    bookmark.private,
+                    bookmark.private.unwrap_or(true),
                 )
                 .await?;
 

@@ -76,12 +76,12 @@ impl From<&Bookmark> for CreateBookmarkRequest {
             url: bookmark.url.to_string(),
             title: bookmark.title.as_ref().map(|v| v.to_string()),
             description: bookmark.description.as_ref().map(|v| v.to_string()),
-            tags: bookmark
+            tags: Some(bookmark
                 .tags
                 .iter()
                 .map(|v| v.to_string())
-                .collect::<Vec<String>>(),
-            private: bookmark.private,
+                .collect::<Vec<String>>()),
+            private: Some(bookmark.private),
         }
     }
 }

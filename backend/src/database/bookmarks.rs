@@ -123,7 +123,7 @@ impl Query {
             }
             Filter::Private => {
                 if user_id.is_none() {
-                    return Condition::all().add( Column::UserId.is_null())
+                    return Condition::all().add(Column::UserId.is_null());
                 }
 
                 let mut visible = Condition::all().add(Column::Private.eq(true));
@@ -227,6 +227,19 @@ impl Query {
             .all(db)
             .await?
             .pop())
+    }
+
+    pub async fn find_by_url<C>(db: &C, user_id: i32, url: &str) -> Result<Option<i32>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Ok(Entity::find()
+            .filter(Column::Url.eq(url))
+            .filter(Column::UserId.eq(user_id))
+            .all(db)
+            .await?
+            .pop()
+            .map(|m| m.id))
     }
 }
 
