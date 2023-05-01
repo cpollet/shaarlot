@@ -97,7 +97,7 @@ pub fn bookmark(props: &Props) -> Html {
             <div class="bookmark__footer">
                 <div class="bookmark__actions">
                     {display_date(&props.bookmark)}
-                    {"\u{00a0}\u{ff5c}\u{00a0}"}
+                    {"\u{00a0}\u{00b7}\u{00a0}"}
                     <a
                         class="material-icons-outlined md-16"
                         onclick={onclick_permalink}
@@ -105,12 +105,12 @@ pub fn bookmark(props: &Props) -> Html {
                     >
                         {"link"}
                     </a>
-                    {"\u{00a0}\u{ff5c}\u{00a0}"}
+                    {"\u{00a0}"}
                     <QrCode id={props.bookmark.id} />
                     { if props.bookmark.access == Access::Write {
                         html!{
                             <>
-                                {"\u{00a0}\u{ff5c}\u{00a0}"}
+                                {"\u{00a0}"}
                                  <a
                                     class="material-icons-outlined md-16 blue"
                                     onclick={onclick_edit}
@@ -118,7 +118,7 @@ pub fn bookmark(props: &Props) -> Html {
                                 >
                                     {"edit"}
                                 </a>
-                                {"\u{00a0}\u{ff5c}\u{00a0}"}
+                                {"\u{00a0}"}
                                 <a
                                     class="material-icons-outlined md-16 red"
                                     onclick={onclick_delete}
