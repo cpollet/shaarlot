@@ -65,9 +65,11 @@ The URL to use is http://localhost:8001.
 * [x] Private bookmarks
 * [x] Pagination
 * [x] Tag search
+  * [ ] Find untagged bookmarks
 * [x] Filtering by privacy
 * [x] Full text search
 * [x] Tag cloud
+* [ ] Sticky bookmarks
 * [ ] Export & Import bookmarks (incl. from Shaarli)
   * [x] Import from Shaarli's API
   * [ ] Import from Shaarli's JSON
@@ -77,5 +79,10 @@ The URL to use is http://localhost:8001.
 * [ ] Private bookmarks sharing
 * [ ] Dead bookmarks detection & report
 * [ ] Duplicate links report
+  * [x] On add
+  * [ ] Periodically
+* [ ] Rename tag
 * [ ] URL cleanup (utm_source=, fb=)
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
+* [ ] Notes
+* [ ] Bookmarklet
