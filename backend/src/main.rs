@@ -30,7 +30,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 #[cfg(not(debug_assertions))]
-static STATIC_DIR: include_dir::Dir<'_> =
+const STATIC_DIR: include_dir::Dir<'_> =
     include_dir::include_dir!("$CARGO_MANIFEST_DIR/../target/release/wasm");
 
 const IGNORED_GET_PARAMS: &str = include_str!("query-params-registry.txt");

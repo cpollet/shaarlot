@@ -6,6 +6,7 @@ pub const URL_SHAARLI_IMPORT_API: &str = "/api/shaarli-import-api";
 #[derive(Serialize, Deserialize)]
 pub struct ShaarliImportApiRequest {
     pub url: String,
+    // todo keep the secret key in the browser only
     pub key: Secret<ShaarliApiKey>,
 }
 
