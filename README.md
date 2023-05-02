@@ -74,6 +74,7 @@ The URL to use is http://localhost:8001.
   * [x] Import from Shaarli's API
   * [ ] Import from Shaarli's JSON
   * [ ] Export to Shaarli's JSON
+  * [ ] Export for backup
 * [ ] Markdown support in bookmarks description
 * [ ] Read it later flags
 * [ ] Private bookmarks sharing
@@ -89,6 +90,9 @@ The URL to use is http://localhost:8001.
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
 * [ ] Notes
 * [ ] Bookmarklet
+* [ ] Android app ([dimtion/Shaarlier](https://github.com/dimtion/Shaarlier))
+* [ ] iOS app ([mro/ShaarliOS](https://github.com/mro/ShaarliOS))
+* [ ] Pinned bookmarks
 
 ## Resources
  * All the rust crates dependencies
