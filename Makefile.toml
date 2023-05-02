@@ -21,6 +21,7 @@ echo "  install-trunk                install trunk"
 echo "  install-wasm32               install wasm32 target"
 echo "  postgres                     start postgres database"
 echo "  redis                        start redis database"
+echo "  update-ignored-get-params    build/update the ignored get params list"
 echo "  dev-frontend                 starts the front-end in dev mode (auto-refresh)"
 echo "  dev-backend                  start the backe en in dev mode (auto-restart)"
 echo "  build-backend-release        compile the backend in release mode"
@@ -83,6 +84,26 @@ else
     --network rbm \
     redis
 fi
+'''
+
+[tasks.update-ignored-get-params]
+workspace = false
+script = '''
+#!/usr/bin/env bash
+
+mkdir -p target/query_params_registry
+wget https://raw.githubusercontent.com/mpchadwick/tracking-query-params-registry/master/_data/params.csv \
+    -O target/query_params_registry/mpchadwick__tracking-query-params-registry.csv
+
+tail -n+2 target/query_params_registry/mpchadwick__tracking-query-params-registry.csv \
+  | cut -d ',' -f 1 \
+  >> backend/src/query-params-registry.txt
+
+echo "" >> backend/src/query-params-registry.txt
+
+sort -u backend/src/query-params-registry.txt | grep "\S" > backend/src/query-params-registry.txt.new
+mv backend/src/query-params-registry.txt.new backend/src/query-params-registry.txt
+
 '''
 
 [tasks.dev-frontend]

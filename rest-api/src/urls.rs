@@ -19,6 +19,7 @@ pub enum GetUrlResult {
     Conflict(GetUrlConflictResponse),
     Forbidden,
     ServerError,
+    InvalidUrl,
 
     #[cfg(feature = "frontend")]
     BrowserError,
@@ -36,6 +37,7 @@ impl GetUrlResult {
                     Err(_) => Some(GetUrlResult::DeserializationError),
                     Ok(payload) => Some(GetUrlResult::Success(payload)),
                 },
+                400 => Some(GetUrlResult::InvalidUrl),
                 403 => Some(GetUrlResult::Forbidden),
                 409 => match response.json::<GetUrlConflictResponse>().await {
                     Err(_) => Some(GetUrlResult::DeserializationError),
@@ -59,6 +61,7 @@ impl axum::response::IntoResponse for GetUrlResult {
             GetUrlResult::Conflict(payload) => {
                 (http::StatusCode::CONFLICT, axum::Json(payload)).into_response()
             }
+            GetUrlResult::InvalidUrl => http::StatusCode::BAD_REQUEST.into_response(),
             GetUrlResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
             GetUrlResult::ServerError => http::StatusCode::INTERNAL_SERVER_ERROR.into_response(),
             _ => panic!(),

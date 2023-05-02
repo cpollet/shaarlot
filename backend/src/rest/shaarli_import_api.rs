@@ -7,7 +7,7 @@ use axum::Extension;
 use chrono::{DateTime, Utc};
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use reqwest::{header, Client};
+use reqwest::header;
 use rest_api::import_shaarli_api::{ShaarliImportApiRequest, ShaarliImportApiResult};
 use sea_orm::{DbErr, TransactionTrait};
 use secrecy::ExposeSecret;
@@ -51,16 +51,10 @@ pub async fn shaarli_import_api(
         .map_err(|_| ShaarliImportApiResult::ServerError)?;
     auth_value.set_sensitive(true);
 
-    let mut headers = header::HeaderMap::new();
-    headers.insert(header::AUTHORIZATION, auth_value);
-
-    let client = Client::builder()
-        .default_headers(headers)
-        .build()
-        .map_err(|_| ShaarliImportApiResult::ServerError)?;
-
-    let bookmarks = client
+    let bookmarks = state
+        .http_client
         .get(format!("{}/api/v1/links?limit=all", bookmark.url))
+        .header(header::AUTHORIZATION, auth_value)
         .send()
         .await
         .map_err(|_| ShaarliImportApiResult::ShaarliError)?

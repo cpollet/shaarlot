@@ -17,6 +17,7 @@ use crate::rest::shaarli_import_api::shaarli_import_api;
 use crate::rest::tags::get_tags;
 use crate::rest::users::*;
 use crate::sessions::session::{SessionHint, UserInfo};
+use crate::url;
 use crate::{database, AppState};
 use axum::extract::{Path, State};
 use axum::middleware::from_fn;
@@ -131,31 +132,36 @@ async fn get_url(
         return Ok(GetUrlResult::Conflict(GetUrlConflictResponse { id }));
     }
 
+    let url = url::clean(url, &state.ignored_query_params).map_err(|_| GetUrlResult::InvalidUrl)?;
     log::info!("Fetching metadata about {}", &url);
 
-    let url = {
-        let mut url = url;
-        if !(url.starts_with("http://") || url.starts_with("https://")) {
-            url = format!("http://{}", url);
-        }
-        url
-    };
-
-    let response = reqwest::get(&url).await.map_err(|e| {
+    let response = state.http_client.get(&url).send().await.map_err(|e| {
         log::error!("{:?}", e);
-        GetUrlResult::ServerError
+        GetUrlResult::Success(GetUrlResponse {
+            url,
+            title: None,
+            description: None,
+        })
     })?;
 
     let url = response.url().to_string();
 
     let html = response.text().await.map_err(|e| {
         log::error!("{:?}", e);
-        GetUrlResult::ServerError
+        GetUrlResult::Success(GetUrlResponse {
+            url: url.clone(),
+            title: None,
+            description: None,
+        })
     })?;
 
     let html = HTML::from_string(html, None).map_err(|e| {
         log::error!("{:?}", e);
-        GetUrlResult::ServerError
+        GetUrlResult::Success(GetUrlResponse {
+            url: url.clone(),
+            title: None,
+            description: None,
+        })
     })?;
 
     Ok(GetUrlResult::Success(GetUrlResponse {

@@ -83,6 +83,15 @@ The URL to use is http://localhost:8001.
   * [ ] Periodically
 * [ ] Rename tag
 * [ ] URL cleanup (utm_source=, fb=)
+  * [x] Static params list
+  * [ ] Dynamic params list
+  * [ ] Advanced cleanup mode ([CleanLinks](https://github.com/Cimbali/CleanLinks/blob/master/addon/data/rules.json) and [link-cleaner](https://github.com/corbindavenport/link-cleaner/blob/main/js/shared.js))
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
 * [ ] Notes
 * [ ] Bookmarklet
+
+## Resources
+ * All the rust crates dependencies
+ * [shaarli/Shaarli](https://github.com/shaarli/Shaarli) original idea, annoying query params
+ * [mpchadwick/tracking-query-params-registry](https://github.com/mpchadwick/tracking-query-params-registry) crawled ignored get params
+ * [Sh1d0w/clean-links](https://github.com/Sh1d0w/clean-links) more ignored get params

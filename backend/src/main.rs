@@ -12,6 +12,7 @@ use backend::{database, AppState};
 use lettre::message::Mailbox;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::SmtpTransport;
+use reqwest::Client;
 use sea_orm_migration::MigratorTrait;
 use secrecy::{ExposeSecret, SecretVec};
 use std::env;
@@ -31,6 +32,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 #[cfg(not(debug_assertions))]
 static STATIC_DIR: include_dir::Dir<'_> =
     include_dir::include_dir!("$CARGO_MANIFEST_DIR/../target/release/wasm");
+
+const IGNORED_GET_PARAMS: &str = include_str!("query-params-registry.txt");
 
 // todo better logging
 
@@ -163,6 +166,15 @@ async fn main() {
                 AppState {
                     database,
                     mailer: mailer.clone(),
+                    ignored_query_params: IGNORED_GET_PARAMS
+                        .split('\n')
+                        .filter(|s| !s.is_empty())
+                        .collect::<Vec<&str>>(),
+                    http_client: Client::builder()
+                        .timeout(Duration::from_secs(5))
+                        .connect_timeout(Duration::from_secs(5))
+                        .build()
+                        .expect("Could not initialize HTTP client"),
                 },
             )
             .route("/health", get(health))
