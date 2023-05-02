@@ -1,8 +1,9 @@
 [package]
 name = "frontend"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 publish = false
+repository = "https://github.com/cpollet/rbm"
 
 [dependencies]
 rest-api = { path = "../rest-api", features = ["frontend"] }

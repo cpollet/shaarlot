@@ -1,5 +1,7 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+DOCKER_IMAGE_NAME={ script = ["grep repository backend/Cargo.toml | tr --delete '\"|[:space:]' | rev | cut -d'/' -f1-2 | rev"] }
+DOCKER_IMAGE_NAME2="prout"
 
 [tasks.help]
 workspace = false
@@ -178,13 +180,13 @@ workspace = false
 cwd = "./docker"
 dependencies = ["prepare-docker-build"]
 command = "docker"
-args = ["build", "-t", "cpollet/rbm", "."]
+args = ["build", "-t", "${DOCKER_IMAGE_NAME}", "."]
 
 [tasks.docker-push]
 workspace = false
 dependencies = ["build-docker"]
 command = "docker"
-args = ["push", "cpollet/rbm"]
+args = ["push", "${DOCKER_IMAGE_NAME}"]
 
 [tasks.run-docker]
 workspace = false
@@ -198,7 +200,7 @@ args = ["run", "--rm", "--name", "rbm",
         "-e", "PUBLIC_URL=http://localhost:8001",
         "-p", "8001:8001",
         "--network", "rbm",
-        "cpollet/rbm"]
+        "${DOCKER_IMAGE_NAME}"]
 
 [tasks.deploy]
 workspace = false
@@ -224,7 +226,7 @@ curl "$HEALTH_URL"; echo
 workspace = false
 ignore_errors = true
 command = "docker"
-args = ["rmi", "cpollet/rbm"]
+args = ["rmi", "${DOCKER_IMAGE_NAME}"]
 
 [tasks.clean-docker]
 workspace = false

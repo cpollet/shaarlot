@@ -154,7 +154,7 @@ fn app() -> Html {
                 <Menu username={state.username.clone()} />
                 <a
                     class="github-fork-ribbon right-bottom fixed"
-                    href="https://github.com/cpollet/rbm"
+                    href={env!("CARGO_PKG_REPOSITORY")}
                     data-ribbon="Fork me on GitHub"
                     title="Fork me on GitHub"
                 >
@@ -175,17 +175,6 @@ fn app() -> Html {
                                     </BookmarksQuery>
                                 }
                             }
-                            // Route::BookmarksSearch => {
-                            //     html! {
-                            //         <BookmarksQuery>
-                            //             <BookmarksProvider>
-                            //                 <TagsProvider>
-                            //                     <BookmarksHOC />
-                            //                 </TagsProvider>
-                            //             </BookmarksProvider>
-                            //         </BookmarksQuery>
-                            //     }
-                            // }
                             Route::AddBookmark => {
                                 html! {
                                     <Protected {logged_in}>
@@ -296,7 +285,8 @@ fn app() -> Html {
             </BrowserRouter>
             <div class="footer">
                 <a
-                    href={format!("https://github.com/cpollet/rbm/tree/{}",
+                    href={format!("{}/tree/{}",
+                                  env!("CARGO_PKG_REPOSITORY"),
                                   state.commit
                                     .as_ref()
                                     .map(AttrValue::to_string)
