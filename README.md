@@ -89,10 +89,10 @@ The URL to use is http://localhost:8001.
   * [ ] Advanced cleanup mode ([CleanLinks](https://github.com/Cimbali/CleanLinks/blob/master/addon/data/rules.json) and [link-cleaner](https://github.com/corbindavenport/link-cleaner/blob/main/js/shared.js))
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
 * [ ] Notes
+* [ ] Pinned bookmarks
 * [ ] Bookmarklet
 * [ ] Android app ([dimtion/Shaarlier](https://github.com/dimtion/Shaarlier))
 * [ ] iOS app ([mro/ShaarliOS](https://github.com/mro/ShaarliOS))
-* [ ] Pinned bookmarks
 
 ## Resources
  * All the rust crates dependencies
