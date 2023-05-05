@@ -12,7 +12,7 @@ axum = { version = "0.6.18" , optional = true }
 chrono = { version = "0.4.24", features = ["serde"] }
 http = "0.2.9"
 secrecy = { version = "0.8.0", features = ["serde"] }
-serde = { version = "1.0.160", features = ["derive"] }
+serde = { version = "1.0.162", features = ["derive"] }
 gloo-net = { version = "0.2.6", optional = true }
 
 [features]
