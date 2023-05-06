@@ -9,6 +9,7 @@ pub mod update;
 pub const URL_BOOKMARKS: &str = "/api/bookmarks";
 pub const URL_BOOKMARK: &str = "/api/bookmarks/:id";
 pub const URL_BOOKMARK_QRCODE: &str = "/api/bookmarks/:id/qrcode";
+// todo merge with URL_BOOKMARKS
 pub const URL_BOOKMARKS_STATS: &str = "/api/bookmarks-stats";
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]

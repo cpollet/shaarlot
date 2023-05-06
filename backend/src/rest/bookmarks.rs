@@ -1,4 +1,6 @@
 use crate::database::bookmarks::{Filter, Pagination, SearchCriteria, SortOrder};
+use crate::database::pins;
+use crate::domain::bookmark::Bookmark;
 use crate::sessions::session::UserInfo;
 use crate::{database, AppState};
 use axum::body::Body;
@@ -6,9 +8,6 @@ use axum::extract::{Path, Query, State};
 use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
-use chrono::Utc;
-use entity::bookmark::Model as BookmarkModel;
-use entity::tag::Model as TagModel;
 use qrcode_generator::QrCodeEcc;
 use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
 use rest_api::bookmarks::delete::DeleteBookmarkResult;
@@ -33,26 +32,26 @@ pub struct GetBookmarksQueryParams {
     filter: Option<String>,
 }
 
-fn into_response(
-    bookmark: BookmarkModel,
-    tags: Vec<TagModel>,
-    user: Option<&UserInfo>,
-) -> GetBookmarkResponse {
+fn into_response(bookmark: Bookmark, remote_user: Option<&UserInfo>) -> GetBookmarkResponse {
     GetBookmarkResponse {
         id: bookmark.id,
         url: bookmark.url,
         title: bookmark.title,
         description: bookmark.description,
-        tags: tags.into_iter().map(|e| e.name).collect::<Vec<String>>(),
-        creation_date: bookmark.creation_date.with_timezone(&Utc),
-        update_date: bookmark.update_date.map(|d| d.with_timezone(&Utc)),
+        tags: bookmark.tags,
+        creation_date: bookmark.creation_date,
+        update_date: bookmark.update_date,
         user_id: bookmark.user_id,
-        access: if user.map(|u| bookmark.user_id == u.id).unwrap_or_default() {
+        access: if remote_user
+            .map(|u| bookmark.user_id == u.id)
+            .unwrap_or_default()
+        {
             Access::Write
         } else {
             Access::Read
         },
         private: bookmark.private,
+        pinned: bookmark.pinned,
     }
 }
 
@@ -62,7 +61,6 @@ pub async fn get_bookmarks(
     State(state): State<AppState>,
 ) -> Result<GetBookmarksResult, GetBookmarksResult> {
     let criteria = SearchCriteria {
-        user_id: user_info.as_ref().map(|u| u.id),
         tags: query
             .tags
             // todo: no manual deserialize
@@ -115,20 +113,23 @@ pub async fn get_bookmarks(
             )
         })?;
 
-    let bookmarks = database::bookmarks::Query::find(&state.database, &criteria, &page, order)
-        .await
-        .map_err(|_| GetBookmarksResult::ServerError)?
-        .into_iter()
-        .map(|m| into_response(m.0, m.1, user_info.as_ref()))
-        .collect::<Vec<GetBookmarkResponse>>();
+    let user_id = user_info.as_ref().map(|u| u.id);
+    let page_size = page.size;
+    let bookmarks =
+        database::bookmarks::Query::find(&state.database, &criteria, &page, &order, user_id)
+            .await
+            .map_err(|_| GetBookmarksResult::ServerError)?
+            .into_iter()
+            .map(|bookmark| into_response(bookmark, user_info.as_ref()))
+            .collect::<Vec<GetBookmarkResponse>>();
 
-    let bookmarks_count = database::bookmarks::Query::count(&state.database, &criteria)
+    let bookmarks_count = database::bookmarks::Query::count(&state.database, user_id, &criteria)
         .await
         .map_err(|_| GetBookmarksResult::ServerError)?;
 
     Ok(GetBookmarksResult::Success(GetBookmarksResponse {
         bookmarks,
-        pages_count: (bookmarks_count as f64 / page.size as f64).ceil() as u64,
+        pages_count: (bookmarks_count as f64 / page_size as f64).ceil() as u64,
     }))
 }
 
@@ -144,7 +145,7 @@ pub async fn get_bookmark(
     )
     .await
     .map_err(|_| GetBookmarkResult::ServerError)?
-    .map(|m| into_response(m.0, m.1, user_info.as_ref()))
+    .map(|bookmark| into_response(bookmark, user_info.as_ref()))
     .ok_or(GetBookmarkResult::NotFound(
         bookmark_id,
         format!("Bookmark '{}' not found", bookmark_id),
@@ -177,8 +178,7 @@ pub async fn get_bookmark_qrcode(
         log::error!("{}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?
-    .ok_or(StatusCode::NOT_FOUND)?
-    .0;
+    .ok_or(StatusCode::NOT_FOUND)?;
 
     let bytes =
         qrcode_generator::to_png_to_vec(model.url.as_bytes(), QrCodeEcc::Low, size as usize)
@@ -234,11 +234,15 @@ pub async fn create_bookmark(
         .await
         .map_err(|_| CreateBookmarkResult::ServerError)?;
 
-    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|_| CreateBookmarkResult::ServerError)?
-        .map(|m| into_response(m.0, m.1, Some(user_info).as_ref()))
-        .ok_or(CreateBookmarkResult::ServerError)?;
+    let bookmark = database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        Some(user_info.id),
+    )
+    .await
+    .map_err(|_| CreateBookmarkResult::ServerError)?
+    .map(|bookmark| into_response(bookmark, Some(user_info).as_ref()))
+    .ok_or(CreateBookmarkResult::ServerError)?;
 
     Ok(CreateBookmarkResult::Success(bookmark))
 }
@@ -249,15 +253,18 @@ pub async fn update_bookmark(
     Extension(user_info): Extension<UserInfo>,
     Json(bookmark): Json<UpdateBookmarkRequest>,
 ) -> Result<UpdateBookmarkResult, UpdateBookmarkResult> {
-    if database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|_| UpdateBookmarkResult::ServerError)?
-        .ok_or(UpdateBookmarkResult::NotFound(
-            bookmark_id,
-            format!("Bookmark '{}' not found", bookmark_id),
-        ))?
-        .0
-        .user_id
+    if database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        Some(user_info.id),
+    )
+    .await
+    .map_err(|_| UpdateBookmarkResult::ServerError)?
+    .ok_or(UpdateBookmarkResult::NotFound(
+        bookmark_id,
+        format!("Bookmark '{}' not found", bookmark_id),
+    ))?
+    .user_id
         != user_info.id
     {
         return Err(UpdateBookmarkResult::Forbidden);
@@ -296,20 +303,30 @@ pub async fn update_bookmark(
                 )
                 .await?;
 
+                if !bookmark.pinned {
+                    pins::Mutation::unpin(txn, bookmark_id, user_info.id).await?;
+                } else {
+                    pins::Mutation::pin(txn, bookmark_id, user_info.id).await?;
+                }
+
                 Ok(())
             })
         })
         .await
         .map_err(|_| UpdateBookmarkResult::ServerError)?;
 
-    let bookmark = database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|_| UpdateBookmarkResult::ServerError)?
-        .map(|m| into_response(m.0, m.1, Some(user_info).as_ref()))
-        .ok_or(UpdateBookmarkResult::NotFound(
-            bookmark_id,
-            format!("Bookmark '{}' not found", bookmark_id),
-        ))?;
+    let bookmark = database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        Some(user_info.id),
+    )
+    .await
+    .map_err(|_| UpdateBookmarkResult::ServerError)?
+    .map(|bookmark| into_response(bookmark, Some(user_info).as_ref()))
+    .ok_or(UpdateBookmarkResult::NotFound(
+        bookmark_id,
+        format!("Bookmark '{}' not found", bookmark_id),
+    ))?;
 
     Ok(UpdateBookmarkResult::Success(bookmark))
 }
@@ -319,15 +336,18 @@ pub async fn delete_bookmark(
     Path(bookmark_id): Path<i32>,
     Extension(user_info): Extension<UserInfo>,
 ) -> Result<DeleteBookmarkResult, DeleteBookmarkResult> {
-    if database::bookmarks::Query::find_by_id(&state.database, bookmark_id)
-        .await
-        .map_err(|_| DeleteBookmarkResult::ServerError)?
-        .ok_or(DeleteBookmarkResult::NotFound(
-            bookmark_id,
-            format!("Bookmark '{}' not found", bookmark_id),
-        ))?
-        .0
-        .user_id
+    if database::bookmarks::Query::find_visible_by_id(
+        &state.database,
+        bookmark_id,
+        Some(user_info.id),
+    )
+    .await
+    .map_err(|_| DeleteBookmarkResult::ServerError)?
+    .ok_or(DeleteBookmarkResult::NotFound(
+        bookmark_id,
+        format!("Bookmark '{}' not found", bookmark_id),
+    ))?
+    .user_id
         != user_info.id
     {
         return Err(DeleteBookmarkResult::Forbidden);
@@ -357,8 +377,8 @@ pub async fn get_bookmarks_stats(
 
     let visible = database::bookmarks::Query::count(
         &state.database,
+        user_id,
         &SearchCriteria {
-            user_id,
             ..SearchCriteria::default()
         },
     )
@@ -367,8 +387,8 @@ pub async fn get_bookmarks_stats(
 
     let private = database::bookmarks::Query::count(
         &state.database,
+        user_id,
         &SearchCriteria {
-            user_id,
             filter: Filter::Private,
             ..SearchCriteria::default()
         },

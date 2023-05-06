@@ -1,16 +1,31 @@
 use crate::database::tags;
+use crate::domain::bookmark::Bookmark;
 use chrono::{DateTime, Utc};
 use entity::bookmark::{ActiveModel, Entity};
 use entity::bookmark::{Column, Model};
-use entity::{bookmark_tag, tag};
-use migration::Expr;
+use entity::{bookmark_tag, pin, tag};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::sea_query::extension::postgres::PgExpr;
+use sea_orm::sea_query::{Expr, IntoCondition};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, Order,
-    QueryFilter, QueryOrder, QuerySelect, QueryTrait, Select, TryIntoModel,
+    ActiveModelTrait, ColumnTrait, Condition, ConnectionTrait, DbErr, EntityTrait, FromQueryResult,
+    JoinType, Order, QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait, Select,
+    TryIntoModel, Value,
 };
+
+#[derive(Debug, Default)]
+pub struct SearchCriteria {
+    pub tags: Vec<String>,
+    pub search: Vec<String>,
+    pub filter: Filter,
+}
+
+#[derive(Debug)]
+pub struct Pagination {
+    pub page: u64,
+    pub size: u64,
+}
 
 #[derive(Clone, Copy, Debug)]
 pub enum SortOrder {
@@ -19,7 +34,11 @@ pub enum SortOrder {
 }
 
 impl SortOrder {
-    fn add_clause(&self, select: Select<Entity>) -> Select<Entity> {
+    fn add_clause(&self, select: Select<Entity>, user_id: &Option<i32>) -> Select<Entity> {
+        let select = match user_id {
+            None => select,
+            Some(_) => select.order_by_asc(pin::Column::UserId),
+        };
         match self {
             SortOrder::CreationDateDesc => select.order_by(Column::CreationDate, Order::Desc),
             SortOrder::CreationDateAsc => select.order_by(Column::CreationDate, Order::Asc),
@@ -62,77 +81,35 @@ impl TryFrom<&str> for Filter {
 
 pub struct Query;
 
-#[derive(Debug, Default)]
-pub struct SearchCriteria {
-    pub user_id: Option<i32>,
-    pub tags: Vec<String>,
-    pub search: Vec<String>,
-    pub filter: Filter,
+enum SearchBy<'a> {
+    Id(i32, Option<i32>),
+    Criteria(
+        &'a SearchCriteria,
+        &'a Pagination,
+        &'a SortOrder,
+        Option<i32>,
+    ),
 }
 
-#[derive(Debug)]
-pub struct Pagination {
-    pub page: u64,
-    pub size: u64,
-}
-
-impl Query {
-    pub async fn find_all<C>(db: &C) -> Result<Vec<Model>, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        Entity::find().all(db).await
-    }
-
-    pub async fn find<C>(
-        db: &C,
-        criteria: &SearchCriteria,
-        page: &Pagination,
-        order: SortOrder,
-    ) -> Result<Vec<(Model, Vec<tag::Model>)>, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        let mut select = Entity::find()
-            .filter(Self::visible_condition(criteria.user_id, criteria.filter))
-            .filter(Self::tags_condition(&criteria.tags))
-            .filter(Self::search_condition(&criteria.search))
-            .offset(page.size * page.page)
-            .limit(page.size);
-        select = order.add_clause(select);
-
-        let bookmarks = select.all(db).await?;
-
-        let mut tagged_bookmarks = Vec::with_capacity(bookmarks.len());
-        for bookmark in bookmarks {
-            let tags = tags::Query::find_by_bookmark_id(db, bookmark.id).await?;
-            tagged_bookmarks.push((bookmark, tags));
-        }
-
-        Ok(tagged_bookmarks)
-    }
-
-    pub fn visible_condition(user_id: Option<i32>, filter: Filter) -> Condition {
-        match filter {
-            Filter::All => {
-                let mut visible = Condition::any().add(Column::Private.eq(false));
-                if let Some(user_id) = user_id {
-                    visible = visible.add(Column::UserId.eq(user_id));
-                }
-                visible
-            }
-            Filter::Private => {
-                if user_id.is_none() {
-                    return Condition::all().add(Column::UserId.is_null());
-                }
-
-                let mut visible = Condition::all().add(Column::Private.eq(true));
-                if let Some(user_id) = user_id {
-                    visible = visible.add(Column::UserId.eq(user_id));
-                }
-                visible
-            }
-            Filter::Public => Condition::any().add(Column::Private.eq(false)),
+impl<'a> SearchBy<'a> {
+    fn add_pinned_flag(select: Select<Entity>, user_id: Option<i32>) -> Select<Entity> {
+        match user_id {
+            Some(user_id) => select
+                .column_as(
+                    Expr::tbl(pin::Entity, pin::Column::UserId).is_not_null(),
+                    "pinned",
+                )
+                .join_rev(
+                    JoinType::LeftJoin,
+                    pin::Relation::Bookmark
+                        .def()
+                        .on_condition(move |pin, _bookmark| {
+                            Expr::tbl(pin, pin::Column::UserId)
+                                .eq(user_id)
+                                .into_condition()
+                        }),
+                ),
+            None => select.column_as(Expr::value(Value::Bool(Some(false))), "pinned"),
         }
     }
 
@@ -185,17 +162,141 @@ impl Query {
 
         search_condition
     }
+}
 
-    pub async fn count<C>(db: &C, criteria: &SearchCriteria) -> Result<i64, DbErr>
+impl<'a> From<&SearchBy<'a>> for Select<Entity> {
+    fn from(value: &SearchBy<'a>) -> Self {
+        let (select, user_id) = match value {
+            SearchBy::Id(id, user_id) => (
+                Entity::find_by_id(id.to_owned())
+                    .filter(Query::visible_condition(user_id.to_owned(), Filter::All)),
+                user_id,
+            ),
+            SearchBy::Criteria(criteria, page, order, user_id) => (
+                order.add_clause(
+                    Entity::find()
+                        .filter(Query::visible_condition(
+                            user_id.to_owned(),
+                            criteria.filter,
+                        ))
+                        .filter(SearchBy::tags_condition(&criteria.tags))
+                        .filter(SearchBy::search_condition(&criteria.search))
+                        .offset(page.size * page.page)
+                        .limit(page.size),
+                    user_id,
+                ),
+                user_id,
+            ),
+        };
+
+        SearchBy::add_pinned_flag(select, user_id.to_owned())
+    }
+}
+
+impl From<(BookmarkModelWithPinned, Vec<tag::Model>)> for Bookmark {
+    fn from(value: (BookmarkModelWithPinned, Vec<tag::Model>)) -> Self {
+        Self {
+            id: value.0.id,
+            user_id: value.0.user_id,
+            url: value.0.url,
+            title: value.0.title,
+            description: value.0.description,
+            tags: value.1.into_iter().map(|t| t.name).collect(),
+            creation_date: value.0.creation_date.with_timezone(&Utc),
+            update_date: value.0.update_date.map(|d| d.with_timezone(&Utc)),
+            private: value.0.private,
+            pinned: value.0.pinned,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, FromQueryResult)]
+struct BookmarkModelWithPinned {
+    pub id: i32,
+    pub url: String,
+    pub description: Option<String>,
+    pub title: Option<String>,
+    pub creation_date: DateTimeWithTimeZone,
+    pub update_date: Option<DateTimeWithTimeZone>,
+    pub user_id: i32,
+    pub private: bool,
+    pub pinned: bool,
+}
+
+impl Query {
+    async fn find_by<'a, C>(db: &C, search_by: &SearchBy<'a>) -> Result<Vec<Bookmark>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        let bookmarks = Into::<Select<Entity>>::into(search_by)
+            .into_model::<BookmarkModelWithPinned>()
+            .all(db)
+            .await
+            .map_err(|e| {
+                log::error!("{:?}", e);
+                e
+            })?;
+
+        let mut tagged_bookmarks = Vec::with_capacity(bookmarks.len());
+        for bookmark in bookmarks {
+            let tags = tags::Query::find_by_bookmark_id(db, bookmark.id).await?;
+            tagged_bookmarks.push(Bookmark::from((bookmark, tags)));
+        }
+
+        Ok(tagged_bookmarks)
+    }
+
+    pub async fn find<'a, C>(
+        db: &C,
+        criteria: &'a SearchCriteria,
+        page: &'a Pagination,
+        order: &'a SortOrder,
+        user_id: Option<i32>,
+    ) -> Result<Vec<Bookmark>, DbErr>
+    where
+        C: ConnectionTrait,
+    {
+        Self::find_by(db, &SearchBy::Criteria(criteria, page, order, user_id)).await
+    }
+
+    pub fn visible_condition(user_id: Option<i32>, filter: Filter) -> Condition {
+        match filter {
+            Filter::All => {
+                let mut visible = Condition::any().add(Column::Private.eq(false));
+                if let Some(user_id) = user_id {
+                    visible = visible.add(Column::UserId.eq(user_id));
+                }
+                visible
+            }
+            Filter::Private => {
+                if user_id.is_none() {
+                    return Condition::all().add(Column::UserId.is_null());
+                }
+
+                let mut visible = Condition::all().add(Column::Private.eq(true));
+                if let Some(user_id) = user_id {
+                    visible = visible.add(Column::UserId.eq(user_id));
+                }
+                visible
+            }
+            Filter::Public => Condition::any().add(Column::Private.eq(false)),
+        }
+    }
+
+    pub async fn count<C>(
+        db: &C,
+        user_id: Option<i32>,
+        criteria: &SearchCriteria,
+    ) -> Result<i64, DbErr>
     where
         C: ConnectionTrait,
     {
         let r: Option<i64> = Entity::find()
             .select_only()
             .column_as(Expr::col(Column::Id).count(), "count")
-            .filter(Self::visible_condition(criteria.user_id, criteria.filter))
-            .filter(Self::tags_condition(&criteria.tags))
-            .filter(Self::search_condition(&criteria.search))
+            .filter(Self::visible_condition(user_id, criteria.filter))
+            .filter(SearchBy::tags_condition(&criteria.tags))
+            .filter(SearchBy::search_condition(&criteria.search))
             .into_tuple()
             .one(db)
             .await?;
@@ -206,27 +307,13 @@ impl Query {
         db: &C,
         id: i32,
         user_id: Option<i32>,
-    ) -> Result<Option<(Model, Vec<tag::Model>)>, DbErr>
+    ) -> Result<Option<Bookmark>, DbErr>
     where
         C: ConnectionTrait,
     {
-        Ok(Entity::find_by_id(id)
-            .find_with_related(tag::Entity)
-            .filter(Self::visible_condition(user_id, Filter::All))
-            .all(db)
-            .await?
-            .pop())
-    }
-
-    pub async fn find_by_id<C>(db: &C, id: i32) -> Result<Option<(Model, Vec<tag::Model>)>, DbErr>
-    where
-        C: ConnectionTrait,
-    {
-        Ok(Entity::find_by_id(id)
-            .find_with_related(tag::Entity)
-            .all(db)
-            .await?
-            .pop())
+        Self::find_by(db, &SearchBy::Id(id, user_id))
+            .await
+            .map(|mut r| r.pop())
     }
 
     pub async fn find_by_url<C>(db: &C, user_id: i32, url: &str) -> Result<Option<i32>, DbErr>
@@ -234,6 +321,7 @@ impl Query {
         C: ConnectionTrait,
     {
         Ok(Entity::find()
+            // todo select only
             .filter(Column::Url.eq(url))
             .filter(Column::UserId.eq(user_id))
             .all(db)

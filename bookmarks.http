@@ -4,7 +4,7 @@ GET http://localhost:3000/health
 ### Application
 GET http://localhost:3000/api/application
 
-### Get all bookmarks
+### Find bookmarks
 GET http://localhost:3000/api/bookmarks?
     order=creation_date:desc&
     page=0&

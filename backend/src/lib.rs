@@ -3,6 +3,7 @@ use reqwest::Client;
 use sea_orm::DatabaseConnection;
 
 pub mod database;
+pub mod domain;
 pub mod mailer;
 pub mod rest;
 pub mod sessions;

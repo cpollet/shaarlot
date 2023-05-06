@@ -69,14 +69,14 @@ The URL to use is http://localhost:8001.
 * [x] Filtering by privacy
 * [x] Full text search
 * [x] Tag cloud
-* [ ] Sticky bookmarks
+* [x] Sticky bookmarks
+* [ ] Bookmarklet
 * [ ] Export & Import bookmarks (incl. from Shaarli)
   * [x] Import from Shaarli's API
   * [ ] Import from Shaarli's JSON
   * [ ] Export to Shaarli's JSON
   * [ ] Export for backup
 * [ ] Markdown support in bookmarks description
-* [ ] Read it later flags
 * [ ] Private bookmarks sharing
 * [ ] Dead bookmarks detection & report
 * [ ] Duplicate links report
@@ -85,14 +85,13 @@ The URL to use is http://localhost:8001.
 * [ ] Rename tag
 * [ ] URL cleanup (utm_source=, fb=)
   * [x] Static params list
-  * [ ] Dynamic params list
+  * [ ] Dynamic params list (from database)
   * [ ] Advanced cleanup mode ([CleanLinks](https://github.com/Cimbali/CleanLinks/blob/master/addon/data/rules.json) and [link-cleaner](https://github.com/corbindavenport/link-cleaner/blob/main/js/shared.js))
 * [ ] Shaarli compatible REST API: https://shaarli.readthedocs.io/en/master/REST-API/
 * [ ] Notes
-* [ ] Pinned bookmarks
-* [ ] Bookmarklet
 * [ ] Android app ([dimtion/Shaarlier](https://github.com/dimtion/Shaarlier))
 * [ ] iOS app ([mro/ShaarliOS](https://github.com/mro/ShaarliOS))
+* [ ] Read it later flags
 
 ## Resources
  * All the rust crates dependencies

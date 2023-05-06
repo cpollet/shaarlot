@@ -124,7 +124,7 @@ pub fn bookmarks(props: &Props) -> Html {
                     </span>
                     <span
                         class={classes!(
-                            "material-icons-outlined", "md-14", "bookmarks__filter-item",
+                            "material-icons-outlined", "md-14",
                             match props.filter {
                                 Some(Filter::Public) => "bookmarks__filter-item--selected",
                                 _ => "bookmarks__filter-item"

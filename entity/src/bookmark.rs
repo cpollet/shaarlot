@@ -28,4 +28,13 @@ impl Related<super::tag::Entity> for Entity {
     }
 }
 
+impl Related<super::account::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::pin::Relation::Account.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::pin::Relation::Bookmark.def().rev())
+    }
+}
+
 impl ActiveModelBehavior for ActiveModel {}

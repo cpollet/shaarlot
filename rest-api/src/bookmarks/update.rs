@@ -11,6 +11,7 @@ pub struct UpdateBookmarkRequest {
     pub description: Option<String>,
     pub tags: Vec<String>,
     pub private: bool,
+    pub pinned: bool,
 }
 
 pub type UpdateBookmarkResponse = GetBookmarkResponse;

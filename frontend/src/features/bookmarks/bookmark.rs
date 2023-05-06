@@ -3,8 +3,11 @@ use super::qr_code::QrCode;
 use crate::components::highlight::Highlight;
 use crate::Route;
 use chrono::{DateTime, Local};
-use rest_api::bookmarks::Access;
+use gloo_net::http::Request;
+use rest_api::bookmarks::update::{UpdateBookmarkRequest, UpdateBookmarkResult};
+use rest_api::bookmarks::{Access, URL_BOOKMARK};
 use std::rc::Rc;
+use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
 use yew_router::Routable;
@@ -19,6 +22,8 @@ pub struct Props {
 #[function_component(Bookmark)]
 pub fn bookmark(props: &Props) -> Html {
     let navigator = use_navigator().unwrap();
+
+    let state = use_state(|| props.bookmark.pinned);
 
     let onclick_delete = {
         let navigator = navigator.clone();
@@ -38,6 +43,37 @@ pub fn bookmark(props: &Props) -> Html {
             e.prevent_default();
             navigator.push(&Route::EditBookmark {
                 id: props.bookmark.id,
+            });
+        })
+    };
+
+    let onclick_pin = {
+        let props = props.clone();
+        let state = state.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            gloo_console::info!("pin", props.bookmark.id);
+
+            let request = {
+                let mut request = UpdateBookmarkRequest::from(&*props.bookmark);
+                request.pinned = !(*state);
+                request
+            };
+
+            let bookmark = props.bookmark.clone();
+            let state = state.clone();
+            spawn_local(async move {
+                if let Some(UpdateBookmarkResult::Success(bookmark)) = UpdateBookmarkResult::from(
+                    Request::put(&URL_BOOKMARK.replace(":id", &bookmark.id.to_string()))
+                        .json(&request)
+                        .expect("could not set json")
+                        .send()
+                        .await,
+                )
+                .await
+                {
+                    state.set(bookmark.pinned);
+                }
             });
         })
     };
@@ -110,6 +146,16 @@ pub fn bookmark(props: &Props) -> Html {
                     { if props.bookmark.access == Access::Write {
                         html!{
                             <>
+                                {"\u{00a0}"}
+                                <a
+                                    class={classes!("material-icons-outlined", "md-16",
+                                        state.then_some("orange")
+                                    )}
+                                    onclick={onclick_pin}
+                                    href="#pin"
+                                >
+                                    {"push_pin"}
+                                </a>
                                 {"\u{00a0}"}
                                  <a
                                     class="material-icons-outlined md-16 blue"

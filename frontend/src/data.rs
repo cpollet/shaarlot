@@ -16,6 +16,7 @@ pub struct Bookmark {
     pub update_date: Option<DateTime<Local>>,
     pub access: Access,
     pub private: bool,
+    pub pinned: bool,
 }
 
 impl Default for Bookmark {
@@ -30,6 +31,7 @@ impl Default for Bookmark {
             update_date: None,
             access: Access::Read,
             private: true,
+            pinned: false,
         }
     }
 }
@@ -50,6 +52,7 @@ impl From<GetBookmarkResponse> for Bookmark {
             update_date: value.update_date.map(DateTime::from),
             access: value.access,
             private: value.private,
+            pinned: value.pinned,
         }
     }
 }
@@ -66,6 +69,7 @@ impl From<&Bookmark> for UpdateBookmarkRequest {
                 .map(|v| v.to_string())
                 .collect::<Vec<String>>(),
             private: bookmark.private,
+            pinned: bookmark.pinned,
         }
     }
 }

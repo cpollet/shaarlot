@@ -17,6 +17,7 @@ pub struct GetBookmarkResponse {
     pub user_id: i32,
     pub access: Access,
     pub private: bool,
+    pub pinned: bool,
 }
 
 pub enum GetBookmarkResult {
