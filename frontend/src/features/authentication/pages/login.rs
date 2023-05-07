@@ -3,6 +3,7 @@ use gloo_net::http::Request;
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResult, URL_SESSIONS};
 use rest_api::RestPassword;
 use secrecy::Secret;
+use serde::{Deserialize, Serialize};
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -13,6 +14,11 @@ use yew_router::prelude::*;
 pub struct Props {
     pub onlogin: Callback<AttrValue>,
     pub logged_in: bool,
+}
+
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
+pub struct QueryParams {
+    pub redirect_to: Option<String>,
 }
 
 #[derive(Clone, PartialEq)]
@@ -33,6 +39,11 @@ pub fn login(props: &Props) -> Html {
     let state = use_state(State::default);
     let navigator = use_navigator().unwrap();
     let username_input_ref = use_node_ref();
+    let query_params = yew_router::hooks::use_location()
+        .unwrap()
+        .query::<QueryParams>()
+        .ok()
+        .unwrap_or_default();
 
     {
         let logged_in = props.logged_in;
@@ -69,6 +80,7 @@ pub fn login(props: &Props) -> Html {
                 new_state.in_progress = true;
                 state.set(new_state);
             }
+            let query_params = query_params.clone();
             spawn_local(async move {
                 let result = CreateSessionResult::from(
                     Request::post(URL_SESSIONS)
@@ -88,7 +100,13 @@ pub fn login(props: &Props) -> Html {
                 match result {
                     Some(CreateSessionResult::Success(_)) => {
                         props.onlogin.emit(state.username.clone());
-                        navigator.push(&Route::Index);
+                        if let Some(redirect_to) = query_params.redirect_to {
+                            if let Some(route) = Route::recognize(&redirect_to) {
+                                navigator.push(&route);
+                            }
+                        } else {
+                            navigator.push(&Route::Index);
+                        }
                     }
                     Some(CreateSessionResult::InvalidCredentials) => {
                         new_state.error = Some(Error::InvalidCredentials);

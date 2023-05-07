@@ -52,7 +52,6 @@ pub fn bookmark(props: &Props) -> Html {
         let state = state.clone();
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
-            gloo_console::info!("pin", props.bookmark.id);
 
             let request = {
                 let mut request = UpdateBookmarkRequest::from(&*props.bookmark);

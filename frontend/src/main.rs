@@ -38,7 +38,7 @@ fn main() {
     yew::Renderer::<App>::new().render();
 }
 
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Clone, Routable, PartialEq, Debug)]
 pub enum Route {
     #[at("/")]
     Index,
@@ -101,6 +101,7 @@ struct State {
     username: Option<AttrValue>,
     commit: Option<AttrValue>,
     build_date: Option<AttrValue>,
+    ready: bool,
 }
 
 #[function_component(App)]
@@ -124,6 +125,7 @@ fn app() -> Html {
                     new_state.commit = Some(AttrValue::from(application.commit));
                     new_state.build_date = Some(AttrValue::from(application.build_date));
                 }
+                new_state.ready = true;
                 state.set(new_state);
             });
 
@@ -148,155 +150,159 @@ fn app() -> Html {
         })
     };
     use_navigator();
-    html! {
-        <>
-            <BrowserRouter>
-                <Menu username={state.username.clone()} />
-                <a
-                    class="github-fork-ribbon right-bottom fixed"
-                    href={env!("CARGO_PKG_REPOSITORY")}
-                    data-ribbon="Fork me on GitHub"
-                    title="Fork me on GitHub"
-                >
-                    {"Fork me on GitHub"}
-                </a>
-                <div class="content">
-                    <Switch<Route> render={
-                        let logged_in = state.username.is_some();
-                        move |route| match route {
-                            Route::Index | Route::Bookmarks => {
-                                html! {
-                                    <BookmarksQuery>
-                                        <BookmarksProvider>
-                                            <TagsProvider>
-                                                <BookmarksHOC />
-                                            </TagsProvider>
-                                        </BookmarksProvider>
-                                    </BookmarksQuery>
+
+    state
+        .ready
+        .then_some(html! {
+            <>
+                <BrowserRouter>
+                    <Menu username={state.username.clone()} />
+                    <a
+                        class="github-fork-ribbon right-bottom fixed"
+                        href={env!("CARGO_PKG_REPOSITORY")}
+                        data-ribbon="Fork me on GitHub"
+                        title="Fork me on GitHub"
+                    >
+                        {"Fork me on GitHub"}
+                    </a>
+                    <div class="content">
+                        <Switch<Route> render={
+                            let logged_in = state.username.is_some();
+                            move |route| match route {
+                                Route::Index | Route::Bookmarks => {
+                                    html! {
+                                        <BookmarksQuery>
+                                            <BookmarksProvider>
+                                                <TagsProvider>
+                                                    <BookmarksHOC />
+                                                </TagsProvider>
+                                            </BookmarksProvider>
+                                        </BookmarksQuery>
+                                    }
                                 }
-                            }
-                            Route::AddBookmark => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <TagsProvider>
-                                            <CreateBookmarkHOC />
+                                Route::AddBookmark => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <TagsProvider>
+                                                <CreateBookmarkHOC />
+                                            </TagsProvider>
+                                        </Protected>
+                                    }
+                                }
+                                Route::ViewBookmark { id } => {
+                                    html! {
+                                        <BookmarkProvider {id}>
+                                            <ViewBookmarkHOC />
+                                        </BookmarkProvider>
+                                    }
+                                }
+                                Route::DeleteBookmark { id } => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <BookmarkProvider {id}>
+                                                <DeleteBookmarkHOC />
+                                            </BookmarkProvider>
+                                        </Protected>
+                                    }
+                                }
+                                Route::EditBookmark { id } => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <BookmarkProvider {id}>
+                                                <TagsProvider>
+                                                    <EditBookmarkHOC />
+                                                </TagsProvider>
+                                            </BookmarkProvider>
+                                        </Protected>
+                                    }
+                                }
+                                Route::TagCloud => {
+                                    html! {
+                                        <TagsProvider order={Order::Name}>
+                                            <TagCloudHOC />
                                         </TagsProvider>
-                                    </Protected>
+                                    }
+                                }
+                                Route::Tools => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <Tools />
+                                        </Protected>
+                                    }
+                                },
+                                Route::ToolImportShaarliApi => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <ToolImportShaarliApi />
+                                        </Protected>
+                                    }
+                                },
+                                Route::SignupForm => {
+                                    html! {
+                                        <SignupForm />
+                                    }
+                                }
+                                Route::SignupSuccess => {
+                                    html! {
+                                        <SignupSuccess />
+                                    }
+                                }
+                                Route::Login => {
+                                    html! {
+                                        <Login {logged_in} onlogin={onlogin.clone()} />
+                                    }
+                                }
+                                Route::RecoverPasswordStart => {
+                                    html! {
+                                        <RecoverPasswordStart />
+                                    }
+                                }
+                                Route::RecoverPasswordForm { id } => {
+                                    html! {
+                                        <RecoverPasswordFormHOC {id} />
+                                    }
+                                }
+                                Route::ValidateEmail { uuid } => {
+                                    html! {
+                                        <ValidateEmail {uuid} />
+                                    }
+                                }
+                                Route::Profile => {
+                                    html! {
+                                        <Protected {logged_in}>
+                                            <Profile />
+                                        </Protected>
+                                    }
+                                }
+                                Route::Logout => {
+                                    html! {
+                                        <Logout onlogout={onlogout.clone()} />
+                                    }
+                                }
+                                Route::NotFound => {
+                                    html! {
+                                        <h1>{"404 Not Found"}</h1>
+                                    }
                                 }
                             }
-                            Route::ViewBookmark { id } => {
-                                html! {
-                                    <BookmarkProvider {id}>
-                                        <ViewBookmarkHOC />
-                                    </BookmarkProvider>
-                                }
-                            }
-                            Route::DeleteBookmark { id } => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <BookmarkProvider {id}>
-                                            <DeleteBookmarkHOC />
-                                        </BookmarkProvider>
-                                    </Protected>
-                                }
-                            }
-                            Route::EditBookmark { id } => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <BookmarkProvider {id}>
-                                            <TagsProvider>
-                                                <EditBookmarkHOC />
-                                            </TagsProvider>
-                                        </BookmarkProvider>
-                                    </Protected>
-                                }
-                            }
-                            Route::TagCloud => {
-                                html! {
-                                    <TagsProvider order={Order::Name}>
-                                        <TagCloudHOC />
-                                    </TagsProvider>
-                                }
-                            }
-                            Route::Tools => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <Tools />
-                                    </Protected>
-                                }
-                            },
-                            Route::ToolImportShaarliApi => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <ToolImportShaarliApi />
-                                    </Protected>
-                                }
-                            },
-                            Route::SignupForm => {
-                                html! {
-                                    <SignupForm />
-                                }
-                            }
-                            Route::SignupSuccess => {
-                                html! {
-                                    <SignupSuccess />
-                                }
-                            }
-                            Route::Login => {
-                                html! {
-                                    <Login {logged_in} onlogin={onlogin.clone()} />
-                                }
-                            }
-                            Route::RecoverPasswordStart => {
-                                html! {
-                                    <RecoverPasswordStart />
-                                }
-                            }
-                            Route::RecoverPasswordForm { id } => {
-                                html! {
-                                    <RecoverPasswordFormHOC {id} />
-                                }
-                            }
-                            Route::ValidateEmail { uuid } => {
-                                html! {
-                                    <ValidateEmail {uuid} />
-                                }
-                            }
-                            Route::Profile => {
-                                html! {
-                                    <Protected {logged_in}>
-                                        <Profile />
-                                    </Protected>
-                                }
-                            }
-                            Route::Logout => {
-                                html! {
-                                    <Logout onlogout={onlogout.clone()} />
-                                }
-                            }
-                            Route::NotFound => {
-                                html! {
-                                    <h1>{"404 Not Found"}</h1>
-                                }
-                            }
-                        }
-                    } />
+                        } />
+                    </div>
+                </BrowserRouter>
+                <div class="footer">
+                    <a
+                        href={format!("{}/tree/{}",
+                                      env!("CARGO_PKG_REPOSITORY"),
+                                      state.commit
+                                        .as_ref()
+                                        .map(AttrValue::to_string)
+                                        .unwrap_or_else(|| "master".to_string())
+                             )}
+                    >
+                        {state.commit.clone()}
+                    </a>
+                    {" · "} {state.build_date.clone()}
                 </div>
-            </BrowserRouter>
-            <div class="footer">
-                <a
-                    href={format!("{}/tree/{}",
-                                  env!("CARGO_PKG_REPOSITORY"),
-                                  state.commit
-                                    .as_ref()
-                                    .map(AttrValue::to_string)
-                                    .unwrap_or_else(|| "master".to_string())
-                         )}
-                >
-                    {state.commit.clone()}
-                </a>
-                {" · "} {state.build_date.clone()}
-            </div>
-        </>
-    }
+            </>
+        })
+        .unwrap_or(html! {<></>})
 }
