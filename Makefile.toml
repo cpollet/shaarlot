@@ -129,24 +129,28 @@ workspace = false
 run_task = { name = ["dev-frontend", "dev-backend"], fork = true, parallel = true }
 
 [tasks.build-backend-release]
+workspace = false
+dependencies = ["compress-assets"]
 command = "cargo"
-args = ["build", "--release"]
+args = ["build", "--bin", "backend", "--release"]
 
 [tasks.prepare-frontend-release]
 workspace = false
+dependencies = ["install-trunk", "install-wasm32"]
 cwd = "./frontend"
 command = "mkdir"
 args = ["-p", "../target/release/wasm"]
 
 [tasks.build-frontend-release]
 workspace = false
-dependencies = ["install-trunk", "install-wasm32", "prepare-frontend-release"]
+dependencies = ["prepare-frontend-release"]
 cwd = "./frontend"
 command = "trunk"
 args = ["build", "--public-url", "/", "--dist", "../target/release/wasm", "--release"]
 
 [tasks.compress-assets]
 workspace = false
+dependencies = ["build-frontend-release"]
 cwd = "./target/release/wasm"
 script = [
     "for f in $(ls); do",
@@ -158,7 +162,7 @@ script = [
 [tasks.build-release]
 workspace = false
 clear = true
-dependencies = ["build-frontend-release", "compress-assets", "build-backend-release"]
+dependencies = ["build-backend-release"]
 
 [tasks.run-release]
 workspace = false
