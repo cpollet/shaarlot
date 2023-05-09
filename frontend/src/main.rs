@@ -12,8 +12,10 @@ use crate::features::authentication::pages::recover_password_form::RecoverPasswo
 use crate::features::authentication::pages::recover_password_start::RecoverPasswordStart;
 use crate::features::bookmarks::bookmark_provider::BookmarkProvider;
 use crate::features::bookmarks::bookmarks_provider::BookmarksProvider;
+use crate::features::bookmarks::bookmarks_query;
 use crate::features::bookmarks::bookmarks_query::BookmarksQuery;
 use crate::features::bookmarks::pages::bookmarks::BookmarksHOC;
+use crate::features::bookmarks::pages::create_bookmark;
 use crate::features::bookmarks::pages::create_bookmark::CreateBookmarkHOC;
 use crate::features::bookmarks::pages::delete_bookmark::DeleteBookmarkHOC;
 use crate::features::bookmarks::pages::edit_bookmark::EditBookmarkHOC;
@@ -94,6 +96,49 @@ pub enum Route {
     #[not_found]
     #[at("/404")]
     NotFound,
+}
+
+#[derive(Debug, Default)]
+pub enum QueryParams {
+    #[default]
+    None,
+    Bookmarks(bookmarks_query::QueryParams),
+    AddBookmark(create_bookmark::QueryParams),
+}
+
+impl Route {
+    pub fn parse_query_string(&self, query_string: &str) -> QueryParams {
+        match self {
+            Route::Index => QueryParams::None,
+            Route::Bookmarks => {
+                serde_urlencoded::from_str::<bookmarks_query::QueryParams>(query_string)
+                    .ok()
+                    .map(QueryParams::Bookmarks)
+                    .unwrap_or_default()
+            }
+            Route::AddBookmark => {
+                serde_urlencoded::from_str::<create_bookmark::QueryParams>(query_string)
+                    .ok()
+                    .map(QueryParams::AddBookmark)
+                    .unwrap_or_default()
+            }
+            Route::ViewBookmark { .. } => QueryParams::None,
+            Route::DeleteBookmark { .. } => QueryParams::None,
+            Route::EditBookmark { .. } => QueryParams::None,
+            Route::TagCloud => QueryParams::None,
+            Route::Tools => QueryParams::None,
+            Route::ToolImportShaarliApi => QueryParams::None,
+            Route::SignupForm => QueryParams::None,
+            Route::SignupSuccess => QueryParams::None,
+            Route::Login => QueryParams::None,
+            Route::RecoverPasswordStart => QueryParams::None,
+            Route::RecoverPasswordForm { .. } => QueryParams::None,
+            Route::ValidateEmail { .. } => QueryParams::None,
+            Route::Profile => QueryParams::None,
+            Route::Logout => QueryParams::None,
+            Route::NotFound => QueryParams::None,
+        }
+    }
 }
 
 #[derive(Clone, Default)]

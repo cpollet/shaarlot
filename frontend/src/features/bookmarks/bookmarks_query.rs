@@ -10,7 +10,7 @@ pub struct Props {
     pub children: ChildrenWithProps<BookmarksProvider>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 enum QueryOrder {
     #[serde(rename(serialize = "creation_date:asc", deserialize = "creation_date:asc"))]
     CreationDateDesc,
@@ -36,7 +36,7 @@ impl From<&QueryOrder> for Order {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Clone, Debug)]
 enum QueryFilter {
     #[serde(rename(serialize = "private", deserialize = "private"))]
     Private,
@@ -64,7 +64,7 @@ impl From<&QueryFilter> for Filter {
 
 // todo review query param serialization and struct shared with API (less relevant as this is
 //  front-end only)
-#[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
 pub struct QueryParams {
     page: Option<u64>,
     page_size: Option<u64>,

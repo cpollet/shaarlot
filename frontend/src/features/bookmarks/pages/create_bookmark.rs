@@ -5,6 +5,7 @@ use gloo_net::http::Request;
 use rest_api::bookmarks::create::{CreateBookmarkRequest, CreateBookmarkResult};
 use rest_api::bookmarks::URL_BOOKMARKS;
 use rest_api::urls::{GetUrlResult, URL_URLS};
+use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 use urlencoding::encode;
 use web_sys::HtmlInputElement;
@@ -15,6 +16,11 @@ use yew_router::hooks::use_navigator;
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     tags: Rc<Tags>,
+}
+
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+pub struct QueryParams {
+    url: Option<String>,
 }
 
 #[derive(Copy, Clone, PartialEq)]

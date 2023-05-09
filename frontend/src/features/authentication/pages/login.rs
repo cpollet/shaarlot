@@ -1,3 +1,4 @@
+use crate::QueryParams as ParsedQueryParams;
 use crate::Route;
 use gloo_net::http::Request;
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResult, URL_SESSIONS};
@@ -16,7 +17,7 @@ pub struct Props {
     pub logged_in: bool,
 }
 
-#[derive(Serialize, Deserialize, Default, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
 pub struct QueryParams {
     pub redirect_to: Option<String>,
 }
@@ -101,8 +102,26 @@ pub fn login(props: &Props) -> Html {
                     Some(CreateSessionResult::Success(_)) => {
                         props.onlogin.emit(state.username.clone());
                         if let Some(redirect_to) = query_params.redirect_to {
-                            if let Some(route) = Route::recognize(&redirect_to) {
-                                navigator.push(&route);
+                            let route = match redirect_to.find('?') {
+                                None => Route::recognize(&redirect_to).map(|r| (r, None)),
+                                Some(index) => Route::recognize(&redirect_to[0..index])
+                                    .map(|r| (r, Some(&redirect_to[index + 1..]))),
+                            };
+
+                            if let Some(route) = route {
+                                match route
+                                    .1
+                                    .map(|q| route.0.parse_query_string(q))
+                                    .unwrap_or_default()
+                                {
+                                    ParsedQueryParams::None => navigator.push(&route.0),
+                                    ParsedQueryParams::AddBookmark(params) => {
+                                        let _ = navigator.push_with_query(&route.0, &params);
+                                    }
+                                    ParsedQueryParams::Bookmarks(params) => {
+                                        let _ = navigator.push_with_query(&route.0, &params);
+                                    }
+                                }
                             }
                         } else {
                             navigator.push(&Route::Index);

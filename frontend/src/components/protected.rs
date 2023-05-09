@@ -14,6 +14,10 @@ pub struct Props {
 pub fn protected(props: &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let route = use_route::<Route>().unwrap();
+    let query_params = yew_router::hooks::use_location()
+        .unwrap()
+        .query_str()
+        .to_string();
 
     if props.logged_in {
         html! {
@@ -23,7 +27,7 @@ pub fn protected(props: &Props) -> Html {
         let _ = navigator.push_with_query(
             &Route::Login,
             &QueryParams {
-                redirect_to: Some(route.to_path()),
+                redirect_to: Some(format!("{}{}", route.to_path(), query_params)),
             },
         );
         html! { <></> }
