@@ -53,6 +53,12 @@ The URL to use is http://localhost:8001.
 | `COOKIE_SECRET`     | 64 random bytes                           | base64-encoded random bytes used to generate session cookies |
 | `SESSION_TTL`       | `86400`                                   | session ttl, is seconds                                      |
 
+## Bookmarklet
+You can bookmark the current tab's URL with the following bookmarklet (just replace `{hostname}` with your actual hostname:
+```javascript
+javascript:location='https://{hostname}/bookmarks/~add?url='+encodeURIComponent(window.location)
+```
+
 ## Planned features
 * [x] CRUD functionality on bookmarks
 * [x] Permalinks
@@ -70,7 +76,7 @@ The URL to use is http://localhost:8001.
 * [x] Full text search
 * [x] Tag cloud
 * [x] Sticky bookmarks
-* [ ] Bookmarklet
+* [x] Bookmarklet
 * [ ] Export & Import bookmarks (incl. from Shaarli)
   * [x] Import from Shaarli's API
   * [ ] Import from Shaarli's JSON

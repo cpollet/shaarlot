@@ -11,7 +11,7 @@ use urlencoding::encode;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
-use yew_router::hooks::use_navigator;
+use yew_router::prelude::*;
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
@@ -56,6 +56,11 @@ pub fn create_bookmark(props: &Props) -> Html {
     let navigator = use_navigator().unwrap();
     let url_input_ref = use_node_ref();
     let title_input_ref = use_node_ref();
+    let query_params = use_location()
+        .unwrap()
+        .query::<QueryParams>()
+        .ok()
+        .unwrap_or_default();
 
     {
         let url_input_ref = url_input_ref.clone();
@@ -81,6 +86,25 @@ pub fn create_bookmark(props: &Props) -> Html {
         })
     }
 
+    {
+        let state = state.clone();
+        let navigator = navigator.clone();
+        use_effect_with_deps(
+            move |query_params| {
+                if let Some(url) = query_params.url.clone() {
+                    fetch_url_data(&url, state, navigator);
+                } else {
+                    let mut new_state = (*state).clone();
+                    new_state.step = Step::Init;
+                    new_state.focused = false;
+                    new_state.bookmark.url = AttrValue::default();
+                    state.set(new_state);
+                }
+            },
+            query_params,
+        );
+    }
+
     let onsubmit = {
         let state = state.clone();
         Callback::from(move |e: SubmitEvent| {
@@ -88,44 +112,20 @@ pub fn create_bookmark(props: &Props) -> Html {
             if state.in_progress {
                 return;
             }
-            {
-                let mut new_state = (*state).clone();
-                new_state.in_progress = true;
-                state.set(new_state);
-            }
             match state.step {
                 Step::Init => {
-                    let navigator = navigator.clone();
-                    let state = state.clone();
-                    spawn_local(async move {
-                        let url =
-                            URL_URLS.replace(":url", encode(state.bookmark.url.as_str()).as_ref());
-
-                        let payload =
-                            match GetUrlResult::from(Request::get(&url).send().await).await {
-                                Some(GetUrlResult::Success(payload)) => Some(payload),
-                                Some(GetUrlResult::Conflict(payload)) => {
-                                    navigator.push(&Route::EditBookmark { id: payload.id });
-                                    None
-                                }
-                                _ => None,
-                            };
-
-                        let mut new_state = (*state).clone();
-                        new_state.step = Step::Details;
-                        new_state.focused = false;
-                        new_state.in_progress = false;
-
-                        if let Some(payload) = payload {
-                            new_state.bookmark.url = AttrValue::from(payload.url);
-                            new_state.bookmark.title = payload.title.map(AttrValue::from);
-                            new_state.bookmark.description =
-                                payload.description.map(AttrValue::from)
-                        }
-                        state.set(new_state);
-                    });
+                    fetch_url_data(
+                        state.bookmark.url.as_str(),
+                        state.clone(),
+                        navigator.clone(),
+                    );
                 }
                 Step::Details => {
+                    {
+                        let mut new_state = (*state).clone();
+                        new_state.in_progress = true;
+                        state.set(new_state);
+                    }
                     let navigator = navigator.clone();
                     let state = state.clone();
                     spawn_local(async move {
@@ -291,6 +291,39 @@ pub fn create_bookmark(props: &Props) -> Html {
             </form>
         </div>
     }
+}
+
+fn fetch_url_data(url: &str, state: UseStateHandle<State>, navigator: Navigator) {
+    {
+        let mut new_state = (*state).clone();
+        new_state.in_progress = true;
+        new_state.bookmark.url = AttrValue::from(url.to_string());
+        state.set(new_state);
+    }
+
+    let url = URL_URLS.replace(":url", encode(url).as_ref());
+    spawn_local(async move {
+        let payload = match GetUrlResult::from(Request::get(&url).send().await).await {
+            Some(GetUrlResult::Success(payload)) => Some(payload),
+            Some(GetUrlResult::Conflict(payload)) => {
+                navigator.push(&Route::EditBookmark { id: payload.id });
+                None
+            }
+            _ => None,
+        };
+
+        let mut new_state = (*state).clone();
+        new_state.step = Step::Details;
+        new_state.focused = false;
+        new_state.in_progress = false;
+
+        if let Some(payload) = payload {
+            new_state.bookmark.url = AttrValue::from(payload.url);
+            new_state.bookmark.title = payload.title.map(AttrValue::from);
+            new_state.bookmark.description = payload.description.map(AttrValue::from)
+        }
+        state.set(new_state);
+    });
 }
 
 #[function_component(CreateBookmarkHOC)]
