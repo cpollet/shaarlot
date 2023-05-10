@@ -56,7 +56,7 @@ The URL to use is http://localhost:8001.
 ## Bookmarklet
 You can bookmark the current tab's URL with the following bookmarklet (just replace `{hostname}` with your actual hostname:
 ```javascript
-javascript:location='https://{hostname}/bookmarks/~add?url='+encodeURIComponent(window.location)
+javascript:(function(){var url=encodeURIComponent(window.location);window.open('https://HOSTNAME/bookmarks/~add?url='+url,'_blank','menubar=no,height=600,width=600,toolbar=no,scrollbars=yes,status=no,dialog=1');})();
 ```
 
 ## Planned features
