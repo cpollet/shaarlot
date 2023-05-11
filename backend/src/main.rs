@@ -3,7 +3,7 @@ use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
-use axum_sessions::{PersistencePolicy, SessionLayer};
+use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
 use backend::database::Configuration;
 use backend::mailer::Mailer;
 use backend::rest::api_router;
@@ -186,7 +186,8 @@ async fn main() {
                         configuration.cookie_secret.expose_secret().as_slice(),
                     )
                     .with_session_ttl(Some(session_ttl))
-                    .with_persistence_policy(PersistencePolicy::Always),
+                    .with_persistence_policy(PersistencePolicy::Always)
+                    .with_same_site_policy(SameSite::Lax),
                 ),
             )
             .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
