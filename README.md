@@ -77,6 +77,8 @@ javascript:(function(){var url=encodeURIComponent(window.location);window.open('
 * [x] Tag cloud
 * [x] Sticky bookmarks
 * [x] Bookmarklet
+* [ ] Filter only own bookmarks
+* [ ] Demo mode
 * [ ] Markdown support in bookmarks description
 * [ ] Notes
 * [ ] Rename tag
