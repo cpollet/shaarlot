@@ -79,6 +79,7 @@ javascript:(function(){var url=encodeURIComponent(window.location);window.open('
 * [x] Bookmarklet
 * [ ] Filter only own bookmarks
 * [ ] Demo mode
+* [ ] Implement sticky notes
 * [ ] Markdown support in bookmarks description
 * [ ] Notes
 * [ ] Rename tag
