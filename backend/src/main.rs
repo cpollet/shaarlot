@@ -81,7 +81,7 @@ async fn main() {
     let smtp_port = env::var("SMTP_PORT").unwrap_or("25".to_owned());
     let smtp_username = env::var("SMTP_USERNAME").unwrap_or("username".to_owned());
     let smtp_password = env::var("SMTP_PASSWORD").unwrap_or("password".to_owned());
-    let smtp_from = env::var("SMTP_FROM").unwrap_or("rbm@localhost".to_owned());
+    let smtp_from = env::var("SMTP_FROM").unwrap_or("shaarlot@localhost".to_owned());
     let redis_host = env::var("REDIS_HOST").unwrap_or("localhost".to_owned());
     let redis_port = env::var("REDIS_PORT").unwrap_or("6379".to_owned());
     let redis_db = env::var("REDIS_DB").unwrap_or("0".to_owned());

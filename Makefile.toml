@@ -53,17 +53,17 @@ workspace = false
 script = '''
 #!/usr/bin/env bash
 
-docker network ls | grep rbm || docker network create rbm
+docker network ls | grep shaarlot || docker network create shaarlot
 
-if docker ps -a | grep rbm-postgres; then
-  docker start rbm-postgres
+if docker ps -a | grep shaarlot-postgres; then
+  docker start shaarlot-postgres
 else
   docker run -d \
-    --name rbm-postgres \
+    --name shaarlot-postgres \
     -e POSTGRES_PASSWORD=password \
-    -v rbm-postgres:/var/lib/postgresql/data \
+    -v shaarlot-postgres:/var/lib/postgresql/data \
     -p 5432:5432 \
-    --network rbm \
+    --network shaarlot \
     postgres
 fi
 
@@ -75,15 +75,15 @@ workspace = false
 script = '''
 #!/usr/bin/env bash
 
-docker network ls | grep rbm || docker network create rbm
+docker network ls | grep shaarlot || docker network create shaarlot
 
-if docker ps -a | grep rbm-redis; then
-  docker start rbm-redis
+if docker ps -a | grep shaarlot-redis; then
+  docker start shaarlot-redis
 else
   docker run -d \
-    --name rbm-redis \
+    --name shaarlot-redis \
     -p 6379:6379 \
-    --network rbm \
+    --network shaarlot \
     redis
 fi
 '''
@@ -192,14 +192,14 @@ args = ["push", "${DOCKER_IMAGE_NAME}"]
 workspace = false
 dependencies = ["postgres", "redis", "build-docker"]
 command = "docker"
-args = ["run", "--rm", "--name", "rbm",
+args = ["run", "--rm", "--name", "shaarlot",
         "--env-file", "./.env",
-        "-e", "DATABASE_HOST=rbm-postgres",
-        "-e", "REDIS_HOST=rbm-redis",
+        "-e", "DATABASE_HOST=shaarlot-postgres",
+        "-e", "REDIS_HOST=shaarlot-redis",
         "-e", "HTTP_PORT=8001",
         "-e", "PUBLIC_URL=http://localhost:8001",
         "-p", "8001:8001",
-        "--network", "rbm",
+        "--network", "shaarlot",
         "${DOCKER_IMAGE_NAME}"]
 
 [tasks.deploy]

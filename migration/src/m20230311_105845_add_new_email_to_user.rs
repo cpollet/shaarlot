@@ -29,7 +29,7 @@ impl MigrationTrait for Migration {
             .exec_stmt(
                 Query::update()
                     .table(User::Table)
-                    .value(User::Email, "nomail@rbm")
+                    .value(User::Email, "nomail@shaarlot")
                     .cond_where(Expr::col(User::Email).is_null())
                     .to_owned(),
             )

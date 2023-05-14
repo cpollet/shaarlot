@@ -3,7 +3,7 @@ name = "migration"
 version.workspace = true
 edition = "2021"
 publish = false
-repository = "https://github.com/cpollet/rbm"
+repository = "https://github.com/cpollet/shaarlot"
 
 [lib]
 

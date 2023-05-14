@@ -1,4 +1,4 @@
-# Rust bookmark manager
+# Shaarlot - a Shaarli-inspired bookmark manager written in rust
 
 ## Build
 Needs openssl: see https://docs.rs/openssl/latest/openssl/
@@ -46,7 +46,7 @@ The URL to use is http://localhost:8001.
 | `SMTP_PORT`         | `25`                                      | the SMTP server port                                         |
 | `SMTP_USERNAME`     | `username`                                | the SMTP username                                            |
 | `SMTP_PASSWORD`     | `password`                                | the SMTP password                                            |
-| `SMTP_FROM`         | `rbm@locahost`                            | the emails sender                                            |
+| `SMTP_FROM`         | `shaarlot@locahost`                       | the emails sender                                            |
 | `REDIS_HOST`        | `localhost`                               | the redis hostname                                           |
 | `REDIS_PORT`        | `6379`                                    | the redis port                                               |
 | `REDIS_DB`          | `0`                                       | the redis database                                           |
@@ -54,7 +54,7 @@ The URL to use is http://localhost:8001.
 | `SESSION_TTL`       | `86400`                                   | session ttl, is seconds                                      |
 
 ## Bookmarklet
-You can bookmark the current tab's URL with the following bookmarklet (just replace `{hostname}` with your actual hostname:
+You can bookmark the current tab's URL with the following bookmarklet (just replace `HOSTNAME` with your actual hostname):
 ```javascript
 javascript:(function(){var url=encodeURIComponent(window.location);window.open('https://HOSTNAME/bookmarks/~add?url='+url,'_blank','menubar=no,height=600,width=600,toolbar=no,scrollbars=yes,status=no,dialog=1');})();
 ```
