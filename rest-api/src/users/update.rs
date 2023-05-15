@@ -26,6 +26,7 @@ pub enum UpdateUserResult {
     /// returned when user cannot be found from session or when current user does not have access to
     /// updated user
     Forbidden,
+    NotImplemented,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -64,6 +65,7 @@ impl UpdateUserResult {
             401 => Some(UpdateUserResult::InvalidCurrentPassword),
             403 => Some(UpdateUserResult::Forbidden),
             500 => Some(UpdateUserResult::ServerError),
+            501 => Some(UpdateUserResult::NotImplemented),
             _ => {
                 // todo add log?
                 None
@@ -99,6 +101,7 @@ impl axum::response::IntoResponse for UpdateUserResult {
             )
                 .into_response(),
             UpdateUserResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
+            UpdateUserResult::NotImplemented => http::StatusCode::NOT_IMPLEMENTED.into_response(),
             UpdateUserResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

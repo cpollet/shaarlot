@@ -32,6 +32,10 @@ pub async fn shaarli_import_api(
     Extension(user_info): Extension<UserInfo>,
     Json(bookmark): Json<ShaarliImportApiRequest>,
 ) -> Result<ShaarliImportApiResult, ShaarliImportApiResult> {
+    if state.demo {
+        return Ok(ShaarliImportApiResult::NotImplemented);
+    }
+
     let key: Hmac<Sha512> = Hmac::new_from_slice(bookmark.key.expose_secret().0.as_bytes())
         .map_err(|_| ShaarliImportApiResult::ServerError)?;
 

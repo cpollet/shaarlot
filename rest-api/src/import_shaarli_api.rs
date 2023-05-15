@@ -14,6 +14,7 @@ pub enum ShaarliImportApiResult {
     Success,
     Forbidden,
     ShaarliError,
+    NotImplemented,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -32,6 +33,7 @@ impl ShaarliImportApiResult {
                 400 => Some(ShaarliImportApiResult::ShaarliError),
                 403 => Some(ShaarliImportApiResult::Forbidden),
                 500 => Some(ShaarliImportApiResult::ServerError),
+                501 => Some(ShaarliImportApiResult::NotImplemented),
                 _ => {
                     // todo add log
                     None
@@ -48,6 +50,9 @@ impl axum::response::IntoResponse for ShaarliImportApiResult {
             ShaarliImportApiResult::Success => http::StatusCode::OK.into_response(),
             ShaarliImportApiResult::ShaarliError => http::StatusCode::BAD_REQUEST.into_response(),
             ShaarliImportApiResult::Forbidden => http::StatusCode::FORBIDDEN.into_response(),
+            ShaarliImportApiResult::NotImplemented => {
+                http::StatusCode::NOT_IMPLEMENTED.into_response()
+            }
             ShaarliImportApiResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

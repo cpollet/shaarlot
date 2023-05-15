@@ -15,4 +15,5 @@ pub struct AppState {
     pub mailer: Mailer,
     pub ignored_query_params: Vec<&'static str>,
     pub http_client: Client,
+    pub demo: bool,
 }

@@ -35,6 +35,7 @@ enum Status {
     InvalidToken,
     InvalidPassword,
     ServerError,
+    NotAvailable,
 }
 
 impl Default for Status {
@@ -127,6 +128,9 @@ pub fn recover_password_form(props: &Props) -> Html {
                     Some(UpdatePasswordRecoveryResult::ServerError) => {
                         new_state.status = Status::ServerError;
                     }
+                    Some(UpdatePasswordRecoveryResult::NotImplemented) => {
+                        new_state.status = Status::NotAvailable;
+                    }
                     _ => {}
                 }
 
@@ -174,6 +178,11 @@ pub fn recover_password_form(props: &Props) -> Html {
                 Status::InvalidPassword => html! {
                     <div class="centered-box__ok">
                         {"The provided password was not acceptable"}
+                    </div>
+                },
+                Status::NotAvailable => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 _ => html! {

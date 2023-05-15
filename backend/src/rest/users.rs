@@ -19,6 +19,10 @@ pub async fn create_user(
     State(state): State<AppState>,
     Json(user): Json<CreateUserRequest>,
 ) -> Result<CreateUserResult, CreateUserResult> {
+    if state.demo {
+        return Ok(CreateUserResult::NotImplemented);
+    }
+
     if !PasswordRules::default()
         .validate(
             user.password.expose_secret(),
@@ -89,6 +93,10 @@ pub async fn update_current_user(
     session: ReadableSession,
     Json(user): Json<UpdateUserRequest>,
 ) -> Result<UpdateUserResult, UpdateUserResult> {
+    if state.demo {
+        return Ok(UpdateUserResult::NotImplemented);
+    }
+
     if user.new_password.is_some()
         && !PasswordRules::default()
             .validate(

@@ -23,6 +23,7 @@ enum Status {
     Importing,
     Forbidden,
     ShaarliError,
+    NotAvailable,
     GenericError,
 }
 
@@ -67,6 +68,11 @@ pub fn tool_import_shaarli_api() -> Html {
                         Some(ShaarliImportApiResult::ShaarliError) => {
                             let mut new_state = (*state).clone();
                             new_state.status = Status::ShaarliError;
+                            state.set(new_state);
+                        }
+                        Some(ShaarliImportApiResult::NotImplemented) => {
+                            let mut new_state = (*state).clone();
+                            new_state.status = Status::NotAvailable;
                             state.set(new_state);
                         }
                         _ => {
@@ -117,6 +123,11 @@ pub fn tool_import_shaarli_api() -> Html {
                 Status::ShaarliError => html! {
                     <div class="centered-box__error">
                         {"An error has occurred while contacting Shaarli"}
+                    </div>
+                },
+                Status::NotAvailable => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 Status::GenericError => html! {

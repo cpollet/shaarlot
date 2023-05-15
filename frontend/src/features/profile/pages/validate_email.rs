@@ -18,6 +18,7 @@ enum State {
     Success,
     InvalidToken,
     ServerError,
+    NotAvailable,
 }
 
 #[function_component(ValidateEmail)]
@@ -40,6 +41,7 @@ pub fn validate_email(props: &Props) -> Html {
                     ValidateEmailResult::Success => State::Success,
                     ValidateEmailResult::InvalidToken => State::InvalidToken,
                     ValidateEmailResult::ServerError => State::ServerError,
+                    ValidateEmailResult::NotImplemented => State::NotAvailable,
                     _ => State::Loading,
                 })
                 .unwrap_or(State::Loading);
@@ -80,6 +82,11 @@ pub fn validate_email(props: &Props) -> Html {
                 State::InvalidToken => html! {
                     <div class="centered-box__error">
                         {"The token is invalid."}
+                    </div>
+                },
+                State::NotAvailable => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 _ => html! {

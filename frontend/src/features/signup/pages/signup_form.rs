@@ -14,6 +14,7 @@ use yew_router::hooks::use_navigator;
 #[derive(Clone, PartialEq)]
 enum Error {
     InvalidPassword,
+    NotAvailable,
 }
 
 #[derive(Clone, PartialEq, Default)]
@@ -98,6 +99,9 @@ pub fn signup_form() -> Html {
                     Some(CreateUserResult::InvalidEmailAddress) => {
                         todo!();
                     }
+                    Some(CreateUserResult::NotImplemented) => {
+                        new_state.error = Some(Error::NotAvailable);
+                    }
                     _ => {}
                 }
 
@@ -158,6 +162,11 @@ pub fn signup_form() -> Html {
                 Some(Error::InvalidPassword) => html! {
                     <div class="centered-box__error">
                         {"Invalid password"}
+                    </div>
+                },
+                Some(Error::NotAvailable) => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 None => html!{ <></> }

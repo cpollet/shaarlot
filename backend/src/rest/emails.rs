@@ -9,6 +9,10 @@ pub async fn update_email(
     State(state): State<AppState>,
     Path(uuid): Path<Uuid>,
 ) -> Result<ValidateEmailResult, ValidateEmailResult> {
+    if state.demo {
+        return Ok(ValidateEmailResult::NotImplemented);
+    }
+
     let generation_date = Query::find_by_email_token(&state.database, uuid.to_string().as_str())
         .await
         .map_err(|_| ValidateEmailResult::ServerError)?

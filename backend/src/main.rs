@@ -99,6 +99,9 @@ async fn main() {
     let session_ttl = env::var("SESSION_TTL")
         .map(|s| Duration::from_secs(u64::from_str(&s).unwrap_or(60 * 60 * 24)))
         .unwrap_or(Duration::from_secs(60 * 60 * 24));
+    let demo = env::var("DEMO")
+        .map(|v| bool::from_str(&v).unwrap_or_default())
+        .unwrap_or_default();
 
     let database = {
         let config = Configuration {
@@ -175,6 +178,7 @@ async fn main() {
                         .connect_timeout(Duration::from_secs(5))
                         .build()
                         .expect("Could not initialize HTTP client"),
+                    demo,
                 },
             )
             .route("/health", get(health))

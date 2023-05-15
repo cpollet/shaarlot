@@ -15,6 +15,7 @@ pub enum UpdatePasswordRecoveryResult {
     Success,
     InvalidToken,
     InvalidPassword,
+    NotImplemented,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -44,6 +45,7 @@ impl UpdatePasswordRecoveryResult {
                 },
             },
             500 => Some(UpdatePasswordRecoveryResult::ServerError),
+            501 => Some(UpdatePasswordRecoveryResult::NotImplemented),
             _ => {
                 // todo add log?
                 None
@@ -73,6 +75,9 @@ impl axum::response::IntoResponse for UpdatePasswordRecoveryResult {
                 )),
             )
                 .into_response(),
+            UpdatePasswordRecoveryResult::NotImplemented => {
+                http::StatusCode::NOT_IMPLEMENTED.into_response()
+            }
             UpdatePasswordRecoveryResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

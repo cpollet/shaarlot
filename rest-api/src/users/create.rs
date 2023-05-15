@@ -20,6 +20,7 @@ pub enum CreateUserResult {
     Success(CreateUserResponse),
     InvalidPassword,
     InvalidEmailAddress,
+    NotImplemented,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -45,6 +46,7 @@ impl CreateUserResult {
             }
             400 => Some(CreateUserResult::InvalidPassword),
             500 => Some(CreateUserResult::ServerError),
+            501 => Some(CreateUserResult::NotImplemented),
             _ => {
                 // todo add log?
                 None
@@ -62,6 +64,7 @@ impl axum::response::IntoResponse for CreateUserResult {
             }
             CreateUserResult::InvalidPassword => http::StatusCode::BAD_REQUEST.into_response(),
             CreateUserResult::InvalidEmailAddress => http::StatusCode::BAD_REQUEST.into_response(), // todo 400 for both invalid password and this!
+            CreateUserResult::NotImplemented => http::StatusCode::NOT_IMPLEMENTED.into_response(),
             CreateUserResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

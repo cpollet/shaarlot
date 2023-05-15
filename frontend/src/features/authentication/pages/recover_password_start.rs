@@ -20,6 +20,7 @@ enum Status {
     ServerError,
     ClientError,
     Success,
+    NotAvailable,
 }
 
 impl Default for Status {
@@ -86,6 +87,9 @@ pub fn recover_password_start() -> Html {
                     Some(CreatePasswordRecoveryResult::ServerError) => {
                         new_state.status = Status::ServerError;
                     }
+                    Some(CreatePasswordRecoveryResult::NotImplemented) => {
+                        new_state.status = Status::NotAvailable;
+                    }
                     _ => {}
                 }
 
@@ -111,6 +115,11 @@ pub fn recover_password_start() -> Html {
                 Status::Success => html! {
                     <div class="centered-box__ok">
                         {"An email has been sent to the registered email address"}
+                    </div>
+                },
+                Status::NotAvailable => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 _ => html! {

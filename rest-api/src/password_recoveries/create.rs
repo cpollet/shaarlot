@@ -7,6 +7,7 @@ pub struct CreatePasswordRecoveryRequest {
 
 pub enum CreatePasswordRecoveryResult {
     Success,
+    NotImplemented,
     ServerError,
 
     #[cfg(feature = "frontend")]
@@ -25,6 +26,7 @@ impl CreatePasswordRecoveryResult {
         match response.status() {
             201 => Some(CreatePasswordRecoveryResult::Success),
             500 => Some(CreatePasswordRecoveryResult::ServerError),
+            501 => Some(CreatePasswordRecoveryResult::NotImplemented),
             _ => {
                 // todo add log
                 None
@@ -38,6 +40,9 @@ impl axum::response::IntoResponse for CreatePasswordRecoveryResult {
     fn into_response(self) -> axum::response::Response {
         match self {
             CreatePasswordRecoveryResult::Success => http::StatusCode::CREATED.into_response(),
+            CreatePasswordRecoveryResult::NotImplemented => {
+                http::StatusCode::NOT_IMPLEMENTED.into_response()
+            }
             CreatePasswordRecoveryResult::ServerError => {
                 http::StatusCode::INTERNAL_SERVER_ERROR.into_response()
             }

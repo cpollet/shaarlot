@@ -27,6 +27,10 @@ pub async fn create_password_recovery(
     State(state): State<AppState>,
     Json(request): Json<CreatePasswordRecoveryRequest>,
 ) -> Result<CreatePasswordRecoveryResult, CreatePasswordRecoveryResult> {
+    if state.demo {
+        return Ok(CreatePasswordRecoveryResult::NotImplemented);
+    }
+
     let user = UserQuery::find_by_username(&state.database, &request.username_or_email)
         .await
         .map_err(|e| {
@@ -96,6 +100,10 @@ pub async fn update_password_recovery(
     State(state): State<AppState>,
     Json(request): Json<UpdatePasswordRecoveryRequest>,
 ) -> Result<UpdatePasswordRecoveryResult, UpdatePasswordRecoveryResult> {
+    if state.demo {
+        return Ok(UpdatePasswordRecoveryResult::NotImplemented);
+    }
+
     if !PasswordRules::default()
         .validate(
             request.password.expose_secret(),

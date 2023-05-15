@@ -156,6 +156,7 @@ script = [
 
 [tasks.build-release]
 workspace = false
+clear = true
 dependencies = ["build-frontend-release", "compress-assets", "build-backend-release"]
 
 [tasks.run-release]

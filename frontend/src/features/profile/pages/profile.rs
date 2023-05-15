@@ -24,6 +24,7 @@ enum Error {
     InvalidCurrentPassword,
     InvalidNewPassword,
     InvalidEmailAddress,
+    NotAvailable,
     Other,
 }
 
@@ -199,6 +200,9 @@ pub fn profile() -> Html {
                     Some(UpdateUserResult::InvalidEmailAddress) => {
                         new_state.error = Some(Error::InvalidEmailAddress);
                     }
+                    Some(UpdateUserResult::NotImplemented) => {
+                        new_state.error = Some(Error::NotAvailable);
+                    }
                     _ => {
                         new_state.error = Some(Error::Other);
                     }
@@ -231,6 +235,11 @@ pub fn profile() -> Html {
                 Some(Error::InvalidEmailAddress) => html! {
                     <div class="centered-box__error">
                         {"Email address was not valid"}
+                    </div>
+                },
+                Some(Error::NotAvailable) => html! {
+                    <div class="centered-box__error">
+                        {"Not available in demo mode"}
                     </div>
                 },
                 Some(Error::Other) => html! {
