@@ -12,7 +12,7 @@ echo "  help                         display this help message"
 echo "  run-dev                      start both the frontend and the backend in dev mode"
 echo "  run-release                  start both the frontend and the backend in release mode"
 echo "  run-docker                   start the docker image (release mode)"
-echo "  deploy-health                trigger the deployment through a webhook and wait for the health check to be OK"
+echo "  deploy                       trigger the deployment of both the demo and live instances through a webhook"
 echo "  update-entities              update seaorm entities"
 echo "  migration-down               roll back the last seaorm migration"
 echo "  generate-migration           generate a new seaorm migration"
@@ -31,7 +31,8 @@ echo "  build-release                compile both the fontend and the backend in
 echo "  prepare-docker-build         prepare for a docker build"
 echo "  build-docker                 build the docker image (release mode)"
 echo "  docker-push                  push the docker image to docker registry"
-echo "  deploy                       trigger the deployment through a webhook"
+echo "  deploy-demo                  trigger the deployment of the demo instance through a webhook"
+echo "  deploy-live                  trigger the deployment of the live instance through a webhook"
 echo "  clean-docker-image           delete the docker image"
 echo "  clean-docker                 delete the docker image and docker target folder"
 echo "  clean                        clean everything"
@@ -204,22 +205,36 @@ args = ["run", "--rm", "--name", "shaarlot",
 
 [tasks.deploy]
 workspace = false
+dependencies = ["docker-push", "deploy-demo", "deploy-live"]
+
+[tasks.deploy-demo]
+workspace = false
 dependencies = ["docker-push"]
 env_files = ["./.env"]
-command = "curl"
-args = ["${WEBHOOK_URL}"]
-
-[tasks.deploy-health]
-workspace = false
-env_files = ["./.env"]
-dependencies = ["deploy"]
 script = '''
 #!/usr/bin/env bash
 
-while ! curl --silent --fail "$HEALTH_URL" &>/dev/null; do
+curl "$DEMO_WEBHOOK_URL"
+
+while ! curl --silent --fail "$DEMO_HEALTH_URL" &>/dev/null; do
     sleep 2
 done
-curl "$HEALTH_URL"; echo
+curl "$DEMO_HEALTH_URL"; echo
+'''
+
+[tasks.deploy-live]
+workspace = false
+dependencies = ["docker-push"]
+env_files = ["./.env"]
+script = '''
+#!/usr/bin/env bash
+
+curl "$LIVE_WEBHOOK_URL"
+
+while ! curl --silent --fail "$LIVE_HEALTH_URL" &>/dev/null; do
+    sleep 2
+done
+curl "$LIVE_HEALTH_URL"; echo
 '''
 
 [tasks.clean-docker-image]
