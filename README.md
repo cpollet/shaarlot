@@ -73,11 +73,14 @@ javascript:(function(){var url=encodeURIComponent(window.location);window.open('
 * [x] Pagination
 * [x] Tag search
   * [ ] Find untagged bookmarks
+  * [ ] Use `searchtags=` (shaarli compatibility)
 * [x] Filtering by privacy
 * [x] Full text search
+  * [ ] Use `searchterm=` (shaarli compatibility)
 * [x] Tag cloud
 * [x] Sticky bookmarks
 * [x] Bookmarklet
+  * [ ] Auto close window after save
 * [ ] Filter only own bookmarks
 * [ ] Demo mode
   * [x] No account creation / update 
@@ -105,6 +108,8 @@ javascript:(function(){var url=encodeURIComponent(window.location);window.open('
 * [ ] Android app ([dimtion/Shaarlier](https://github.com/dimtion/Shaarlier))
 * [ ] iOS app ([mro/ShaarliOS](https://github.com/mro/ShaarliOS))
 * [ ] Read it later flags
+* [ ] github stars link
+* [ ] cli tool
 
 ## Resources
  * All the rust crates dependencies
