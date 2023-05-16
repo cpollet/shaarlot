@@ -110,10 +110,17 @@ mv backend/src/query-params-registry.txt.new backend/src/query-params-registry.t
 
 [tasks.dev-frontend]
 workspace = false
-dependencies = ["install-trunk", "install-wasm32"]
+dependencies = ["prepare-frontend-dev"]
 cwd = "./frontend"
 command = "trunk"
 args = ["serve", "--public-url", "/", "--address", "0.0.0.0", "--proxy-backend=http://localhost:3000/api/"]
+
+[tasks.prepare-frontend-dev]
+workspace = false
+dependencies = ["install-trunk", "install-wasm32"]
+cwd = "./frontend"
+command = "mkdir"
+args = ["-p", "../target/debug/wasm"]
 
 [tasks.dev-backend]
 workspace = false
