@@ -1,6 +1,6 @@
 [env]
 CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
-DOCKER_IMAGE_NAME={ script = ["grep repository backend/Cargo.toml | tr --delete '\"|[:space:]' | rev | cut -d'/' -f1-2 | rev"] }
+DOCKER_IMAGE_NAME={ script = ["grep repository backend/Cargo.toml | sed 's/\"//g' | awk '{print $3}' | rev | cut -d'/' -f1-2 | rev"] }
 
 [tasks.help]
 workspace = false
