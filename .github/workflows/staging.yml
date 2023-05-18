@@ -1,9 +1,6 @@
 name: Build release and deploy on staging
 
 on:
-  pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
@@ -91,3 +88,4 @@ jobs:
 
 # todo: build image from docker container directly...
 # todo: manual workflow to trigger deployment on live.shaarlot.net & demo.shaarlot.net
+# https://codingpackets.com/blog/rust-binary-and-docker-releases-using-github-actions/
