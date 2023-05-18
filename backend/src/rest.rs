@@ -132,7 +132,7 @@ async fn get_url(
         return Ok(GetUrlResult::Conflict(GetUrlConflictResponse { id }));
     }
 
-    let url = url::clean(url, &state.ignored_query_params).map_err(|_| GetUrlResult::InvalidUrl)?;
+    let url = url::clean(url, &state.ignored_query_params).ok_or(GetUrlResult::InvalidUrl)?;
     log::info!("Fetching metadata about {}", &url);
 
     let response = state.http_client.get(&url).send().await.map_err(|e| {

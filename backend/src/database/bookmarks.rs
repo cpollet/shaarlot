@@ -96,6 +96,7 @@ impl<'a> SearchBy<'a> {
         match user_id {
             Some(user_id) => select
                 .column_as(
+                    #[allow(deprecated)]
                     Expr::tbl(pin::Entity, pin::Column::UserId).is_not_null(),
                     "pinned",
                 )
@@ -104,6 +105,7 @@ impl<'a> SearchBy<'a> {
                     pin::Relation::Bookmark
                         .def()
                         .on_condition(move |pin, _bookmark| {
+                            #[allow(deprecated)]
                             Expr::tbl(pin, pin::Column::UserId)
                                 .eq(user_id)
                                 .into_condition()
@@ -358,6 +360,7 @@ impl Mutation {
         .and_then(|m| m.try_into_model())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn import_bookmark<C>(
         db: &C,
         url: String,
