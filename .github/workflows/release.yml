@@ -2,10 +2,9 @@ name: Build release and deploy on prod
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-      - gh-actions
+#  push:
+#    branches:
+#      - gh-actions
 
 env:
   CARGO_TERM_COLOR: always
