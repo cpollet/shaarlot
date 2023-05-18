@@ -5,7 +5,7 @@ use axum::Router;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
 use backend::database::Configuration;
-use backend::mailer::Mailer;
+use backend::mailer::{LogSender, MailSender, Mailer, Sendmail};
 use backend::rest::api_router;
 use backend::sessions::RedisStore;
 use backend::{database, AppState};
@@ -147,15 +147,24 @@ async fn main() {
         session_store,
     };
 
-    let creds = Credentials::new(smtp_username.to_owned(), smtp_password.to_owned());
-    let smtp_transport = SmtpTransport::relay(&smtp_host)
-        .unwrap()
-        .port(u16::from_str(&smtp_port).unwrap())
-        .credentials(creds)
-        .build();
+    let mail_sender: Box<dyn Sendmail + Send> = match smtp_host.as_str() {
+        "" => Box::new(LogSender {}),
+        host => {
+            let creds = Credentials::new(smtp_username, smtp_password);
+            let smtp_transport = SmtpTransport::relay(host)
+                .unwrap()
+                .port(u16::from_str(&smtp_port).unwrap())
+                .credentials(creds)
+                .build();
+
+            Box::new(MailSender {
+                smtp: smtp_transport,
+            })
+        }
+    };
 
     let mailer = Mailer::new(
-        smtp_transport,
+        mail_sender,
         smtp_from.parse::<Mailbox>().unwrap(),
         public_url,
     );

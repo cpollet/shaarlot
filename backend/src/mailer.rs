@@ -32,7 +32,15 @@ impl State {
 
 enum Msg {
     Stop(Waker),
-    Send(Message),
+    Send(Email),
+}
+
+#[derive(Debug)]
+pub struct Email {
+    from: Mailbox,
+    to: Mailbox,
+    subject: String,
+    body: String,
 }
 
 pub struct Graceful {
@@ -53,17 +61,16 @@ impl Future for Graceful {
 }
 
 impl Mailer {
-    pub fn new(smtp: SmtpTransport, from: Mailbox, public_url: String) -> Self {
+    pub fn new(sender: Box<dyn Sendmail + Send>, from: Mailbox, public_url: String) -> Self {
         let (tx, rx) = sync_channel::<Msg>(32);
 
         let executor = {
             thread::spawn(move || {
                 while let Ok(task) = rx.recv() {
                     match task {
-                        Msg::Send(message) => match smtp.send(&message) {
-                            Ok(_) => {}
-                            Err(e) => log::error!("Could not send email: {:?}", e),
-                        },
+                        Msg::Send(email) => {
+                            sender.send(email);
+                        }
                         Msg::Stop(waker) => {
                             waker.wake();
                             return;
@@ -92,49 +99,47 @@ impl Mailer {
     where
         S: Display,
     {
-        self.send(
-            Message::builder()
-                .from(self.from.clone())
-                .to(to)
-                .subject("Please validate your email")
-                .body(format!(
-                    "Please visit {}/email/{}/~validate to complete your registration.",
-                    self.public_url, token
-                ))
-                .unwrap(),
-        );
+        self.send(Email {
+            from: self.from.clone(),
+            to,
+            subject: "Please validate your email".to_string(),
+            body: format!(
+                "Please visit {}/email/{}/~validate to complete your registration.",
+                self.public_url, token
+            ),
+        });
     }
 
-    fn send(&self, message: Message) {
+    fn send(&self, email: Email) {
         if !self.state.accepts_messages() {
             log::error!("Shutdown in progress");
         }
-        if let Err(e) = self.task_sender.send(Msg::Send(message)) {
+        if let Err(e) = self.task_sender.send(Msg::Send(email)) {
             log::error!("Could not send email: {:?}", e);
         }
     }
 
     pub fn send_email_updated(&self, new_email: &str, to: Mailbox) {
-        self.send( Message::builder()
-            .from(self.from.clone())
-            .to(to)
-            .subject("Update of email address")
-            .body(format!(
-                "An email update validation email was sent to {}. Please follow instruction there to complete the email address update.",
-                new_email
-            ))
-            .unwrap());
+        self.send(
+            Email{
+                from: self.from.clone(),
+                to,
+                subject: "Update of email address".to_string(),
+                body:format!(
+                    "An email update validation email was sent to {}. Please follow instruction there to complete the email address update.",
+                    new_email
+                ),
+            }
+        );
     }
 
     pub fn send_password_updated(&self, to: Mailbox) {
-        self.send(
-            Message::builder()
-                .from(self.from.clone())
-                .to(to)
-                .subject("Update of password")
-                .body("Your password has been updated.".to_string())
-                .unwrap(),
-        );
+        self.send(Email {
+            from: self.from.clone(),
+            to,
+            subject: "Update of password".to_string(),
+            body: "Your password has been updated.".to_string(),
+        });
     }
 
     pub fn send_password_recovery<I, T>(&self, id: I, token: T, to: Mailbox)
@@ -142,16 +147,47 @@ impl Mailer {
         I: Display,
         T: Display,
     {
-        self.send(
-            Message::builder()
-                .from(self.from.clone())
-                .to(to)
-                .subject("Password recovery")
-                .body(format!(
-                    "Please visit {}/recover-password/{}?token={} to proceed.",
-                    self.public_url, id, token
-                ))
+        self.send(Email {
+            from: self.from.clone(),
+            to,
+            subject: "Password recovery".to_string(),
+            body: format!(
+                "Please visit {}/recover-password/{}?token={} to proceed.",
+                self.public_url, id, token
+            ),
+        });
+    }
+}
+
+pub trait Sendmail {
+    fn send(&self, email: Email);
+}
+
+pub struct MailSender {
+    pub smtp: SmtpTransport,
+}
+
+impl Sendmail for MailSender {
+    fn send(&self, email: Email) {
+        log::info!("send email");
+        match self.smtp.send(
+            &Message::builder()
+                .from(email.from)
+                .to(email.to)
+                .subject(email.subject)
+                .body(email.body)
                 .unwrap(),
-        );
+        ) {
+            Ok(_) => {}
+            Err(e) => log::error!("Could not send email: {:?}", e),
+        }
+    }
+}
+
+pub struct LogSender {}
+
+impl Sendmail for LogSender {
+    fn send(&self, email: Email) {
+        log::info!("{:?}", email);
     }
 }
