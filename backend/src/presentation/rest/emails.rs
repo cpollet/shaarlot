@@ -1,4 +1,4 @@
-use crate::database::accounts::{Mutation, Query};
+use crate::infrastructure::database::accounts::{Mutation, Query};
 use crate::AppState;
 use axum::extract::{Path, State};
 use chrono::{DateTime, FixedOffset, Utc};

@@ -1,6 +1,6 @@
-use crate::database::tags;
-use crate::database::tags::SortOrder;
-use crate::sessions::session::UserInfo;
+use crate::infrastructure::database::tags;
+use crate::infrastructure::database::tags::SortOrder;
+use crate::presentation::rest::UserInfo;
 use crate::AppState;
 use axum::extract::{Query, State};
 use axum::Extension;

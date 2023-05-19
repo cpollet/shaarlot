@@ -6,37 +6,48 @@ mod password_recoveries;
 mod sessions;
 mod shaarli_import_api;
 mod tags;
+mod urls;
 mod users;
 
-use crate::rest::application::get_application;
-use crate::rest::bookmarks::*;
-use crate::rest::emails::update_email;
-use crate::rest::password_recoveries::{create_password_recovery, update_password_recovery};
-use crate::rest::sessions::*;
-use crate::rest::shaarli_import_api::shaarli_import_api;
-use crate::rest::tags::get_tags;
-use crate::rest::users::*;
-use crate::sessions::session::{SessionHint, UserInfo};
-use crate::url;
-use crate::{database, AppState};
-use axum::extract::{Path, State};
+use crate::presentation::rest::application::get_application;
+use crate::presentation::rest::bookmarks::{
+    create_bookmark, delete_bookmark, get_bookmark, get_bookmark_qrcode, get_bookmarks,
+    get_bookmarks_stats, update_bookmark,
+};
+use crate::presentation::rest::emails::update_email;
+use crate::presentation::rest::json::Json;
+use crate::presentation::rest::password_recoveries::{
+    create_password_recovery, update_password_recovery,
+};
+use crate::presentation::rest::sessions::{
+    create_session, delete_current_session, get_current_session,
+};
+use crate::presentation::rest::shaarli_import_api::shaarli_import_api;
+use crate::presentation::rest::tags::get_tags;
+use crate::presentation::rest::urls::get_url;
+use crate::presentation::rest::users::{create_user, get_current_user, update_current_user};
+use crate::AppState;
+use axum::http::{Request, StatusCode};
 use axum::middleware::from_fn;
+use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
-use axum::{Extension, Router};
+use axum::Router;
 use axum_sessions::async_session::SessionStore;
-use axum_sessions::{PersistencePolicy, SessionLayer};
+use axum_sessions::{PersistencePolicy, SessionHandle, SessionLayer};
 use rest_api::application::URL_APPLICATION;
 use rest_api::bookmarks::{URL_BOOKMARK, URL_BOOKMARKS_STATS};
 use rest_api::bookmarks::{URL_BOOKMARKS, URL_BOOKMARK_QRCODE};
+use rest_api::error_response::ErrorResponse;
 use rest_api::import_shaarli_api::URL_SHAARLI_IMPORT_API;
 use rest_api::password_recoveries::URL_PASSWORD_RECOVERIES;
 use rest_api::sessions::{URL_SESSIONS, URL_SESSIONS_CURRENT};
 use rest_api::tags::URL_TAGS;
-use rest_api::urls::{GetUrlConflictResponse, GetUrlResponse, GetUrlResult, URL_URLS};
+use rest_api::urls::URL_URLS;
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
 use secrecy::{ExposeSecret, SecretVec};
-use webpage::HTML;
+use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 
 pub struct Configuration<S>
 where
@@ -44,6 +55,75 @@ where
 {
     pub cookie_secret: SecretVec<u8>,
     pub session_store: S,
+}
+
+pub const SESSION_KEY_USER_INFO: &str = "USER_INFO";
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct UserInfo {
+    pub id: i32,
+    pub username: String,
+}
+
+impl Display for UserInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[id:{}, username:{}]", self.id, self.username)
+    }
+}
+
+pub struct SessionHint;
+
+impl SessionHint {
+    pub async fn required<B>(
+        mut request: Request<B>,
+        next: axum::middleware::Next<B>,
+    ) -> impl IntoResponse {
+        if let Some(session_handle) = request.extensions().get::<SessionHandle>() {
+            let user_info = {
+                session_handle
+                    .read()
+                    .await
+                    .get::<UserInfo>(SESSION_KEY_USER_INFO)
+            };
+            if let Some(user_info) = user_info {
+                log::info!("Requested session configured with user {}", user_info);
+                request.extensions_mut().insert(user_info);
+                return next.run(request).await;
+            }
+        } else {
+            log::warn!("No session found");
+        }
+
+        (
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse::new(
+                "FORBIDDEN",
+                "You're not allowed to access this resource",
+            )),
+        )
+            .into_response()
+    }
+
+    pub async fn supported<B>(
+        mut request: Request<B>,
+        next: axum::middleware::Next<B>,
+    ) -> Response {
+        if let Some(session_handle) = request.extensions().get::<SessionHandle>() {
+            let user_info = {
+                session_handle
+                    .read()
+                    .await
+                    .get::<UserInfo>(SESSION_KEY_USER_INFO)
+            };
+            if let Some(user_info) = user_info {
+                log::info!("Supported session configured with user {}", user_info);
+                request.extensions_mut().insert(Some(user_info));
+            } else {
+                request.extensions_mut().insert::<Option<UserInfo>>(None);
+            }
+        }
+        next.run(request).await
+    }
 }
 
 pub fn api_router<S>(configuration: &Configuration<S>, state: AppState) -> Router
@@ -118,55 +198,4 @@ where
                 ),
         )
         .with_state(state)
-}
-
-async fn get_url(
-    Extension(user_info): Extension<UserInfo>,
-    Path(url): Path<String>,
-    State(state): State<AppState>,
-) -> Result<GetUrlResult, GetUrlResult> {
-    if let Some(id) = database::bookmarks::Query::find_by_url(&state.database, user_info.id, &url)
-        .await
-        .map_err(|_| GetUrlResult::ServerError)?
-    {
-        return Ok(GetUrlResult::Conflict(GetUrlConflictResponse { id }));
-    }
-
-    let url = url::clean(url, &state.ignored_query_params).ok_or(GetUrlResult::InvalidUrl)?;
-    log::info!("Fetching metadata about {}", &url);
-
-    let response = state.http_client.get(&url).send().await.map_err(|e| {
-        log::error!("{:?}", e);
-        GetUrlResult::Success(GetUrlResponse {
-            url,
-            title: None,
-            description: None,
-        })
-    })?;
-
-    let url = response.url().to_string();
-
-    let html = response.text().await.map_err(|e| {
-        log::error!("{:?}", e);
-        GetUrlResult::Success(GetUrlResponse {
-            url: url.clone(),
-            title: None,
-            description: None,
-        })
-    })?;
-
-    let html = HTML::from_string(html, None).map_err(|e| {
-        log::error!("{:?}", e);
-        GetUrlResult::Success(GetUrlResponse {
-            url: url.clone(),
-            title: None,
-            description: None,
-        })
-    })?;
-
-    Ok(GetUrlResult::Success(GetUrlResponse {
-        url,
-        title: html.title,
-        description: html.description,
-    }))
 }

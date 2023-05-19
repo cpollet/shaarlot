@@ -1,8 +1,9 @@
-use crate::database::bookmarks::{Filter, Pagination, SearchCriteria, SortOrder};
-use crate::database::pins;
-use crate::domain::bookmark::Bookmark;
-use crate::sessions::session::UserInfo;
-use crate::{database, AppState};
+use crate::domain::entities::Bookmark;
+use crate::infrastructure::database;
+use crate::infrastructure::database::bookmarks::{Filter, Pagination, SearchCriteria, SortOrder};
+use crate::infrastructure::database::pins;
+use crate::presentation::rest::UserInfo;
+use crate::AppState;
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, Response, StatusCode};

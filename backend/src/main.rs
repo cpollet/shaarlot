@@ -4,11 +4,12 @@ use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
-use backend::database::Configuration;
-use backend::mailer::{LogSender, MailSender, Mailer, Sendmail};
-use backend::rest::api_router;
-use backend::sessions::RedisStore;
-use backend::{database, AppState};
+use backend::infrastructure::database;
+use backend::infrastructure::database::Configuration;
+use backend::infrastructure::mailer::{LogSender, MailSender, Mailer, Sendmail};
+use backend::infrastructure::session_store::RedisStore;
+use backend::presentation::rest::api_router;
+use backend::AppState;
 use lettre::message::Mailbox;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::SmtpTransport;
@@ -142,7 +143,7 @@ async fn main() {
         session_ttl,
     );
 
-    let configuration = backend::rest::Configuration {
+    let configuration = backend::presentation::rest::Configuration {
         cookie_secret,
         session_store,
     };

@@ -5,8 +5,6 @@ use redis::AsyncCommands;
 use std::fmt::Debug;
 use std::time::Duration;
 
-pub mod session;
-
 #[derive(Clone, Debug)]
 pub struct RedisStore {
     connection: MultiplexedConnection,

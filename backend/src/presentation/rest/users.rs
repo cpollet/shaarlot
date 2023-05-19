@@ -1,5 +1,5 @@
-use crate::database::accounts::{Mutation, Query};
-use crate::sessions::session::{UserInfo, SESSION_KEY_USER_INFO};
+use crate::infrastructure::database::accounts::{Mutation, Query};
+use crate::presentation::rest::{UserInfo, SESSION_KEY_USER_INFO};
 use crate::AppState;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;

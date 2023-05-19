@@ -1,9 +1,8 @@
-use crate::database::{bookmarks, bookmarks_tags, tags};
-use crate::rest::json::Json;
-use crate::sessions::session::UserInfo;
+use crate::infrastructure::database::{bookmarks, bookmarks_tags, tags};
+use crate::presentation::rest::UserInfo;
 use crate::AppState;
 use axum::extract::State;
-use axum::Extension;
+use axum::{Extension, Json};
 use chrono::{DateTime, Utc};
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;

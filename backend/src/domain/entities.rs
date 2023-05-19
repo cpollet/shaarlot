@@ -1,4 +1,3 @@
-use crate::domain::tag::Tag;
 use chrono::{DateTime, Utc};
 
 pub struct Bookmark {
@@ -13,3 +12,5 @@ pub struct Bookmark {
     pub private: bool,
     pub pinned: bool,
 }
+
+pub type Tag = String;

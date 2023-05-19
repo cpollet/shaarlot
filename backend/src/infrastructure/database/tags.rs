@@ -1,5 +1,5 @@
-use crate::database::bookmarks;
-use crate::database::bookmarks::Filter;
+use crate::infrastructure::database::bookmarks;
+use crate::infrastructure::database::bookmarks::Filter;
 use entity::tag::{ActiveModel, Column, Entity, Model};
 use entity::{bookmark, bookmark_tag};
 use migration::JoinType;

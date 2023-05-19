@@ -1,11 +1,11 @@
-use crate::sessions::session::{UserInfo, SESSION_KEY_USER_INFO};
-use crate::{database, AppState};
+use crate::infrastructure::database::accounts::Query;
+use crate::presentation::rest::{UserInfo, SESSION_KEY_USER_INFO};
+use crate::AppState;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use axum_sessions::extractors::{ReadableSession, WritableSession};
-use database::accounts::Query;
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResponse, CreateSessionResult};
 use secrecy::ExposeSecret;
 

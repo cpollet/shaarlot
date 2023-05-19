@@ -1,2 +1,2 @@
-pub mod bookmark;
-pub mod tag;
+pub mod entities;
+pub mod repositories;

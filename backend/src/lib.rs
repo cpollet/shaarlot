@@ -1,12 +1,10 @@
-use crate::mailer::Mailer;
+use crate::infrastructure::mailer::Mailer;
 use reqwest::Client;
 use sea_orm::DatabaseConnection;
 
-pub mod database;
 pub mod domain;
-pub mod mailer;
-pub mod rest;
-pub mod sessions;
+pub mod infrastructure;
+pub mod presentation;
 pub mod url;
 
 #[derive(Clone)]

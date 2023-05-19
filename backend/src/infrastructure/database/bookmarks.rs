@@ -1,5 +1,5 @@
-use crate::database::tags;
-use crate::domain::bookmark::Bookmark;
+use crate::domain::entities::Bookmark;
+use crate::infrastructure::database::tags;
 use chrono::{DateTime, Utc};
 use entity::bookmark::{ActiveModel, Entity};
 use entity::bookmark::{Column, Model};

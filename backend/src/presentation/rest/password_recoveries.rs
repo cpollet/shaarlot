@@ -1,12 +1,12 @@
-use crate::database::accounts::Mutation as UserMutation;
-use crate::database::accounts::Query as UserQuery;
-use crate::database::password_recoveries::{Mutation, Query};
-use crate::rest::json::Json;
+use crate::infrastructure::database::accounts::Mutation as UserMutation;
+use crate::infrastructure::database::accounts::Query as UserQuery;
+use crate::infrastructure::database::password_recoveries::{Mutation, Query};
 use crate::AppState;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use axum::extract::State;
+use axum::Json;
 use chrono::{DateTime, FixedOffset, Utc};
 use common::PasswordRules;
 use entity::password_recovery::Model;
