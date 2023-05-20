@@ -1,10 +1,10 @@
-use anyhow::Context;
-use sea_orm::{DatabaseConnection, DbErr, TransactionTrait};
-use crate::domain::entities::{Bookmark, Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{Bookmark, Bookmarks, Filter, Pagination, Sort};
 use crate::domain::repositories::BookmarkRepository;
-use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
 use crate::infrastructure::database::bookmarks::SearchCriteria;
+use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
+use anyhow::Context;
 use async_trait::async_trait;
+use sea_orm::{DatabaseConnection, DbErr, TransactionTrait};
 
 #[derive(Clone)]
 pub struct DatabaseBookmarkRepository {
@@ -36,8 +36,8 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
                                 bookmark.user_id,
                                 bookmark.private,
                             )
-                                .await?
-                                .id
+                            .await?
+                            .id
                         }
                         Some(bookmark_id) => {
                             bookmarks::Mutation::update_bookmark(
@@ -48,12 +48,12 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
                                 bookmark.description,
                                 bookmark.private,
                             )
-                                .await?
-                                .ok_or(DbErr::Custom(format!(
-                                    "Bookmark '{}' not found",
-                                    bookmark_id
-                                )))?
-                                .id
+                            .await?
+                            .ok_or(DbErr::Custom(format!(
+                                "Bookmark '{}' not found",
+                                bookmark_id
+                            )))?
+                            .id
                         }
                     };
 
@@ -80,9 +80,9 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
             bookmark_id,
             Some(bookmark.user_id),
         )
-            .await
-            .context("Could not retrieve bookmark")?
-            .context("Could not retrieve bookmark: not found")?;
+        .await
+        .context("Could not retrieve bookmark")?
+        .context("Could not retrieve bookmark: not found")?;
 
         Ok(bookmark)
     }
@@ -95,9 +95,9 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
                 ..SearchCriteria::default()
             },
         )
-            .await
-            .context("Could not retrieve bookmarks count")
-            .map(|c| c as u64)
+        .await
+        .context("Could not retrieve bookmarks count")
+        .map(|c| c as u64)
     }
 
     async fn count_private(&self, user_id: i32) -> anyhow::Result<u64> {
@@ -109,9 +109,9 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
                 ..SearchCriteria::default()
             },
         )
-            .await
-            .context("Could not retrieve bookmarks count")
-            .map(|c| c as u64)
+        .await
+        .context("Could not retrieve bookmarks count")
+        .map(|c| c as u64)
     }
 
     async fn find(

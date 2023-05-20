@@ -1,5 +1,5 @@
 use crate::application::update_bookmark::UpdateResult::{Forbidden, Updated};
-use crate::domain::entities::Bookmark;
+use crate::domain::entities::bookmark::Bookmark;
 use crate::domain::repositories::BookmarkRepository;
 use anyhow::Context;
 use std::sync::Arc;

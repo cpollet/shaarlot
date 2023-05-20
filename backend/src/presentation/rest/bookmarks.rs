@@ -4,7 +4,7 @@ use crate::application::find_bookmark::FindBookmarkCommand;
 use crate::application::get_bookmark_stats::GetBookmarksStatsCommand;
 use crate::application::search_bookmarks::SearchBookmarkCommand;
 use crate::application::update_bookmark::{UpdateBookmarkCommand, UpdateResult};
-use crate::domain::entities::{Bookmark, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{Bookmark, Filter, Pagination, Sort};
 use crate::presentation::rest::UserInfo;
 use crate::AppState;
 use anyhow::Context;

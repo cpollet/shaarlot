@@ -1,4 +1,4 @@
-use crate::domain::entities::Bookmark;
+use crate::domain::entities::bookmark::Bookmark;
 use crate::domain::repositories::BookmarkRepository;
 use std::sync::Arc;
 

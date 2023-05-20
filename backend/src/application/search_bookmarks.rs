@@ -1,4 +1,4 @@
-use crate::domain::entities::{Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{Bookmarks, Filter, Pagination, Sort};
 use crate::domain::repositories::BookmarkRepository;
 use std::sync::Arc;
 

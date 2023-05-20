@@ -4,14 +4,14 @@ use crate::infrastructure::database::accounts;
 use anyhow::Context;
 use async_trait::async_trait;
 use chrono::Utc;
+use entity::account;
 use entity::account::{Column, Model};
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::ActiveValue::Set;
+use sea_orm::ColumnTrait;
+use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, IntoActiveModel};
 use uuid::Uuid;
-use entity::account;
-use sea_orm::QueryFilter;
-use sea_orm::ColumnTrait;
 
 impl TryFrom<Model> for Account {
     type Error = anyhow::Error;
@@ -81,7 +81,9 @@ impl AccountRepository for DatabaseAccountRepository {
             .next_email
             .map(|e| DateTimeWithTimeZone::from(e.token_generation_date().clone())));
 
-        model.update(&self.database).await
+        model
+            .update(&self.database)
+            .await
             .context("Could not update account")
             .and_then(Account::try_from)
     }

@@ -1,4 +1,4 @@
-use crate::domain::entities::{Bookmark, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{Bookmark, Filter, Pagination, Sort};
 use crate::infrastructure::database::tags;
 use chrono::{DateTime, Utc};
 use entity::bookmark::{ActiveModel, Entity};

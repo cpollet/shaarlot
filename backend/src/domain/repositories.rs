@@ -1,5 +1,5 @@
 use crate::domain::entities::account::Account;
-use crate::domain::entities::{Bookmark, Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{Bookmark, Bookmarks, Filter, Pagination, Sort};
 use async_trait::async_trait;
 use uuid::Uuid;
 

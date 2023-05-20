@@ -1,4 +1,4 @@
-use crate::domain::entities::Filter;
+use crate::domain::entities::bookmark::Filter;
 use crate::infrastructure::database::bookmarks;
 use entity::tag::{ActiveModel, Column, Entity, Model};
 use entity::{bookmark, bookmark_tag};
