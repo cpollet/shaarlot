@@ -10,9 +10,11 @@ use backend::application::find_bookmark::FindBookmarkUseCase;
 use backend::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use backend::application::search_bookmarks::SearchBookmarkUseCase;
 use backend::application::update_bookmark::UpdateBookmarkUseCase;
+use backend::application::validate_email::ValidateEmailUseCase;
 use backend::infrastructure::database;
 use backend::infrastructure::database::Configuration;
 use backend::infrastructure::mailer::{LogSender, MailSender, Mailer, Sendmail};
+use backend::infrastructure::repositories::account_repository::DatabaseAccountRepository;
 use backend::infrastructure::repositories::bookmark_repository::DatabaseBookmarkRepository;
 use backend::infrastructure::session_store::RedisStore;
 use backend::presentation::rest::api_router;
@@ -183,6 +185,9 @@ async fn main() {
     let bookmark_repository = Arc::new(DatabaseBookmarkRepository {
         database: database.clone(),
     });
+    let account_repository = Arc::new(DatabaseAccountRepository {
+        database: database.clone(),
+    });
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
@@ -215,6 +220,7 @@ async fn main() {
                         bookmark_repository.clone(),
                     ),
                     get_bookmarks_stats: GetBookmarksStatsUseCase::new(bookmark_repository.clone()),
+                    validate_email: ValidateEmailUseCase::new(account_repository.clone()),
                 },
             )
             .route("/health", get(health))

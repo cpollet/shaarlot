@@ -1,5 +1,7 @@
+use crate::domain::entities::account::Account;
 use crate::domain::entities::{Bookmark, Bookmarks, Filter, Pagination, Sort};
 use async_trait::async_trait;
+use uuid::Uuid;
 
 #[async_trait]
 pub trait BookmarkRepository: Sync + Send {
@@ -24,4 +26,11 @@ pub trait BookmarkRepository: Sync + Send {
     async fn find_by_id(&self, user_id: Option<i32>, id: i32) -> anyhow::Result<Option<Bookmark>>;
 
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
+}
+
+#[async_trait]
+pub trait AccountRepository: Sync + Send {
+    async fn save(&self, account: Account) -> anyhow::Result<Account>;
+
+    async fn find_by_email_token(&self, token: Uuid) -> anyhow::Result<Option<Account>>;
 }

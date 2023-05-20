@@ -1,3 +1,5 @@
+pub mod account;
+
 use chrono::{DateTime, Utc};
 
 pub struct Bookmark {

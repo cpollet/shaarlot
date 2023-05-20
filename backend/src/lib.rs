@@ -4,6 +4,7 @@ use crate::application::find_bookmark::FindBookmarkUseCase;
 use crate::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use crate::application::search_bookmarks::SearchBookmarkUseCase;
 use crate::application::update_bookmark::UpdateBookmarkUseCase;
+use crate::application::validate_email::ValidateEmailUseCase;
 use crate::infrastructure::mailer::Mailer;
 use reqwest::Client;
 use sea_orm::DatabaseConnection;
@@ -27,4 +28,5 @@ pub struct AppState {
     pub update_bookmark_usecase: UpdateBookmarkUseCase,
     pub delete_bookmark_usecase: DeleteBookmarkUseCase,
     pub get_bookmarks_stats: GetBookmarksStatsUseCase,
+    pub validate_email: ValidateEmailUseCase,
 }
