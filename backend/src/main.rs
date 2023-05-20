@@ -4,9 +4,16 @@ use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
+use backend::application::create_bookmark::CreateBookmarkUseCase;
+use backend::application::delete_bookmark::DeleteBookmarkUseCase;
+use backend::application::find_bookmark::FindBookmarkUseCase;
+use backend::application::get_bookmark_stats::GetBookmarksStatsUseCase;
+use backend::application::search_bookmarks::SearchBookmarkUseCase;
+use backend::application::update_bookmark::UpdateBookmarkUseCase;
 use backend::infrastructure::database;
 use backend::infrastructure::database::Configuration;
 use backend::infrastructure::mailer::{LogSender, MailSender, Mailer, Sendmail};
+use backend::infrastructure::repositories::bookmark_repository::DatabaseBookmarkRepository;
 use backend::infrastructure::session_store::RedisStore;
 use backend::presentation::rest::api_router;
 use backend::AppState;
@@ -18,6 +25,7 @@ use sea_orm_migration::MigratorTrait;
 use secrecy::{ExposeSecret, SecretVec};
 use std::env;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use tokio::signal;
@@ -172,6 +180,10 @@ async fn main() {
 
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
+    let bookmark_repository = Arc::new(DatabaseBookmarkRepository {
+        database: database.clone(),
+    });
+
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
             api_router(
@@ -189,6 +201,20 @@ async fn main() {
                         .build()
                         .expect("Could not initialize HTTP client"),
                     demo,
+                    create_bookmark_usecase: CreateBookmarkUseCase::new(
+                        bookmark_repository.clone(),
+                    ),
+                    search_bookmarks_usecase: SearchBookmarkUseCase::new(
+                        bookmark_repository.clone(),
+                    ),
+                    find_bookmark_usecase: FindBookmarkUseCase::new(bookmark_repository.clone()),
+                    update_bookmark_usecase: UpdateBookmarkUseCase::new(
+                        bookmark_repository.clone(),
+                    ),
+                    delete_bookmark_usecase: DeleteBookmarkUseCase::new(
+                        bookmark_repository.clone(),
+                    ),
+                    get_bookmarks_stats: GetBookmarksStatsUseCase::new(bookmark_repository.clone()),
                 },
             )
             .route("/health", get(health))

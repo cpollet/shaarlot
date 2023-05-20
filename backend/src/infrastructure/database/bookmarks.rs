@@ -1,4 +1,4 @@
-use crate::domain::entities::Bookmark;
+use crate::domain::entities::{Bookmark, Filter, Pagination, Sort};
 use crate::infrastructure::database::tags;
 use chrono::{DateTime, Utc};
 use entity::bookmark::{ActiveModel, Entity};
@@ -14,6 +14,8 @@ use sea_orm::{
     TryIntoModel, Value,
 };
 
+// todo functions should return Model, repository should convert to entities
+
 #[derive(Debug, Default)]
 pub struct SearchCriteria {
     pub tags: Vec<String>,
@@ -21,74 +23,24 @@ pub struct SearchCriteria {
     pub filter: Filter,
 }
 
-#[derive(Debug)]
-pub struct Pagination {
-    pub page: u64,
-    pub size: u64,
+pub struct Query;
+
+enum SearchBy<'a> {
+    Id(i32, Option<i32>),
+    Criteria(&'a SearchCriteria, &'a Pagination, &'a Sort, Option<i32>),
 }
 
-#[derive(Clone, Copy, Debug)]
-pub enum SortOrder {
-    CreationDateDesc,
-    CreationDateAsc,
-}
-
-impl SortOrder {
-    fn add_clause(&self, select: Select<Entity>, user_id: &Option<i32>) -> Select<Entity> {
+impl Sort {
+    fn add_clause(&self, select: Select<Entity>, user_id: Option<i32>) -> Select<Entity> {
         let select = match user_id {
             None => select,
             Some(_) => select.order_by_asc(pin::Column::UserId),
         };
         match self {
-            SortOrder::CreationDateDesc => select.order_by(Column::CreationDate, Order::Desc),
-            SortOrder::CreationDateAsc => select.order_by(Column::CreationDate, Order::Asc),
+            Sort::CreationDateDesc => select.order_by(Column::CreationDate, Order::Desc),
+            Sort::CreationDateAsc => select.order_by(Column::CreationDate, Order::Asc),
         }
     }
-}
-
-impl TryFrom<&str> for SortOrder {
-    type Error = String;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "creation_date:asc" => Ok(SortOrder::CreationDateAsc),
-            "creation_date:desc" => Ok(SortOrder::CreationDateDesc),
-            _ => Err(format!("{} is not valid", value)),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default)]
-pub enum Filter {
-    #[default]
-    All,
-    Private,
-    Public,
-}
-
-impl TryFrom<&str> for Filter {
-    type Error = String;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "" => Ok(Filter::All),
-            "private" => Ok(Filter::Private),
-            "public" => Ok(Filter::Public),
-            _ => Err(format!("{} is not valid", value)),
-        }
-    }
-}
-
-pub struct Query;
-
-enum SearchBy<'a> {
-    Id(i32, Option<i32>),
-    Criteria(
-        &'a SearchCriteria,
-        &'a Pagination,
-        &'a SortOrder,
-        Option<i32>,
-    ),
 }
 
 impl<'a> SearchBy<'a> {
@@ -166,8 +118,8 @@ impl<'a> SearchBy<'a> {
     }
 }
 
-impl<'a> From<&SearchBy<'a>> for Select<Entity> {
-    fn from(value: &SearchBy<'a>) -> Self {
+impl<'a> From<SearchBy<'a>> for Select<Entity> {
+    fn from(value: SearchBy<'a>) -> Self {
         let (select, user_id) = match value {
             SearchBy::Id(id, user_id) => (
                 Entity::find_by_id(id.to_owned())
@@ -195,10 +147,11 @@ impl<'a> From<&SearchBy<'a>> for Select<Entity> {
     }
 }
 
+// todo move to repository?
 impl From<(BookmarkModelWithPinned, Vec<tag::Model>)> for Bookmark {
     fn from(value: (BookmarkModelWithPinned, Vec<tag::Model>)) -> Self {
         Self {
-            id: value.0.id,
+            id: Some(value.0.id),
             user_id: value.0.user_id,
             url: value.0.url,
             title: value.0.title,
@@ -226,7 +179,7 @@ struct BookmarkModelWithPinned {
 }
 
 impl Query {
-    async fn find_by<'a, C>(db: &C, search_by: &SearchBy<'a>) -> Result<Vec<Bookmark>, DbErr>
+    async fn find_by<'a, C>(db: &C, search_by: SearchBy<'a>) -> Result<Vec<Bookmark>, DbErr>
     where
         C: ConnectionTrait,
     {
@@ -252,13 +205,13 @@ impl Query {
         db: &C,
         criteria: &'a SearchCriteria,
         page: &'a Pagination,
-        order: &'a SortOrder,
+        order: &'a Sort,
         user_id: Option<i32>,
     ) -> Result<Vec<Bookmark>, DbErr>
     where
         C: ConnectionTrait,
     {
-        Self::find_by(db, &SearchBy::Criteria(criteria, page, order, user_id)).await
+        Self::find_by(db, SearchBy::Criteria(criteria, page, order, user_id)).await
     }
 
     pub fn visible_condition(user_id: Option<i32>, filter: Filter) -> Condition {
@@ -313,7 +266,7 @@ impl Query {
     where
         C: ConnectionTrait,
     {
-        Self::find_by(db, &SearchBy::Id(id, user_id))
+        Self::find_by(db, SearchBy::Id(id, user_id))
             .await
             .map(|mut r| r.pop())
     }
