@@ -131,6 +131,7 @@ pub struct DatabaseAccountRepository {
 #[async_trait]
 impl AccountRepository for DatabaseAccountRepository {
     async fn save(&self, account: Account) -> anyhow::Result<Account> {
+        // fixme transaction
         PasswordRecoveryEntity::delete_many()
             .filter(
                 Condition::all()
