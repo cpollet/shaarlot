@@ -5,9 +5,11 @@ use axum::Router;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
 use backend::application::create_bookmark::CreateBookmarkUseCase;
+use backend::application::create_password_recovery::CreatePasswordRecoveryUseCase;
 use backend::application::delete_bookmark::DeleteBookmarkUseCase;
 use backend::application::find_bookmark::FindBookmarkUseCase;
 use backend::application::get_bookmark_stats::GetBookmarksStatsUseCase;
+use backend::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use backend::application::search_bookmarks::SearchBookmarkUseCase;
 use backend::application::update_bookmark::UpdateBookmarkUseCase;
 use backend::application::validate_email::ValidateEmailUseCase;
@@ -16,6 +18,7 @@ use backend::infrastructure::database::Configuration;
 use backend::infrastructure::mailer::{LogSender, MailSender, Mailer, Sendmail};
 use backend::infrastructure::repositories::account_repository::DatabaseAccountRepository;
 use backend::infrastructure::repositories::bookmark_repository::DatabaseBookmarkRepository;
+use backend::infrastructure::repositories::password_recovery_repository::DatabasePasswordRecoveryRepository;
 use backend::infrastructure::session_store::RedisStore;
 use backend::presentation::rest::api_router;
 use backend::AppState;
@@ -53,6 +56,7 @@ async fn main() {
     let filter = filter::Targets::new()
         .with_target("sqlx::postgres::notice", Level::WARN)
         // .with_target("sqlx::query", Level::DEBUG)
+        .with_target("backend", Level::DEBUG)
         .with_target("tower_http::trace::on_response", Level::DEBUG)
         .with_target("tower_http::trace::on_request", Level::INFO)
         .with_target("tower_http::trace::make_span", Level::TRACE)
@@ -188,6 +192,9 @@ async fn main() {
     let account_repository = Arc::new(DatabaseAccountRepository {
         database: database.clone(),
     });
+    let password_recovery_repository = Arc::new(DatabasePasswordRecoveryRepository {
+        database: database.clone(),
+    });
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
@@ -221,6 +228,15 @@ async fn main() {
                     ),
                     get_bookmarks_stats: GetBookmarksStatsUseCase::new(bookmark_repository.clone()),
                     validate_email: ValidateEmailUseCase::new(account_repository.clone()),
+                    create_password_recovery: CreatePasswordRecoveryUseCase::new(
+                        account_repository.clone(),
+                        password_recovery_repository.clone(),
+                        Arc::new(mailer.clone()),
+                    ),
+                    perform_password_recovery: PerformPasswordRecoveryUseCase::new(
+                        account_repository.clone(),
+                        password_recovery_repository.clone(),
+                    ),
                 },
             )
             .route("/health", get(health))

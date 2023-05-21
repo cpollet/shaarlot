@@ -1,5 +1,6 @@
 use crate::domain::entities::account::Account;
 use crate::domain::entities::bookmark::{Bookmark, Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::password_recovery::{ObfuscatedPasswordRecovery, PasswordRecovery};
 use async_trait::async_trait;
 use uuid::Uuid;
 
@@ -32,5 +33,23 @@ pub trait BookmarkRepository: Sync + Send {
 pub trait AccountRepository: Sync + Send {
     async fn save(&self, account: Account) -> anyhow::Result<Account>;
 
+    async fn find_by_id(&self, id: i32) -> anyhow::Result<Option<Account>>;
+
     async fn find_by_email_token(&self, token: Uuid) -> anyhow::Result<Option<Account>>;
+
+    async fn find_by_username(&self, email: &str) -> anyhow::Result<Option<Account>>;
+
+    async fn find_by_email(&self, email: &str) -> anyhow::Result<Option<Account>>;
+}
+
+#[async_trait]
+pub trait PasswordRecoveryRepository: Sync + Send {
+    async fn save(
+        &self,
+        password_recovery: PasswordRecovery,
+    ) -> anyhow::Result<ObfuscatedPasswordRecovery>;
+
+    async fn delete(&self, id: Uuid) -> anyhow::Result<()>;
+
+    async fn find_by_id(&self, id: Uuid) -> anyhow::Result<Option<ObfuscatedPasswordRecovery>>;
 }

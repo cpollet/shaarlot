@@ -1,7 +1,9 @@
 pub mod create_bookmark;
+pub mod create_password_recovery;
 pub mod delete_bookmark;
 pub mod find_bookmark;
 pub mod get_bookmark_stats;
+pub mod perform_password_recovery;
 pub mod search_bookmarks;
 pub mod update_bookmark;
 pub mod validate_email;

@@ -79,7 +79,7 @@ impl AccountRepository for DatabaseAccountRepository {
         model.email_token = Set(account.next_email.as_ref().map(|e| e.token().to_string()));
         model.email_token_generation_date = Set(account
             .next_email
-            .map(|e| DateTimeWithTimeZone::from(e.token_generation_date().clone())));
+            .map(|e| DateTimeWithTimeZone::from(*e.token_generation_date())));
 
         model
             .update(&self.database)
@@ -88,12 +88,42 @@ impl AccountRepository for DatabaseAccountRepository {
             .and_then(Account::try_from)
     }
 
+    async fn find_by_id(&self, id: i32) -> anyhow::Result<Option<Account>> {
+        account::Entity::find()
+            .filter(Column::Id.eq(id))
+            .one(&self.database)
+            .await
+            .context("Could not find account by id")?
+            .map(Account::try_from)
+            .transpose()
+    }
+
     async fn find_by_email_token(&self, token: Uuid) -> anyhow::Result<Option<Account>> {
         account::Entity::find()
             .filter(Column::EmailToken.eq(token))
             .one(&self.database)
             .await
-            .context("Could not retrieve account by email token")?
+            .context("Could not find account by email token")?
+            .map(Account::try_from)
+            .transpose()
+    }
+
+    async fn find_by_username(&self, username: &str) -> anyhow::Result<Option<Account>> {
+        account::Entity::find()
+            .filter(Column::Username.eq(username.to_lowercase()))
+            .one(&self.database)
+            .await
+            .context("Could not find account by username")?
+            .map(Account::try_from)
+            .transpose()
+    }
+
+    async fn find_by_email(&self, email: &str) -> anyhow::Result<Option<Account>> {
+        account::Entity::find()
+            .filter(Column::Email.eq(email.to_lowercase()))
+            .one(&self.database)
+            .await
+            .context("Could not find account by email")?
             .map(Account::try_from)
             .transpose()
     }

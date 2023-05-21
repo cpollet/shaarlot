@@ -66,6 +66,7 @@ impl Default for PasswordRules {
 }
 
 impl PasswordRules {
+    // fixme must take (Secret<>, Secret<>) as param
     pub fn validate<'t, P>(&self, a: P, b: P) -> PasswordFlags
     where
         P: Into<&'t str>,

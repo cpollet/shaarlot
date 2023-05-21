@@ -1,7 +1,6 @@
 pub mod accounts;
 pub mod bookmarks;
 pub mod bookmarks_tags;
-pub mod password_recoveries;
 pub mod pins;
 pub mod tags;
 
