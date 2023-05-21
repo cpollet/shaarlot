@@ -18,7 +18,6 @@ use backend::infrastructure::database::Configuration;
 use backend::infrastructure::mailer::{LogSender, MailSender, Mailer, Sendmail};
 use backend::infrastructure::repositories::account_repository::DatabaseAccountRepository;
 use backend::infrastructure::repositories::bookmark_repository::DatabaseBookmarkRepository;
-use backend::infrastructure::repositories::password_recovery_repository::DatabasePasswordRecoveryRepository;
 use backend::infrastructure::session_store::RedisStore;
 use backend::presentation::rest::api_router;
 use backend::AppState;
@@ -192,9 +191,6 @@ async fn main() {
     let account_repository = Arc::new(DatabaseAccountRepository {
         database: database.clone(),
     });
-    let password_recovery_repository = Arc::new(DatabasePasswordRecoveryRepository {
-        database: database.clone(),
-    });
 
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
@@ -230,12 +226,10 @@ async fn main() {
                     validate_email: ValidateEmailUseCase::new(account_repository.clone()),
                     create_password_recovery: CreatePasswordRecoveryUseCase::new(
                         account_repository.clone(),
-                        password_recovery_repository.clone(),
                         Arc::new(mailer.clone()),
                     ),
                     perform_password_recovery: PerformPasswordRecoveryUseCase::new(
                         account_repository.clone(),
-                        password_recovery_repository.clone(),
                     ),
                 },
             )

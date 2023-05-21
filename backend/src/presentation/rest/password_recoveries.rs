@@ -28,7 +28,10 @@ pub async fn create_password_recovery(
             username_or_email: request.username_or_email,
         })
         .await
-        .map_err(|_| CreatePasswordRecoveryResult::ServerError)
+        .map_err(|e| {
+            log::error!("{:?}", e);
+            CreatePasswordRecoveryResult::ServerError
+        })
         .map(|_| CreatePasswordRecoveryResult::Success)
 }
 
@@ -52,7 +55,10 @@ pub async fn update_password_recovery(
             ),
         })
         .await
-        .map_err(|_| UpdatePasswordRecoveryResult::ServerError)?;
+        .map_err(|e| {
+            log::error!("{:?}", e);
+            UpdatePasswordRecoveryResult::ServerError
+        })?;
 
     match result {
         PasswordRecoveryResult::InvalidPassword => {

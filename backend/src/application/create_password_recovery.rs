@@ -1,5 +1,5 @@
-use crate::domain::entities::password_recovery::PasswordRecovery;
-use crate::domain::repositories::{AccountRepository, PasswordRecoveryRepository};
+use crate::domain::entities::password_recovery::{ClearPasswordRecovery, PasswordRecovery};
+use crate::domain::repositories::AccountRepository;
 use crate::infrastructure::mailer::Mailer;
 use anyhow::{Context, Error};
 use secrecy::ExposeSecret;
@@ -12,19 +12,13 @@ pub struct CreatePasswordRecoveryCommand {
 #[derive(Clone)]
 pub struct CreatePasswordRecoveryUseCase {
     account_repository: Arc<dyn AccountRepository>,
-    password_recovery_repository: Arc<dyn PasswordRecoveryRepository>,
     mailer: Arc<Mailer>,
 }
 
 impl CreatePasswordRecoveryUseCase {
-    pub fn new(
-        account_repository: Arc<dyn AccountRepository>,
-        password_recovery_repository: Arc<dyn PasswordRecoveryRepository>,
-        mailer: Arc<Mailer>,
-    ) -> Self {
+    pub fn new(account_repository: Arc<dyn AccountRepository>, mailer: Arc<Mailer>) -> Self {
         Self {
             account_repository,
-            password_recovery_repository,
             mailer,
         }
     }
@@ -46,29 +40,27 @@ impl CreatePasswordRecoveryUseCase {
         };
 
         let password_recovery =
-            PasswordRecovery::new(account.as_ref().map(|a| a.id).unwrap_or_default())
+            ClearPasswordRecovery::new(account.as_ref().map(|a| a.id).unwrap_or_default())
                 .context("Could not create password recovery")?;
 
-        let mailbox = account
-            .map(|a| a.mailbox())
-            .transpose()
-            .map_err(Error::msg)
-            .context("Could not find email address")?;
+        if let Some(mut account) = account {
+            let mailbox = account
+                .mailbox()
+                .map_err(Error::msg)
+                .context("Could not find email address")?;
 
-        if let Some(mailbox) = mailbox {
+            let id = password_recovery.id();
             let token = password_recovery.token.clone();
 
-            let password_recovery = self
-                .password_recovery_repository
-                .save(password_recovery)
-                .await
-                .context("Could not save password recovers")?;
+            account.add_password_recovery(PasswordRecovery::Clear(password_recovery));
 
-            self.mailer.send_password_recovery(
-                password_recovery.id,
-                token.expose_secret(),
-                mailbox,
-            );
+            self.account_repository
+                .save(account)
+                .await
+                .context("Cound not save account")?;
+
+            self.mailer
+                .send_password_recovery(id, token.expose_secret(), mailbox);
         }
 
         Ok(())

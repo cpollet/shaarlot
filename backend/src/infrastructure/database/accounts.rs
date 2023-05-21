@@ -12,10 +12,6 @@ use uuid::Uuid;
 pub struct Query;
 
 impl Query {
-    pub async fn find_by_id(db: &DatabaseConnection, id: i32) -> Result<Option<Model>, DbErr> {
-        Entity::find_by_id(id).one(db).await
-    }
-
     pub async fn find_by_username(
         db: &DatabaseConnection,
         username: &str,

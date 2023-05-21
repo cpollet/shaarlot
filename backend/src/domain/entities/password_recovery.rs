@@ -6,23 +6,62 @@ use chrono::{DateTime, FixedOffset, Utc};
 use secrecy::{ExposeSecret, Secret};
 use uuid::Uuid;
 
-pub struct PasswordRecovery {
+pub trait Expire {
+    fn is_expired(&self) -> bool;
+}
+
+pub trait Verify {
+    fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool>;
+}
+
+// todo periodic delete when expired
+#[derive(Debug)]
+pub enum PasswordRecovery {
+    Clear(ClearPasswordRecovery),
+    Hashed(HashedPasswordRecovery),
+}
+
+impl PasswordRecovery {
+    pub fn create(user_id: i32) -> anyhow::Result<ClearPasswordRecovery> {
+        ClearPasswordRecovery::new(user_id).context("Could not create new password recovery")
+    }
+
+    pub fn id(&self) -> Uuid {
+        match self {
+            PasswordRecovery::Clear(r) => r.id(),
+            PasswordRecovery::Hashed(r) => r.id(),
+        }
+    }
+}
+
+impl Expire for PasswordRecovery {
+    fn is_expired(&self) -> bool {
+        match self {
+            PasswordRecovery::Clear(r) => r.is_expired(),
+            PasswordRecovery::Hashed(r) => r.is_expired(),
+        }
+    }
+}
+
+impl Verify for PasswordRecovery {
+    fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool> {
+        match self {
+            PasswordRecovery::Clear(r) => r.token_matches(token),
+            PasswordRecovery::Hashed(r) => r.token_matches(token),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct ClearPasswordRecovery {
+    // todo remove pub
     pub id: Uuid,
     pub token: Secret<String>,
     pub hashed_token: String,
     pub user_id: i32,
 }
 
-pub struct ObfuscatedPasswordRecovery {
-    pub id: Uuid,
-    pub hashed_token: String,
-    pub user_id: i32,
-    pub generation_date: DateTime<Utc>,
-}
-
-// todo periodic delete when expired
-
-impl PasswordRecovery {
+impl ClearPasswordRecovery {
     pub fn new(user_id: i32) -> anyhow::Result<Self> {
         let token = Uuid::new_v4().to_string();
         let salt = SaltString::generate(&mut OsRng);
@@ -39,17 +78,54 @@ impl PasswordRecovery {
             user_id,
         })
     }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    pub fn token(&self) -> &Secret<String> {
+        &self.token
+    }
 }
 
-impl ObfuscatedPasswordRecovery {
-    pub fn recovery_expired(&self) -> bool {
+impl Expire for ClearPasswordRecovery {
+    fn is_expired(&self) -> bool {
+        false
+    }
+}
+
+impl Verify for ClearPasswordRecovery {
+    fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool> {
+        Ok(self.token.expose_secret().eq(token.expose_secret()))
+    }
+}
+
+#[derive(Debug)]
+pub struct HashedPasswordRecovery {
+    // todo remove pub
+    pub id: Uuid,
+    pub hashed_token: String,
+    pub user_id: i32,
+    pub generation_date: DateTime<Utc>,
+}
+
+impl HashedPasswordRecovery {
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+}
+
+impl Expire for HashedPasswordRecovery {
+    fn is_expired(&self) -> bool {
         let now = DateTime::<FixedOffset>::from(Utc::now());
         let duration = now.signed_duration_since(self.generation_date);
 
         duration.num_minutes() > 5
     }
+}
 
-    pub fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool> {
+impl Verify for HashedPasswordRecovery {
+    fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool> {
         let token_hash = PasswordHash::new(&self.hashed_token)
             .map_err(Error::msg)
             .context("Could not instantiate hash verifier")?;
