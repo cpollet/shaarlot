@@ -25,16 +25,6 @@ impl Query {
             .one(db)
             .await
     }
-
-    pub async fn find_by_email(
-        db: &DatabaseConnection,
-        email: &str,
-    ) -> Result<Option<Model>, DbErr> {
-        Entity::find()
-            .filter(Column::Email.eq(email.to_lowercase()))
-            .one(db)
-            .await
-    }
 }
 
 pub struct Mutation;

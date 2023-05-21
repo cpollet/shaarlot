@@ -131,13 +131,13 @@ impl Account {
             creation_date: self.creation_date,
             email: self.email,
             next_email: self.next_email,
+            password_recoveries: self.password_recoveries,
         }))
     }
 
     fn hash_password(password: Secret<String>) -> anyhow::Result<String> {
-        let argon2 = Argon2::default();
         let salt = SaltString::generate(&mut OsRng);
-        let hashed = argon2
+        let hashed = Argon2::default()
             .hash_password(password.expose_secret().as_bytes(), &salt)
             .map_err(Error::msg)
             .context("Could not hash password")?;
