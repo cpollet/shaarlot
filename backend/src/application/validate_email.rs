@@ -44,7 +44,7 @@ impl ValidateEmailUseCase {
         self.repository
             .save(account)
             .await
-            .context("Could not save account")
+            .context("Could not validate email address")
             .map(|_| ValidationResult::Validated)
     }
 }

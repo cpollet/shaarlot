@@ -57,7 +57,7 @@ impl CreatePasswordRecoveryUseCase {
             self.account_repository
                 .save(account)
                 .await
-                .context("Cound not save account")?;
+                .context("Could not create password recovery")?;
 
             self.mailer
                 .send_password_recovery(id, token.expose_secret(), mailbox);

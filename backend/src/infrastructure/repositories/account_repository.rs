@@ -240,7 +240,7 @@ impl AccountRepository for DatabaseAccountRepository {
             .filter(Condition::any().add(AccountColumn::Id.in_subquery(account_ids_stmt)))
             .all(&self.database)
             .await
-            .context("Could not find account by email")?
+            .context("Could not find account by recovery id")?
             .pop()
             .map(Account::try_from)
             .transpose()
