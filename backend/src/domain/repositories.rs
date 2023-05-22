@@ -1,5 +1,8 @@
 use crate::domain::entities::account::Account;
-use crate::domain::entities::bookmark::{Bookmark, Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{
+    Bookmark, Bookmarks, Filter, Pagination, Sort as BookmarkSort,
+};
+use crate::domain::values::tag::{CountedTag, Sort as TagSort};
 use async_trait::async_trait;
 use uuid::Uuid;
 
@@ -18,7 +21,7 @@ pub trait BookmarkRepository: Sync + Send {
         search: Vec<String>,
         filter: Filter,
         pagination: Pagination,
-        sort: Sort,
+        sort: BookmarkSort,
     ) -> anyhow::Result<(Bookmarks, u64)>;
 
     // todo change user_id, or order
@@ -26,6 +29,12 @@ pub trait BookmarkRepository: Sync + Send {
     async fn find_by_id(&self, user_id: Option<i32>, id: i32) -> anyhow::Result<Option<Bookmark>>;
 
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
+
+    async fn find_tags(
+        &self,
+        user_id: Option<i32>,
+        sort: TagSort,
+    ) -> anyhow::Result<Vec<CountedTag>>;
 }
 
 #[async_trait]

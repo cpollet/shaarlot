@@ -1,3 +1,4 @@
+use crate::domain::values::tag::Tag;
 use chrono::{DateTime, Utc};
 
 pub struct Bookmark {
@@ -20,8 +21,6 @@ impl Bookmark {
 }
 
 pub type Bookmarks = Vec<Bookmark>;
-
-pub type Tag = String;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum Filter {

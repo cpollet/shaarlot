@@ -9,6 +9,7 @@ mod tags;
 mod urls;
 mod users;
 
+use crate::domain::entities::account::ClearPassword;
 use crate::presentation::rest::application::get_application;
 use crate::presentation::rest::bookmarks::{
     create_bookmark, delete_bookmark, get_bookmark, get_bookmark_qrcode, get_bookmarks,
@@ -45,11 +46,10 @@ use rest_api::tags::URL_TAGS;
 use rest_api::urls::URL_URLS;
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
+use rest_api::RestPassword;
 use secrecy::{ExposeSecret, SecretVec};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use rest_api::RestPassword;
-use crate::domain::entities::account::ClearPassword;
 
 pub struct Configuration<S>
 where

@@ -1,4 +1,5 @@
 use crate::domain::entities::bookmark::Filter;
+use crate::domain::values::tag::{CountedTag, Sort};
 use crate::infrastructure::database::bookmarks;
 use entity::tag::{ActiveModel, Column, Entity, Model};
 use entity::{bookmark, bookmark_tag};
@@ -25,14 +26,11 @@ impl SortOrder {
     }
 }
 
-impl TryFrom<&str> for SortOrder {
-    type Error = String;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
+impl From<Sort> for SortOrder {
+    fn from(value: Sort) -> Self {
         match value {
-            "name" => Ok(SortOrder::Name),
-            "count" => Ok(SortOrder::Count),
-            _ => Err(format!("{} is not valid", value)),
+            Sort::NameAsc => SortOrder::Name,
+            Sort::CountAsc => SortOrder::Count,
         }
     }
 }
@@ -46,6 +44,15 @@ pub struct TagsAndCount {
     pub count: i64,
 }
 
+impl From<TagsAndCount> for CountedTag {
+    fn from(value: TagsAndCount) -> Self {
+        Self {
+            name: value.name,
+            count: value.count as i32,
+        }
+    }
+}
+
 impl Query {
     pub async fn find_by_name<C>(db: &C, name: &str) -> Result<Option<Model>, DbErr>
     where
@@ -57,8 +64,8 @@ impl Query {
     pub async fn find_by_user_id_order_by<C>(
         db: &C,
         user_id: Option<i32>,
-        order: SortOrder,
-    ) -> Result<Vec<TagsAndCount>, DbErr>
+        order: Sort,
+    ) -> Result<Vec<CountedTag>, DbErr>
     where
         C: ConnectionTrait,
     {
@@ -75,9 +82,13 @@ impl Query {
             .filter(bookmarks::Query::visible_condition(user_id, Filter::All))
             .group_by(Column::Id)
             .group_by(Column::Name);
-        select = order.add_clause(select);
+        select = SortOrder::from(order).add_clause(select);
 
-        select.into_model::<TagsAndCount>().all(db).await
+        select.into_model::<TagsAndCount>().all(db).await.map(|t| {
+            t.into_iter()
+                .map(CountedTag::from)
+                .collect::<Vec<CountedTag>>()
+        })
     }
 
     pub async fn find_by_bookmark_id<C>(db: &C, bookmark_id: i32) -> Result<Vec<Model>, DbErr>

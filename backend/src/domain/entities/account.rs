@@ -2,7 +2,7 @@ use crate::domain::entities::password_recovery::{Expire, PasswordRecovery, Verif
 use anyhow::{Context, Error};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, password_hash, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{DateTime, FixedOffset, Utc};
 use common::PasswordRules;
 use lettre::message::Mailbox;
@@ -53,8 +53,7 @@ impl Account {
             .map_err(Error::msg)
             .context("Could not instantiate hash verifier")?;
 
-        match Argon2::default()
-            .verify_password(password.expose_secret_as_bytes(), &password_hash) {
+        match Argon2::default().verify_password(password.expose_secret_as_bytes(), &password_hash) {
             Ok(_) => Ok(true),
             Err(password_hash::Error::Password) => Ok(false),
             Err(e) => Err(e).map_err(Error::msg).context("Could not verify hash"),
@@ -80,7 +79,7 @@ impl Account {
             id: self.id,
             username: self.username,
             password: self.password,
-            new_password:Some(Self::hash_password(passwords.0)?),
+            new_password: Some(Self::hash_password(passwords.0)?),
             creation_date: self.creation_date,
             email: self.email,
             next_email: self.next_email,
@@ -148,7 +147,6 @@ impl Account {
             .collect::<Vec<PasswordRecovery>>()
     }
 }
-
 
 #[derive(Debug)]
 pub struct HashedPassword(Secret<String>);

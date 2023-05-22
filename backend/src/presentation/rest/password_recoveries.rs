@@ -2,6 +2,7 @@ use crate::application::create_password_recovery::CreatePasswordRecoveryCommand;
 use crate::application::perform_password_recovery::{
     PasswordRecoveryResult, PerformPasswordRecoveryCommand,
 };
+use crate::domain::entities::account::ClearPassword;
 use crate::AppState;
 use axum::extract::State;
 use axum::Json;
@@ -13,7 +14,6 @@ use rest_api::password_recoveries::update::{
 };
 use secrecy::{ExposeSecret, Secret};
 use uuid::Uuid;
-use crate::domain::entities::account::ClearPassword;
 
 pub async fn create_password_recovery(
     State(state): State<AppState>,

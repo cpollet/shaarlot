@@ -1,5 +1,9 @@
-use crate::domain::entities::bookmark::{Bookmark, Bookmarks, Filter, Pagination, Sort};
+use crate::domain::entities::bookmark::{
+    Bookmark, Bookmarks, Filter, Pagination, Sort as BookmarkSort,
+};
 use crate::domain::repositories::BookmarkRepository;
+use crate::domain::values::tag::{CountedTag, Sort as TagSort};
+
 use crate::infrastructure::database::bookmarks::SearchCriteria;
 use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
 use anyhow::Context;
@@ -121,7 +125,7 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
         search: Vec<String>,
         filter: Filter,
         pagination: Pagination,
-        sort: Sort,
+        sort: BookmarkSort,
     ) -> anyhow::Result<(Bookmarks, u64)> {
         let criteria = SearchCriteria {
             tags,
@@ -159,5 +163,15 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
             })
             .await
             .context("Could not delete bookmark")
+    }
+
+    async fn find_tags(
+        &self,
+        user_id: Option<i32>,
+        sort: TagSort,
+    ) -> anyhow::Result<Vec<CountedTag>> {
+        tags::Query::find_by_user_id_order_by(&self.database, user_id, sort)
+            .await
+            .context("Could not load tags")
     }
 }
