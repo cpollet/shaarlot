@@ -18,7 +18,8 @@ pub struct Account {
     // todo remove pub
     pub id: i32,
     pub username: String,
-    pub password: Password,
+    pub password: HashedPassword,
+    pub new_password: Option<HashedPassword>,
     pub creation_date: DateTime<Utc>,
     pub email: Option<String>,
     pub next_email: Option<NextEmail>,
@@ -48,7 +49,7 @@ impl Account {
 
     // todo move hash-related things into a common stuff
     pub fn verify_password(&self, password: &ClearPassword) -> anyhow::Result<bool> {
-        let password_hash = PasswordHash::new(self.password.get_hash().0.expose_secret())
+        let password_hash = PasswordHash::new(self.password.expose_secret_as_string_ref())
             .map_err(Error::msg)
             .context("Could not instantiate hash verifier")?;
 
@@ -78,7 +79,8 @@ impl Account {
         Ok(ChangePasswordResult::Success(Self {
             id: self.id,
             username: self.username,
-            password: Password::Change(Self::hash_password(passwords.0)?),
+            password: self.password,
+            new_password:Some(Self::hash_password(passwords.0)?),
             creation_date: self.creation_date,
             email: self.email,
             next_email: self.next_email,
@@ -147,19 +149,24 @@ impl Account {
     }
 }
 
+
 #[derive(Debug)]
-pub enum Password {
-    /// the hashed password found in database
-    Keep(HashedPassword),
-    /// the hashed password, to be save to database
-    Change(HashedPassword),
+pub struct HashedPassword(Secret<String>);
+
+impl HashedPassword {
+    pub fn expose_secret_as_string_ref(&self) -> &String {
+        self.0.expose_secret()
+    }
+}
+
+impl From<String> for HashedPassword {
+    fn from(value: String) -> Self {
+        Self(Secret::new(value))
+    }
 }
 
 #[derive(Debug)]
-pub struct HashedPassword(pub Secret<String>);
-
-#[derive(Debug)]
-pub struct ClearPassword(pub Secret<String>);
+pub struct ClearPassword(Secret<String>);
 
 impl ClearPassword {
     pub fn expose_secret_as_bytes(&self) -> &[u8] {
@@ -171,12 +178,9 @@ impl ClearPassword {
     }
 }
 
-impl Password {
-    pub fn get_hash(&self) -> &HashedPassword {
-        match self {
-            Password::Keep(hash) => hash,
-            Password::Change(hash) => hash,
-        }
+impl From<String> for ClearPassword {
+    fn from(value: String) -> Self {
+        Self(Secret::new(value))
     }
 }
 

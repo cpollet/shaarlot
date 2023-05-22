@@ -45,7 +45,7 @@ use rest_api::tags::URL_TAGS;
 use rest_api::urls::URL_URLS;
 use rest_api::users::{URL_CURRENT_USER, URL_USERS};
 use rest_api::validate_email::URL_EMAIL;
-use secrecy::{ExposeSecret, Secret, SecretVec};
+use secrecy::{ExposeSecret, SecretVec};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use rest_api::RestPassword;
@@ -130,7 +130,7 @@ impl SessionHint {
 
 impl From<&RestPassword> for ClearPassword {
     fn from(value: &RestPassword) -> Self {
-        ClearPassword(Secret::new(value.0.clone()))
+        ClearPassword::from(value.0.clone())
     }
 }
 
