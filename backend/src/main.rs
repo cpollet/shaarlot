@@ -209,17 +209,17 @@ async fn main() {
                         .build()
                         .expect("Could not initialize HTTP client"),
                     demo,
-                    create_bookmark_usecase: CreateBookmarkUseCase::new(
+                    create_bookmark: CreateBookmarkUseCase::new(
                         bookmark_repository.clone(),
                     ),
-                    search_bookmarks_usecase: SearchBookmarkUseCase::new(
+                    search_bookmarks: SearchBookmarkUseCase::new(
                         bookmark_repository.clone(),
                     ),
-                    find_bookmark_usecase: FindBookmarkUseCase::new(bookmark_repository.clone()),
-                    update_bookmark_usecase: UpdateBookmarkUseCase::new(
+                    find_bookmark: FindBookmarkUseCase::new(bookmark_repository.clone()),
+                    update_bookmark: UpdateBookmarkUseCase::new(
                         bookmark_repository.clone(),
                     ),
-                    delete_bookmark_usecase: DeleteBookmarkUseCase::new(
+                    delete_bookmark: DeleteBookmarkUseCase::new(
                         bookmark_repository.clone(),
                     ),
                     get_bookmarks_stats: GetBookmarksStatsUseCase::new(bookmark_repository.clone()),

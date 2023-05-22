@@ -145,7 +145,7 @@ pub async fn get_bookmarks(
         })?;
 
     let search_result = state
-        .search_bookmarks_usecase
+        .search_bookmarks
         .execute(SearchBookmarkCommand {
             user_id: user_info.as_ref().map(|u| u.id),
             tags,
@@ -177,7 +177,7 @@ pub async fn get_bookmark(
     Path(bookmark_id): Path<i32>,
 ) -> Result<GetBookmarkResult, GetBookmarkResult> {
     let bookmark = state
-        .find_bookmark_usecase
+        .find_bookmark
         .execute(FindBookmarkCommand {
             user_id: user_info.as_ref().map(|u| u.id),
             bookmark_id,
@@ -209,7 +209,7 @@ pub async fn get_bookmark_qrcode(
         })?;
 
     let bookmark = state
-        .find_bookmark_usecase
+        .find_bookmark
         .execute(FindBookmarkCommand {
             user_id: user_info.as_ref().map(|u| u.id),
             bookmark_id,
@@ -238,7 +238,7 @@ pub async fn create_bookmark(
     Json(bookmark): Json<CreateBookmarkRequest>,
 ) -> Result<CreateBookmarkResult, CreateBookmarkResult> {
     state
-        .create_bookmark_usecase
+        .create_bookmark
         .execute(CreateBookmarkCommand {
             user_id: user_info.id,
             url: bookmark.url.clone(),
@@ -260,7 +260,7 @@ pub async fn update_bookmark(
     Json(bookmark): Json<UpdateBookmarkRequest>,
 ) -> Result<UpdateBookmarkResult, UpdateBookmarkResult> {
     let result = state
-        .update_bookmark_usecase
+        .update_bookmark
         .execute(UpdateBookmarkCommand {
             id: bookmark_id,
             user_id: user_info.id,
@@ -294,7 +294,7 @@ pub async fn delete_bookmark(
     Extension(user_info): Extension<UserInfo>,
 ) -> Result<DeleteBookmarkResult, DeleteBookmarkResult> {
     let result = state
-        .delete_bookmark_usecase
+        .delete_bookmark
         .execute(DeleteBookmarkCommand {
             user_id: user_info.id,
             bookmark_id,
