@@ -17,10 +17,12 @@ use entity::password_recovery::{
 use sea_orm::prelude::DateTimeWithTimeZone;
 use sea_orm::sea_query::Query;
 use sea_orm::ActiveValue::{Set, Unchanged};
-use sea_orm::QueryFilter;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait};
 use sea_orm::{ColumnTrait, Condition, NotSet};
+use sea_orm::{DbErr, QueryFilter, TransactionError, TransactionTrait};
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -128,53 +130,93 @@ pub struct DatabaseAccountRepository {
     pub database: DatabaseConnection,
 }
 
+#[derive(Debug)]
+enum SaveDbErr {
+    DeleteExpiredRecoveries(DbErr),
+    InsertRecovery(DbErr),
+    UpdateAccount(DbErr),
+}
+
+impl Display for SaveDbErr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SaveDbErr::DeleteExpiredRecoveries(e) => {
+                write!(f, "Could not delete expired recoveries: {:?}", e)
+            }
+            SaveDbErr::InsertRecovery(e) => write!(f, "Could not insert account: {:?}", e),
+            SaveDbErr::UpdateAccount(e) => write!(f, "Could not update account: {:?}", e),
+        }
+    }
+}
+
+impl Error for SaveDbErr {}
+
 #[async_trait]
 impl AccountRepository for DatabaseAccountRepository {
     async fn save(&self, account: Account) -> anyhow::Result<Account> {
-        // fixme transaction
-        PasswordRecoveryEntity::delete_many()
-            .filter(
-                Condition::all()
-                    .add(PasswordRecoveryColumn::UserId.eq(account.id))
-                    .add(
-                        PasswordRecoveryColumn::Id.is_not_in(
-                            account
-                                .password_recoveries
-                                .keys()
-                                .map(|id| id.to_string())
-                                .collect::<Vec<String>>(),
-                        ),
-                    ),
-            )
-            .exec(&self.database)
-            .await
-            .context("Could not delete expired password recoveries")?;
+        let result = self
+            .database
+            .transaction::<_, i32, SaveDbErr>(|txn| {
+                Box::pin(async move {
+                    PasswordRecoveryEntity::delete_many()
+                        .filter(
+                            Condition::all()
+                                .add(PasswordRecoveryColumn::UserId.eq(account.id))
+                                .add(
+                                    PasswordRecoveryColumn::Id.is_not_in(
+                                        account
+                                            .password_recoveries
+                                            .keys()
+                                            .map(|id| id.to_string())
+                                            .collect::<Vec<String>>(),
+                                    ),
+                                ),
+                        )
+                        .exec(txn)
+                        .await
+                        .map_err(SaveDbErr::DeleteExpiredRecoveries)?;
 
-        let mut account = account;
+                    let mut account = account;
 
-        let password_recoveries = account
-            .take_password_recoveries()
-            .into_iter()
-            .filter_map(|v| match v {
-                PasswordRecovery::Clear(r) => Some(r.into_active_model()),
-                _ => None,
+                    let password_recoveries = account
+                        .take_password_recoveries()
+                        .into_iter()
+                        .filter_map(|v| match v {
+                            PasswordRecovery::Clear(r) => Some(r.into_active_model()),
+                            _ => None,
+                        })
+                        .collect::<Vec<PasswordRecoveryActiveModel>>();
+
+                    for password_recovery in password_recoveries {
+                        password_recovery
+                            .insert(txn)
+                            .await
+                            .map_err(SaveDbErr::InsertRecovery)?;
+                        // .context("Could not save new password recovers")?;
+                    }
+
+                    let account = account.into_active_model();
+                    let account = account
+                        .update(txn)
+                        .await
+                        .map_err(SaveDbErr::UpdateAccount)?;
+
+                    Ok(account.id)
+                })
             })
-            .collect::<Vec<PasswordRecoveryActiveModel>>();
+            .await;
 
-        for password_recovery in password_recoveries {
-            password_recovery
-                .insert(&self.database)
-                .await
-                .context("Could not save new password recovers")?;
-        }
+        let id = match result {
+            Ok(id) => id,
+            Err(TransactionError::Transaction(e)) => {
+                return Err(e).context("Could not save account")
+            }
+            Err(TransactionError::Connection(e)) => {
+                return Err(e).context("Count not save account")
+            }
+        };
 
-        let account = account.into_active_model();
-        let account = account
-            .update(&self.database)
-            .await
-            .context("Could not update account")?;
-
-        self.find_by_id(account.id)
+        self.find_by_id(id)
             .await
             .transpose()
             .expect("account must exist")
