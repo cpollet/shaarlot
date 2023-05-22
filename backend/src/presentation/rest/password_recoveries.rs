@@ -13,6 +13,7 @@ use rest_api::password_recoveries::update::{
 };
 use secrecy::{ExposeSecret, Secret};
 use uuid::Uuid;
+use crate::domain::entities::account::ClearPassword;
 
 pub async fn create_password_recovery(
     State(state): State<AppState>,
@@ -50,8 +51,8 @@ pub async fn update_password_recovery(
                 .map_err(|_| UpdatePasswordRecoveryResult::InvalidToken)?,
             token: Secret::new(request.token.expose_secret().0.clone()),
             passwords: (
-                Secret::new(request.password.expose_secret().0.clone()),
-                Secret::new(request.password_verif.expose_secret().0.clone()),
+                ClearPassword::from(request.password.expose_secret()),
+                ClearPassword::from(request.password_verif.expose_secret()),
             ),
         })
         .await

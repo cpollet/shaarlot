@@ -7,9 +7,11 @@ use crate::application::perform_password_recovery::PerformPasswordRecoveryUseCas
 use crate::application::search_bookmarks::SearchBookmarkUseCase;
 use crate::application::update_bookmark::UpdateBookmarkUseCase;
 use crate::application::validate_email::ValidateEmailUseCase;
+use crate::domain::repositories::AccountRepository;
 use crate::infrastructure::mailer::Mailer;
 use reqwest::Client;
 use sea_orm::DatabaseConnection;
+use std::sync::Arc;
 
 pub mod application;
 pub mod domain;
@@ -19,9 +21,11 @@ pub mod url;
 
 #[derive(Clone)]
 pub struct AppState {
+    // todo remove
     pub database: DatabaseConnection,
     // todo remove
     pub mailer: Mailer,
+    pub account_repository: Arc<dyn AccountRepository>,
     pub ignored_query_params: Vec<&'static str>,
     pub http_client: Client,
     pub demo: bool,

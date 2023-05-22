@@ -1,13 +1,16 @@
+use crate::domain::entities::account::{Account, ClearPassword};
 use crate::infrastructure::database::accounts::Query;
 use crate::presentation::rest::{UserInfo, SESSION_KEY_USER_INFO};
 use crate::AppState;
+use anyhow::Context;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use axum_sessions::extractors::{ReadableSession, WritableSession};
 use rest_api::sessions::{CreateSessionRequest, CreateSessionResponse, CreateSessionResult};
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret, Secret};
+use rest_api::RestPassword;
 
 const DEFAULT_HASH: &str = "$argon2id$v=19$m=4096,t=3,p=1$baDtBn+xiGM5bIMWdtwslA$df2X6ViJYdLDvARhcgkcmo6QfQAXrbjdrOYxKWWrdF8";
 
@@ -29,24 +32,28 @@ pub async fn create_session(
     State(state): State<AppState>,
     Json(user): Json<CreateSessionRequest>,
 ) -> Result<CreateSessionResult, CreateSessionResult> {
-    let db_user = Query::find_by_username(&state.database, &user.username)
+    let account = state
+        .account_repository
+        .find_by_username(&user.username)
         .await
-        .map_err(|_| CreateSessionResult::ServerError)?
-        .ok_or({
+        .map_err(|_| CreateSessionResult::ServerError)?;
+
+    let account = match account {
+        Some(account) => {
+            match account.verify_password(&ClearPassword::from(user.password.expose_secret())) {
+                Ok(true) => account,
+                _ => return Ok(CreateSessionResult::InvalidCredentials),
+            }
+        }
+        None => {
             // compute a dummy hash to prevent timing attacks
             let hash = PasswordHash::new(DEFAULT_HASH).unwrap();
             let _ = Argon2::default().verify_password(user.password.expose_secret().into(), &hash);
-            CreateSessionResult::InvalidCredentials
-        })?;
+            return Ok(CreateSessionResult::InvalidCredentials);
+        }
+    };
 
-    let password_hash = PasswordHash::new(&db_user.password)
-        .map_err(|_| CreateSessionResult::InvalidCredentials)?;
-
-    Argon2::default()
-        .verify_password(user.password.expose_secret().into(), &password_hash)
-        .map_err(|_| CreateSessionResult::InvalidCredentials)?;
-
-    if db_user.email.is_none() {
+    if account.email.is_none() {
         return Err(CreateSessionResult::InvalidCredentials);
     }
 
@@ -54,8 +61,8 @@ pub async fn create_session(
         .insert(
             SESSION_KEY_USER_INFO,
             UserInfo {
-                id: db_user.id,
-                username: db_user.username,
+                id: account.id,
+                username: account.username,
             },
         )
         .map_err(|_| CreateSessionResult::ServerError)?;

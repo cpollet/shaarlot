@@ -199,6 +199,7 @@ async fn main() {
                 AppState {
                     database,
                     mailer: mailer.clone(),
+                    account_repository: account_repository.clone(),
                     ignored_query_params: IGNORED_GET_PARAMS
                         .split('\n')
                         .filter(|s| !s.is_empty())
@@ -209,19 +210,11 @@ async fn main() {
                         .build()
                         .expect("Could not initialize HTTP client"),
                     demo,
-                    create_bookmark: CreateBookmarkUseCase::new(
-                        bookmark_repository.clone(),
-                    ),
-                    search_bookmarks: SearchBookmarkUseCase::new(
-                        bookmark_repository.clone(),
-                    ),
+                    create_bookmark: CreateBookmarkUseCase::new(bookmark_repository.clone()),
+                    search_bookmarks: SearchBookmarkUseCase::new(bookmark_repository.clone()),
                     find_bookmark: FindBookmarkUseCase::new(bookmark_repository.clone()),
-                    update_bookmark: UpdateBookmarkUseCase::new(
-                        bookmark_repository.clone(),
-                    ),
-                    delete_bookmark: DeleteBookmarkUseCase::new(
-                        bookmark_repository.clone(),
-                    ),
+                    update_bookmark: UpdateBookmarkUseCase::new(bookmark_repository.clone()),
+                    delete_bookmark: DeleteBookmarkUseCase::new(bookmark_repository.clone()),
                     get_bookmarks_stats: GetBookmarksStatsUseCase::new(bookmark_repository.clone()),
                     validate_email: ValidateEmailUseCase::new(account_repository.clone()),
                     create_password_recovery: CreatePasswordRecoveryUseCase::new(

@@ -8,6 +8,8 @@ pub const URL_SESSIONS_CURRENT: &str = "/api/sessions/current";
 #[derive(Serialize, Deserialize)]
 pub struct CreateSessionRequest {
     pub username: String,
+    // todo review that and create a new type RestPassword as Secret<String>? (same for tokens)
+    // todo and share it with the backend (i.e without the "rest" notion)
     pub password: Secret<RestPassword>,
 }
 

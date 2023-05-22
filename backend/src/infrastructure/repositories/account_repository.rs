@@ -1,4 +1,4 @@
-use crate::domain::entities::account::{Account, NextEmail, Password};
+use crate::domain::entities::account::{Account, HashedPassword, NextEmail, Password};
 use crate::domain::entities::password_recovery::{
     ClearPasswordRecovery, HashedPasswordRecovery, PasswordRecovery,
 };
@@ -20,6 +20,7 @@ use sea_orm::ActiveValue::{Set, Unchanged};
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait};
 use sea_orm::{ColumnTrait, Condition, NotSet};
 use sea_orm::{DbErr, QueryFilter, TransactionError, TransactionTrait};
+use secrecy::Secret;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -61,7 +62,7 @@ impl TryFrom<(AccountModel, Vec<PasswordRecoveryModel>)> for Account {
             id: account.id,
             next_email: NextEmail::try_from_model(&account)?,
             username: account.username,
-            password: Password::Keep,
+            password: Password::Keep(HashedPassword(Secret::new(account.password))),
             creation_date: account.creation_date.with_timezone(&Utc),
             email: account.email,
             password_recoveries,

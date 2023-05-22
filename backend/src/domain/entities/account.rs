@@ -2,7 +2,7 @@ use crate::domain::entities::password_recovery::{Expire, PasswordRecovery, Verif
 use anyhow::{Context, Error};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
+use argon2::{Argon2, password_hash, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{DateTime, FixedOffset, Utc};
 use common::PasswordRules;
 use lettre::message::Mailbox;
@@ -46,15 +46,29 @@ impl Account {
             .map_err(|_| EmailError::InvalidEmail)
     }
 
+    // todo move hash-related things into a common stuff
+    pub fn verify_password(&self, password: &ClearPassword) -> anyhow::Result<bool> {
+        let password_hash = PasswordHash::new(self.password.get_hash().0.expose_secret())
+            .map_err(Error::msg)
+            .context("Could not instantiate hash verifier")?;
+
+        match Argon2::default()
+            .verify_password(password.expose_secret_as_bytes(), &password_hash) {
+            Ok(_) => Ok(true),
+            Err(password_hash::Error::Password) => Ok(false),
+            Err(e) => Err(e).map_err(Error::msg).context("Could not verify hash"),
+        }
+    }
+
     pub fn change_password(
         // todo should take &mut self
         self,
-        passwords: (Secret<String>, Secret<String>),
+        passwords: (ClearPassword, ClearPassword),
     ) -> anyhow::Result<ChangePasswordResult> {
         if !PasswordRules::default()
             .validate(
-                passwords.0.expose_secret().as_str(),
-                passwords.1.expose_secret().as_str(),
+                passwords.0.expose_secret_as_str(),
+                passwords.1.expose_secret_as_str(),
             )
             .is_valid()
         {
@@ -72,13 +86,14 @@ impl Account {
         }))
     }
 
-    fn hash_password(password: Secret<String>) -> anyhow::Result<String> {
+    // todo move hash-related things into a common stuff
+    fn hash_password(password: ClearPassword) -> anyhow::Result<HashedPassword> {
         let salt = SaltString::generate(&mut OsRng);
         let hashed = Argon2::default()
-            .hash_password(password.expose_secret().as_bytes(), &salt)
+            .hash_password(password.expose_secret_as_bytes(), &salt)
             .map_err(Error::msg)
             .context("Could not hash password")?;
-        Ok(hashed.to_string())
+        Ok(HashedPassword(Secret::new(hashed.to_string())))
     }
 
     pub fn add_password_recovery(&mut self, password_recovery: PasswordRecovery) {
@@ -92,7 +107,7 @@ impl Account {
         mut self,
         recovery_id: Uuid,
         token: Secret<String>,
-        passwords: (Secret<String>, Secret<String>),
+        passwords: (ClearPassword, ClearPassword),
     ) -> anyhow::Result<RecoverPasswordResult> {
         self.remove_expired_recoveries();
 
@@ -134,9 +149,35 @@ impl Account {
 
 #[derive(Debug)]
 pub enum Password {
-    Keep,
-    // todo should be PasswordHash
-    Change(String),
+    /// the hashed password found in database
+    Keep(HashedPassword),
+    /// the hashed password, to be save to database
+    Change(HashedPassword),
+}
+
+#[derive(Debug)]
+pub struct HashedPassword(pub Secret<String>);
+
+#[derive(Debug)]
+pub struct ClearPassword(pub Secret<String>);
+
+impl ClearPassword {
+    pub fn expose_secret_as_bytes(&self) -> &[u8] {
+        self.0.expose_secret().as_bytes()
+    }
+
+    pub fn expose_secret_as_str(&self) -> &str {
+        self.0.expose_secret().as_str()
+    }
+}
+
+impl Password {
+    pub fn get_hash(&self) -> &HashedPassword {
+        match self {
+            Password::Keep(hash) => hash,
+            Password::Change(hash) => hash,
+        }
+    }
 }
 
 #[derive(Debug)]

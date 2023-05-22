@@ -1,4 +1,4 @@
-use crate::domain::entities::account::RecoverPasswordResult;
+use crate::domain::entities::account::{ClearPassword, RecoverPasswordResult};
 use crate::domain::repositories::AccountRepository;
 use anyhow::Context;
 use secrecy::Secret;
@@ -8,7 +8,7 @@ use uuid::Uuid;
 pub struct PerformPasswordRecoveryCommand {
     pub id: Uuid,
     pub token: Secret<String>,
-    pub passwords: (Secret<String>, Secret<String>),
+    pub passwords: (ClearPassword, ClearPassword),
 }
 
 pub enum PasswordRecoveryResult {

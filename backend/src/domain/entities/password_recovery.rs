@@ -56,6 +56,7 @@ impl Verify for PasswordRecovery {
 pub struct ClearPasswordRecovery {
     // todo remove pub
     pub id: Uuid,
+    // todo create new type
     pub token: Secret<String>,
     pub hashed_token: String,
     pub user_id: i32,
@@ -65,6 +66,7 @@ impl ClearPasswordRecovery {
     pub fn new(user_id: i32) -> anyhow::Result<Self> {
         let token = Uuid::new_v4().to_string();
         let salt = SaltString::generate(&mut OsRng);
+        // todo move hash-related things into a common stuff
         let hashed_token = Argon2::default()
             .hash_password(token.as_ref(), &salt)
             .map_err(Error::msg)
@@ -125,6 +127,7 @@ impl Expire for HashedPasswordRecovery {
 }
 
 impl Verify for HashedPasswordRecovery {
+    // todo move hash-related things into a common stuff
     fn token_matches(&self, token: Secret<String>) -> anyhow::Result<bool> {
         let token_hash = PasswordHash::new(&self.hashed_token)
             .map_err(Error::msg)
