@@ -195,7 +195,7 @@ impl AccountRepository for DatabaseAccountRepository {
     async fn find_by_email_token(&self, token: Uuid) -> anyhow::Result<Option<Account>> {
         AccountEntity::find()
             .find_with_related(PasswordRecoveryEntity)
-            .filter(AccountColumn::EmailToken.eq(token))
+            .filter(AccountColumn::EmailToken.eq(token.to_string()))
             .all(&self.database)
             .await
             .context("Could not find account by email token")?
