@@ -7,7 +7,6 @@ use axum::extract::{Path, State};
 use axum::Extension;
 use rest_api::urls::{GetUrlConflictResponse, GetUrlResponse, GetUrlResult};
 
-
 pub async fn get_url(
     Extension(user_info): Extension<UserInfo>,
     Path(url): Path<String>,

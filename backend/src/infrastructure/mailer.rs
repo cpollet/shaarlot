@@ -7,8 +7,8 @@ use std::str::FromStr;
 use std::sync::mpsc::{sync_channel, SyncSender};
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
+use std::thread;
 use std::thread::JoinHandle;
-use std::{thread};
 
 #[derive(Clone)]
 pub struct Mailer {

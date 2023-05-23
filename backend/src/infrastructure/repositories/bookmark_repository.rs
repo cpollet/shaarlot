@@ -4,7 +4,6 @@ use crate::domain::entities::bookmark::{
 use crate::domain::repositories::BookmarkRepository;
 use crate::domain::values::tag::{CountedTag, Sort as TagSort};
 
-
 use crate::infrastructure::database::bookmarks::SearchCriteria;
 use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
 use anyhow::{Context, Error};

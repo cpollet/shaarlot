@@ -15,7 +15,7 @@ use lettre::Address;
 use rest_api::users::create::{CreateUserRequest, CreateUserResponse, CreateUserResult};
 use rest_api::users::get::{GetUserResponse, GetUserResult};
 use rest_api::users::update::{UpdateUserRequest, UpdateUserResponse, UpdateUserResult};
-use secrecy::{ExposeSecret};
+use secrecy::ExposeSecret;
 
 use std::str::FromStr;
 use uuid::Uuid;
@@ -62,14 +62,19 @@ pub async fn get_current_user(
         .get::<UserInfo>(SESSION_KEY_USER_INFO)
         .ok_or(GetUserResult::Forbidden)?;
 
-    Query::find_by_username(&state.database, &user_info.username)
+    state
+        .account_repository
+        .find_by_id(user_info.id)
         .await
-        .map_err(|_| GetUserResult::Forbidden)? // this is ok, Forbidden would be when we query for another user
+        .map_err(|e| {
+            log::error!("{:?}", e);
+            GetUserResult::ServerError
+        })?
         .map(|u| {
             Ok(GetUserResult::Success(GetUserResponse {
-                id: u.id,
+                id: u.id.expect("must have an id"),
                 username: u.username,
-                email: u.email.ok_or(GetUserResult::Forbidden)?,
+                email: u.email.ok_or(GetUserResult::Forbidden)?.to_string(),
             }))
         })
         .unwrap_or_else(|| Err(GetUserResult::Forbidden))

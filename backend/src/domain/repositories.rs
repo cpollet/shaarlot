@@ -45,7 +45,7 @@ pub trait AccountRepository: Sync + Send {
 
     async fn find_by_email_token(&self, token: Uuid) -> anyhow::Result<Option<Account>>;
 
-    async fn find_by_username(&self, email: &str) -> anyhow::Result<Option<Account>>;
+    async fn find_by_username(&self, username: &str) -> anyhow::Result<Option<Account>>;
 
     async fn find_by_email(&self, email: &str) -> anyhow::Result<Option<Account>>;
 
