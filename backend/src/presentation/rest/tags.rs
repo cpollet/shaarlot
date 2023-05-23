@@ -1,7 +1,6 @@
 use crate::application::get_tags::GetTagsCommand;
 use crate::domain::values::tag::{CountedTag, Sort};
 
-
 use crate::presentation::rest::UserInfo;
 use crate::AppState;
 
