@@ -4,12 +4,14 @@ use axum::routing::get;
 use axum::Router;
 use axum_sessions::async_session::base64;
 use axum_sessions::{PersistencePolicy, SameSite, SessionLayer};
+use backend::application::create_account::CreateAccountUseCase;
 use backend::application::create_bookmark::CreateBookmarkUseCase;
 use backend::application::create_password_recovery::CreatePasswordRecoveryUseCase;
 use backend::application::delete_bookmark::DeleteBookmarkUseCase;
 use backend::application::find_bookmark::FindBookmarkUseCase;
 use backend::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use backend::application::get_tags::GetTagsUseCase;
+use backend::application::get_url_details::GetUrlDetailsUseCase;
 use backend::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use backend::application::search_bookmarks::SearchBookmarkUseCase;
 use backend::application::update_bookmark::UpdateBookmarkUseCase;
@@ -42,7 +44,6 @@ use tracing::Level;
 use tracing_subscriber::filter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use backend::application::get_url_details::GetUrlDetailsUseCase;
 
 #[cfg(not(debug_assertions))]
 const STATIC_DIR: include_dir::Dir<'_> =
@@ -179,11 +180,11 @@ async fn main() {
         }
     };
 
-    let mailer = Mailer::new(
+    let mailer = Arc::new(Mailer::new(
         mail_sender,
         smtp_from.parse::<Mailbox>().unwrap(),
         public_url,
-    );
+    ));
 
     log::info!("Listening on http://{}:{}", http_host, http_port);
 
@@ -222,13 +223,20 @@ async fn main() {
                     validate_email: ValidateEmailUseCase::new(account_repository.clone()),
                     create_password_recovery: CreatePasswordRecoveryUseCase::new(
                         account_repository.clone(),
-                        Arc::new(mailer.clone()),
+                        mailer.clone(),
                     ),
                     perform_password_recovery: PerformPasswordRecoveryUseCase::new(
                         account_repository.clone(),
                     ),
                     get_tags: GetTagsUseCase::new(bookmark_repository.clone()),
-                    get_url_details: GetUrlDetailsUseCase::new(bookmark_repository.clone(), http_client)
+                    get_url_details: GetUrlDetailsUseCase::new(
+                        bookmark_repository.clone(),
+                        http_client,
+                    ),
+                    create_account: CreateAccountUseCase::new(
+                        account_repository.clone(),
+                        mailer.clone(),
+                    ),
                 },
             )
             .route("/health", get(health))

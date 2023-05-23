@@ -1,5 +1,6 @@
 use crate::domain::entities::bookmark::Bookmark;
 use crate::domain::repositories::BookmarkRepository;
+use chrono::Utc;
 use std::sync::Arc;
 
 pub struct CreateBookmarkCommand {
@@ -30,7 +31,7 @@ impl CreateBookmarkUseCase {
                 title: command.title,
                 description: command.description,
                 tags: command.tags,
-                creation_date: Default::default(),
+                creation_date: Utc::now(),
                 update_date: None,
                 private: command.private,
                 pinned: false,

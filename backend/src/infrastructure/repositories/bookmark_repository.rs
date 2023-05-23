@@ -4,12 +4,12 @@ use crate::domain::entities::bookmark::{
 use crate::domain::repositories::BookmarkRepository;
 use crate::domain::values::tag::{CountedTag, Sort as TagSort};
 
-use crate::domain::entities::account::Account;
+
 use crate::infrastructure::database::bookmarks::SearchCriteria;
 use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
 use anyhow::{Context, Error};
 use async_trait::async_trait;
-use entity::bookmark::{Column, Model, Entity};
+use entity::bookmark::{Column, Entity};
 use sea_orm::{
     ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QuerySelect, TransactionTrait,
 };

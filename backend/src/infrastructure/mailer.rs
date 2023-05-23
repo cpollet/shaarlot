@@ -1,24 +1,25 @@
 use lettre::message::Mailbox;
-use lettre::{Message, SmtpTransport, Transport};
+use lettre::{Address, Message, SmtpTransport, Transport};
 use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
+use std::str::FromStr;
 use std::sync::mpsc::{sync_channel, SyncSender};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
-use std::thread;
 use std::thread::JoinHandle;
+use std::{thread};
 
 #[derive(Clone)]
 pub struct Mailer {
     from: Mailbox,
     public_url: String,
-    state: State,
+    state: Arc<RwLock<State>>,
     executor_handler: Arc<JoinHandle<()>>,
     task_sender: SyncSender<Msg>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum State {
     Ready,
     ShuttingDown,
@@ -38,16 +39,16 @@ enum Msg {
 #[derive(Debug)]
 pub struct Email {
     from: Mailbox,
-    to: Mailbox,
+    to: Address,
     subject: String,
     body: String,
 }
 
-pub struct Graceful {
-    mailer: Mailer,
+pub struct Graceful<'a> {
+    mailer: &'a Mailer,
 }
 
-impl Future for Graceful {
+impl<'a> Future for Graceful<'a> {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -83,19 +84,25 @@ impl Mailer {
         Self {
             from,
             public_url,
-            state: State::Ready,
+            state: Arc::new(RwLock::new(State::Ready)),
             executor_handler: Arc::new(executor),
             task_sender: tx,
         }
     }
 
-    pub fn stop(mut self) -> Graceful {
-        self.state = State::ShuttingDown;
-        log::info!("Starting graceful shutdown");
+    pub fn stop(&self) -> Graceful {
+        {
+            let mut s = self.state.write().unwrap();
+            *s = State::ShuttingDown;
+        }
+        log::info!(
+            "Starting graceful shutdown (state={:?})",
+            self.state.read().unwrap()
+        );
         Graceful { mailer: self }
     }
 
-    pub fn send_email_token<S>(&self, token: S, to: Mailbox)
+    pub fn send_email_token<S>(&self, token: S, to: Address)
     where
         S: Display,
     {
@@ -111,7 +118,7 @@ impl Mailer {
     }
 
     fn send(&self, email: Email) {
-        if !self.state.accepts_messages() {
+        if !self.state.read().unwrap().accepts_messages() {
             log::error!("Shutdown in progress");
         }
         if let Err(e) = self.task_sender.send(Msg::Send(email)) {
@@ -119,7 +126,7 @@ impl Mailer {
         }
     }
 
-    pub fn send_email_updated(&self, new_email: &str, to: Mailbox) {
+    pub fn send_email_updated(&self, new_email: &str, to: Address) {
         self.send(
             Email{
                 from: self.from.clone(),
@@ -133,7 +140,7 @@ impl Mailer {
         );
     }
 
-    pub fn send_password_updated(&self, to: Mailbox) {
+    pub fn send_password_updated(&self, to: Address) {
         self.send(Email {
             from: self.from.clone(),
             to,
@@ -142,7 +149,7 @@ impl Mailer {
         });
     }
 
-    pub fn send_password_recovery<I, T>(&self, id: I, token: T, to: Mailbox)
+    pub fn send_password_recovery<I, T>(&self, id: I, token: T, to: Address)
     where
         I: Display,
         T: Display,
@@ -173,7 +180,7 @@ impl Sendmail for MailSender {
         match self.smtp.send(
             &Message::builder()
                 .from(email.from)
-                .to(email.to)
+                .to(Mailbox::from_str(email.to.as_ref()).expect("cannot be invalid"))
                 .subject(email.subject)
                 .body(email.body)
                 .unwrap(),

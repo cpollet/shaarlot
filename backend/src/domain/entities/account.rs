@@ -5,28 +5,69 @@ use argon2::password_hash::SaltString;
 use argon2::{password_hash, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{DateTime, FixedOffset, Utc};
 use common::PasswordRules;
-use lettre::message::Mailbox;
+
+use lettre::Address;
 use secrecy::{ExposeSecret, Secret};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::mem;
-use std::str::FromStr;
+
+
 use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct Account {
     // todo remove pub
-    pub id: i32,
+    // todo how to remove Option<i32>?
+    pub id: Option<i32>,
     pub username: String,
     pub password: HashedPassword,
     pub new_password: Option<HashedPassword>,
     pub creation_date: DateTime<Utc>,
-    pub email: Option<String>,
+    pub email: Option<Address>,
     pub next_email: Option<NextEmail>,
     pub password_recoveries: HashMap<Uuid, PasswordRecovery>,
 }
 
+// todo domain vs technical error
+pub enum CreateAccountError {
+    InvalidPassword,
+    Error(Error),
+}
+
 impl Account {
+    pub fn new(
+        username: String,
+        email: Address,
+        passwords: (ClearPassword, ClearPassword),
+    ) -> anyhow::Result<Account, CreateAccountError> {
+        if !Self::validate_password(&passwords) {
+            return Err(CreateAccountError::InvalidPassword);
+        }
+
+        Ok(Self {
+            id: None,
+            username,
+            email: None,
+            next_email: Some(NextEmail::create(email)),
+            password: Self::hash_password(passwords.0)
+                .context("Could not hash password")
+                .map_err(CreateAccountError::Error)?,
+            new_password: None,
+            creation_date: Utc::now(),
+            password_recoveries: Default::default(),
+        })
+    }
+
+    fn validate_password(passwords: &(ClearPassword, ClearPassword)) -> bool {
+        PasswordRules::default()
+            .validate(
+                passwords.0.expose_secret_as_str(),
+                passwords.1.expose_secret_as_str(),
+            )
+            .is_valid()
+    }
+
     pub fn validate_email(mut self) -> Result<Self, ValidateEmailError> {
         match self.next_email {
             None => Ok(self),
@@ -39,12 +80,12 @@ impl Account {
         }
     }
 
-    pub fn mailbox(&self) -> Result<Mailbox, EmailError> {
-        self.email
-            .as_ref()
-            .map(|e| Mailbox::from_str(e.as_str()))
-            .ok_or(EmailError::NoEmail)?
-            .map_err(|_| EmailError::InvalidEmail)
+    pub fn email(&self) -> Result<&Address, EmailError> {
+        self.email.as_ref().ok_or(EmailError::NoEmail)
+    }
+
+    pub fn next_email(&self) -> Option<&NextEmail> {
+        self.next_email.as_ref()
     }
 
     // todo move hash-related things into a common stuff
@@ -65,13 +106,7 @@ impl Account {
         self,
         passwords: (ClearPassword, ClearPassword),
     ) -> anyhow::Result<ChangePasswordResult> {
-        if !PasswordRules::default()
-            .validate(
-                passwords.0.expose_secret_as_str(),
-                passwords.1.expose_secret_as_str(),
-            )
-            .is_valid()
-        {
+        if !Self::validate_password(&passwords) {
             return Ok(ChangePasswordResult::InvalidPassword);
         }
 
@@ -184,17 +219,26 @@ impl From<String> for ClearPassword {
 
 #[derive(Debug)]
 pub struct NextEmail {
-    email: String,
+    email: Address,
+    // todo move behind a secret
     token: Uuid,
     token_generation_date: DateTime<Utc>,
 }
 
 impl NextEmail {
-    pub fn new(email: String, token: Uuid, token_generation_date: DateTime<Utc>) -> Self {
+    pub fn new(email: Address, token: Uuid, token_generation_date: DateTime<Utc>) -> Self {
         Self {
             email,
             token,
             token_generation_date,
+        }
+    }
+
+    pub fn create(email: Address) -> Self {
+        Self {
+            email,
+            token: Uuid::new_v4(),
+            token_generation_date: Utc::now(),
         }
     }
 
@@ -205,7 +249,7 @@ impl NextEmail {
         duration.num_minutes() > 60
     }
 
-    pub fn email(&self) -> &str {
+    pub fn email(&self) -> &Address {
         &self.email
     }
 

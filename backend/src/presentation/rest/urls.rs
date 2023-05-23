@@ -1,12 +1,12 @@
 use crate::application::get_url_details::{GetUrlDetailsCommand, GetUrlDetailsResult};
-use crate::infrastructure::database;
+
 use crate::presentation::rest::UserInfo;
 use crate::AppState;
-use anyhow::Context;
+
 use axum::extract::{Path, State};
 use axum::Extension;
 use rest_api::urls::{GetUrlConflictResponse, GetUrlResponse, GetUrlResult};
-use webpage::HTML;
+
 
 pub async fn get_url(
     Extension(user_info): Extension<UserInfo>,
@@ -42,8 +42,8 @@ pub async fn get_url(
             description,
         } => Ok(GetUrlResult::Success(GetUrlResponse {
             url,
-            title: title,
-            description: description,
+            title,
+            description,
         })),
     }
 }

@@ -1,3 +1,4 @@
+use crate::application::create_account::CreateAccountUseCase;
 use crate::application::create_bookmark::CreateBookmarkUseCase;
 use crate::application::create_password_recovery::CreatePasswordRecoveryUseCase;
 use crate::application::delete_bookmark::DeleteBookmarkUseCase;
@@ -26,7 +27,7 @@ pub struct AppState {
     // todo remove
     pub database: DatabaseConnection,
     // todo remove
-    pub mailer: Mailer,
+    pub mailer: Arc<Mailer>,
     pub account_repository: Arc<dyn AccountRepository>,
     pub ignored_query_params: Vec<&'static str>,
     // todo remove
@@ -43,4 +44,5 @@ pub struct AppState {
     pub perform_password_recovery: PerformPasswordRecoveryUseCase,
     pub get_tags: GetTagsUseCase,
     pub get_url_details: GetUrlDetailsUseCase,
+    pub create_account: CreateAccountUseCase,
 }

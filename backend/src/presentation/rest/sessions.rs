@@ -60,7 +60,8 @@ pub async fn create_session(
         .insert(
             SESSION_KEY_USER_INFO,
             UserInfo {
-                id: account.id,
+                // fixme: avoid expect()
+                id: account.id.expect("must be present"),
                 username: account.username,
             },
         )

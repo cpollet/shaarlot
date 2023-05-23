@@ -2,6 +2,7 @@ use crate::domain::values::tag::Tag;
 use chrono::{DateTime, Utc};
 
 pub struct Bookmark {
+    // todo remove pub
     pub id: Option<i32>,
     pub user_id: i32,
     pub url: String,

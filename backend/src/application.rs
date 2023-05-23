@@ -1,3 +1,4 @@
+pub mod create_account;
 pub mod create_bookmark;
 pub mod create_password_recovery;
 pub mod delete_bookmark;

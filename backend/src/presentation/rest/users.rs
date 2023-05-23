@@ -1,3 +1,5 @@
+use crate::application::create_account::CreateAccountCommand;
+use crate::domain::entities::account::{ClearPassword, CreateAccountError};
 use crate::infrastructure::database::accounts::{Mutation, Query};
 use crate::presentation::rest::{UserInfo, SESSION_KEY_USER_INFO};
 use crate::AppState;
@@ -9,10 +11,13 @@ use axum::Json;
 use axum_sessions::extractors::ReadableSession;
 use common::PasswordRules;
 use lettre::message::Mailbox;
+use lettre::Address;
 use rest_api::users::create::{CreateUserRequest, CreateUserResponse, CreateUserResult};
 use rest_api::users::get::{GetUserResponse, GetUserResult};
 use rest_api::users::update::{UpdateUserRequest, UpdateUserResponse, UpdateUserResult};
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret};
+
+use std::str::FromStr;
 use uuid::Uuid;
 
 pub async fn create_user(
@@ -23,48 +28,30 @@ pub async fn create_user(
         return Ok(CreateUserResult::NotImplemented);
     }
 
-    if !PasswordRules::default()
-        .validate(
-            user.password.expose_secret(),
-            user.password_verif.expose_secret(),
-        )
-        .is_valid()
-    {
-        return Err(CreateUserResult::InvalidPassword);
-    }
-
-    let user_mailbox = user
-        .email
-        .parse::<Mailbox>()
-        .map_err(|_| CreateUserResult::InvalidEmailAddress)?;
-
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed = Argon2::default()
-        .hash_password(user.password.expose_secret().into(), &salt)
-        .map_err(|_| CreateUserResult::ServerError)?
-        .to_string();
-
-    let email_token = Uuid::new_v4().to_string();
-
-    let result = Mutation::create(
-        &state.database,
-        user.email,
-        user.username,
-        hashed,
-        email_token.clone(),
-    )
-    .await
-    .map_err(|_| CreateUserResult::ServerError)
-    .map(|u| {
-        CreateUserResult::Success(CreateUserResponse {
-            id: u.id,
-            username: u.username,
+    let result = state
+        .create_account
+        .execute(CreateAccountCommand {
+            username: user.username,
+            email: Address::from_str(&user.email)
+                .map_err(|_| CreateUserResult::InvalidEmailAddress)?,
+            passwords: (
+                ClearPassword::from(user.password.expose_secret()),
+                ClearPassword::from(user.password_verif.expose_secret()),
+            ),
         })
-    })?;
+        .await;
 
-    state.mailer.send_email_token(email_token, user_mailbox);
-
-    Ok(result)
+    match result {
+        Ok(account) => Ok(CreateUserResult::Success(CreateUserResponse {
+            id: account.id.expect("must have an id"),
+            username: account.username,
+        })),
+        Err(CreateAccountError::InvalidPassword) => Ok(CreateUserResult::InvalidPassword),
+        Err(CreateAccountError::Error(e)) => {
+            log::error!("{:?}", e);
+            Err(CreateUserResult::ServerError)
+        }
+    }
 }
 
 pub async fn get_current_user(
@@ -168,19 +155,19 @@ pub async fn update_current_user(
         .await
         .map_err(|_| UpdateUserResult::ServerError)?;
 
-    if new_password.0 {
-        state.mailer.send_password_updated(user_old_mailbox.clone());
-    }
-
-    if new_email.0 {
-        state
-            .mailer
-            .send_email_token(db_user.email_token.unwrap(), user_new_mailbox);
-        state.mailer.send_email_updated(
-            &db_user.new_email.expect("No new email found in database"),
-            user_old_mailbox,
-        );
-    }
+    // if new_password.0 {
+    //     state.mailer.send_password_updated(user_old_mailbox.clone());
+    // }
+    //
+    // if new_email.0 {
+    //     state
+    //         .mailer
+    //         .send_email_token(db_user.email_token.unwrap(), user_new_mailbox);
+    //     state.mailer.send_email_updated(
+    //         &db_user.new_email.expect("No new email found in database"),
+    //         user_old_mailbox,
+    //     );
+    // }
 
     Ok(UpdateUserResult::Success(UpdateUserResponse {
         id: db_user.id,

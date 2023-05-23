@@ -21,6 +21,7 @@ use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait};
 use sea_orm::{ColumnTrait, Condition, NotSet};
 use sea_orm::{DbErr, QueryFilter, TransactionError, TransactionTrait};
 
+use lettre::Address;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -29,18 +30,32 @@ use uuid::Uuid;
 
 impl Account {
     fn into_active_model(self) -> AccountActiveModel {
-        AccountActiveModel {
-            id: Unchanged(self.id),
-            username: Unchanged(self.username),
-            password: NotSet,
-            creation_date: Unchanged(DateTimeWithTimeZone::from(self.creation_date)),
-            email: Set(self.email),
-            email_token: Set(self.next_email.as_ref().map(|e| e.token().to_string())),
-            email_token_generation_date: Set(self
-                .next_email
-                .as_ref()
-                .map(|e| DateTimeWithTimeZone::from(*e.token_generation_date()))),
-            new_email: Set(self.next_email.map(|e| e.email().to_string())),
+        match self.id {
+            None => AccountActiveModel {
+                username: Set(self.username.to_lowercase()),
+                password: Set(self.password.expose_secret_as_string_ref().to_string()),
+                email: Set(None),
+                email_token: Set(self.next_email.as_ref().map(|e| e.token().to_string())),
+                email_token_generation_date: Set(self
+                    .next_email
+                    .as_ref()
+                    .map(|e| DateTimeWithTimeZone::from(*e.token_generation_date()))),
+                new_email: Set(self.next_email.map(|e| e.email().to_string())),
+                ..Default::default()
+            },
+            Some(id) => AccountActiveModel {
+                id: Unchanged(id),
+                username: Unchanged(self.username),
+                password: NotSet,
+                creation_date: Unchanged(DateTimeWithTimeZone::from(self.creation_date)),
+                email: Set(self.email.map(|e| e.to_string())),
+                email_token: Set(self.next_email.as_ref().map(|e| e.token().to_string())),
+                email_token_generation_date: Set(self
+                    .next_email
+                    .as_ref()
+                    .map(|e| DateTimeWithTimeZone::from(*e.token_generation_date()))),
+                new_email: Set(self.next_email.map(|e| e.email().to_string())),
+            },
         }
     }
 }
@@ -59,13 +74,16 @@ impl TryFrom<(AccountModel, Vec<PasswordRecoveryModel>)> for Account {
         }
 
         Ok(Self {
-            id: account.id,
+            id: Some(account.id),
             next_email: NextEmail::try_from_model(&account)?,
             username: account.username,
             password: HashedPassword::from(account.password),
             new_password: None,
             creation_date: account.creation_date.with_timezone(&Utc),
-            email: account.email,
+            email: account
+                .email
+                .map(|e| Address::from_str(&e).context("Invalid email address"))
+                .transpose()?,
             password_recoveries,
         })
     }
@@ -110,11 +128,8 @@ impl NextEmail {
                 .context("email_token is not a valid UUID")?;
 
                 Some(NextEmail::new(
-                    model
-                        .new_email
-                        .as_ref()
-                        .expect("must have a new_email")
-                        .clone(),
+                    Address::from_str(model.new_email.as_ref().expect("must have a new_email"))
+                        .context("Invalid email address")?,
                     uuid,
                     model
                         .email_token_generation_date
@@ -153,9 +168,22 @@ impl Display for SaveDbErr {
 
 impl Error for SaveDbErr {}
 
-#[async_trait]
-impl AccountRepository for DatabaseAccountRepository {
-    async fn save(&self, account: Account) -> anyhow::Result<Account> {
+impl DatabaseAccountRepository {
+    async fn insert(&self, account: Account) -> anyhow::Result<Account> {
+        let account = account.into_active_model();
+
+        let account = account
+            .insert(&self.database)
+            .await
+            .context("Could not insert account")?;
+
+        self.find_by_id(account.id)
+            .await
+            .transpose()
+            .expect("account must exist")
+    }
+
+    async fn update(&self, account: Account) -> anyhow::Result<Account> {
         let result = self
             .database
             .transaction::<_, i32, SaveDbErr>(|txn| {
@@ -194,7 +222,6 @@ impl AccountRepository for DatabaseAccountRepository {
                             .insert(txn)
                             .await
                             .map_err(SaveDbErr::InsertRecovery)?;
-                        // .context("Could not save new password recovers")?;
                     }
 
                     let account = account.into_active_model();
@@ -222,6 +249,16 @@ impl AccountRepository for DatabaseAccountRepository {
             .await
             .transpose()
             .expect("account must exist")
+    }
+}
+
+#[async_trait]
+impl AccountRepository for DatabaseAccountRepository {
+    async fn save(&self, account: Account) -> anyhow::Result<Account> {
+        match account.id {
+            None => self.insert(account).await,
+            Some(_) => self.update(account).await,
+        }
     }
 
     async fn find_by_id(&self, id: i32) -> anyhow::Result<Option<Account>> {

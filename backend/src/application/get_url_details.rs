@@ -1,8 +1,8 @@
-use std::str::FromStr;
 use crate::domain::repositories::BookmarkRepository;
-use crate::domain::values::url_details::UrlDetails;
+
 use anyhow::Context;
 use reqwest::Client;
+use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;
 use webpage::HTML;

@@ -39,28 +39,34 @@ impl CreatePasswordRecoveryUseCase {
             Some(account) => Some(account),
         };
 
-        let password_recovery =
-            ClearPasswordRecovery::new(account.as_ref().map(|a| a.id).unwrap_or_default())
-                .context("Could not create password recovery")?;
+        // fixme: avoid expect()
+        let password_recovery = ClearPasswordRecovery::new(
+            account
+                .as_ref()
+                .map(|a| a.id.expect("must be present"))
+                .unwrap_or_default(),
+        )
+        .context("Could not create password recovery")?;
 
         if let Some(mut account) = account {
-            let mailbox = account
-                .mailbox()
-                .map_err(Error::msg)
-                .context("Could not find email address")?;
-
             let id = password_recovery.id();
             let token = password_recovery.token.clone();
 
             account.add_password_recovery(PasswordRecovery::Clear(password_recovery));
 
-            self.account_repository
+            let account = self
+                .account_repository
                 .save(account)
                 .await
                 .context("Could not create password recovery")?;
 
+            let email = account
+                .email()
+                .map_err(Error::msg)
+                .context("Could not find email address")?;
+
             self.mailer
-                .send_password_recovery(id, token.expose_secret(), mailbox);
+                .send_password_recovery(id, token.expose_secret(), email.clone());
         }
 
         Ok(())

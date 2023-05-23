@@ -24,8 +24,6 @@ pub trait BookmarkRepository: Sync + Send {
         sort: BookmarkSort,
     ) -> anyhow::Result<(Bookmarks, u64)>;
 
-    // todo change user_id, or order
-    // todo rename find_visible_by_id
     async fn find_by_id(&self, user_id: Option<i32>, id: i32) -> anyhow::Result<Option<Bookmark>>;
 
     async fn find_id_by_url(&self, user_id: i32, url: &str) -> anyhow::Result<Option<i32>>;
