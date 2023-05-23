@@ -4,11 +4,15 @@ use crate::domain::entities::bookmark::{
 use crate::domain::repositories::BookmarkRepository;
 use crate::domain::values::tag::{CountedTag, Sort as TagSort};
 
+use crate::domain::entities::account::Account;
 use crate::infrastructure::database::bookmarks::SearchCriteria;
 use crate::infrastructure::database::{bookmarks, bookmarks_tags, pins, tags};
-use anyhow::Context;
+use anyhow::{Context, Error};
 use async_trait::async_trait;
-use sea_orm::{DatabaseConnection, DbErr, TransactionTrait};
+use entity::bookmark::{Column, Model, Entity};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, QuerySelect, TransactionTrait,
+};
 
 #[derive(Clone)]
 pub struct DatabaseBookmarkRepository {
@@ -149,6 +153,19 @@ impl BookmarkRepository for DatabaseBookmarkRepository {
         bookmarks::Query::find_visible_by_id(&self.database, id, user_id)
             .await
             .context("Could not retrieve bookmark")
+    }
+
+    async fn find_id_by_url(&self, user_id: i32, url: &str) -> anyhow::Result<Option<i32>> {
+        Entity::find()
+            .select_only()
+            .column(Column::Id)
+            .filter(Column::Url.eq(url))
+            .filter(Column::UserId.eq(user_id))
+            .into_tuple()
+            .one(&self.database)
+            .await
+            .map_err(Error::msg)
+            .context("Could not find by url")
     }
 
     async fn delete(&self, id: i32) -> anyhow::Result<()> {

@@ -28,6 +28,8 @@ pub trait BookmarkRepository: Sync + Send {
     // todo rename find_visible_by_id
     async fn find_by_id(&self, user_id: Option<i32>, id: i32) -> anyhow::Result<Option<Bookmark>>;
 
+    async fn find_id_by_url(&self, user_id: i32, url: &str) -> anyhow::Result<Option<i32>>;
+
     async fn delete(&self, id: i32) -> anyhow::Result<()>;
 
     async fn find_tags(

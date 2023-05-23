@@ -4,6 +4,7 @@ use crate::application::delete_bookmark::DeleteBookmarkUseCase;
 use crate::application::find_bookmark::FindBookmarkUseCase;
 use crate::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use crate::application::get_tags::GetTagsUseCase;
+use crate::application::get_url_details::GetUrlDetailsUseCase;
 use crate::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use crate::application::search_bookmarks::SearchBookmarkUseCase;
 use crate::application::update_bookmark::UpdateBookmarkUseCase;
@@ -28,6 +29,7 @@ pub struct AppState {
     pub mailer: Mailer,
     pub account_repository: Arc<dyn AccountRepository>,
     pub ignored_query_params: Vec<&'static str>,
+    // todo remove
     pub http_client: Client,
     pub demo: bool,
     pub create_bookmark: CreateBookmarkUseCase,
@@ -40,4 +42,5 @@ pub struct AppState {
     pub create_password_recovery: CreatePasswordRecoveryUseCase,
     pub perform_password_recovery: PerformPasswordRecoveryUseCase,
     pub get_tags: GetTagsUseCase,
+    pub get_url_details: GetUrlDetailsUseCase,
 }

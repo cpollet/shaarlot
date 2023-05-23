@@ -42,6 +42,7 @@ use tracing::Level;
 use tracing_subscriber::filter;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use backend::application::get_url_details::GetUrlDetailsUseCase;
 
 #[cfg(not(debug_assertions))]
 const STATIC_DIR: include_dir::Dir<'_> =
@@ -193,6 +194,11 @@ async fn main() {
         database: database.clone(),
     });
 
+    let http_client = Client::builder()
+        .timeout(Duration::from_secs(5))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .expect("Could not initialize HTTP client");
     axum::Server::bind(&format!("{}:{}", http_host, http_port).parse().unwrap())
         .serve(
             api_router(
@@ -205,11 +211,7 @@ async fn main() {
                         .split('\n')
                         .filter(|s| !s.is_empty())
                         .collect::<Vec<&str>>(),
-                    http_client: Client::builder()
-                        .timeout(Duration::from_secs(5))
-                        .connect_timeout(Duration::from_secs(5))
-                        .build()
-                        .expect("Could not initialize HTTP client"),
+                    http_client: http_client.clone(),
                     demo,
                     create_bookmark: CreateBookmarkUseCase::new(bookmark_repository.clone()),
                     search_bookmarks: SearchBookmarkUseCase::new(bookmark_repository.clone()),
@@ -226,6 +228,7 @@ async fn main() {
                         account_repository.clone(),
                     ),
                     get_tags: GetTagsUseCase::new(bookmark_repository.clone()),
+                    get_url_details: GetUrlDetailsUseCase::new(bookmark_repository.clone(), http_client)
                 },
             )
             .route("/health", get(health))
