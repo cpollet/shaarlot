@@ -9,4 +9,5 @@ pub mod get_url_details;
 pub mod perform_password_recovery;
 pub mod search_bookmarks;
 pub mod update_bookmark;
+pub mod update_user;
 pub mod validate_email;

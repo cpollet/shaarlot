@@ -8,7 +8,7 @@ use common::PasswordRules;
 
 use lettre::Address;
 use secrecy::{ExposeSecret, Secret};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
 use std::mem;
 
@@ -26,12 +26,18 @@ pub struct Account {
     pub email: Option<Address>,
     pub next_email: Option<NextEmail>,
     pub password_recoveries: HashMap<Uuid, PasswordRecovery>,
+    /// Tells whether the current instance already passed a password verification
+    pub password_verified: bool,
+    pub events: HashSet<Event>,
 }
 
-// todo domain vs technical error
-pub enum CreateAccountError {
-    InvalidPassword,
-    Error(Error),
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub enum Event {
+    AccountCreated, // todo handle
+    EmailUpdated,
+    PasswordRecoveryStarted,  // todo handle
+    PasswordRecoveryFinished, // todo handle
+    PasswordUpdated,
 }
 
 impl Account {
@@ -55,6 +61,8 @@ impl Account {
             new_password: None,
             creation_date: Utc::now(),
             password_recoveries: Default::default(),
+            password_verified: false,
+            events: HashSet::from([Event::AccountCreated]),
         })
     }
 
@@ -67,6 +75,30 @@ impl Account {
             .is_valid()
     }
 
+    pub fn update_email(
+        &mut self,
+        password: &ClearPassword,
+        email: Address,
+    ) -> Result<(), UpdateEmailError> {
+        if !self
+            .verify_password(password)
+            .context("Could not verify password for email update")
+            .map_err(UpdateEmailError::Error)?
+        {
+            return Err(UpdateEmailError::CurrentPasswordIncorrect);
+        }
+
+        if self.email().expect("email must exist") == &email {
+            return Ok(());
+        }
+
+        self.next_email = Some(NextEmail::create(email));
+        self.events.insert(Event::EmailUpdated);
+
+        Ok(())
+    }
+
+    // todo &mut self
     pub fn validate_email(mut self) -> Result<Self, ValidateEmailError> {
         match self.next_email {
             None => Ok(self),
@@ -88,37 +120,58 @@ impl Account {
     }
 
     // todo move hash-related things into a common stuff
-    pub fn verify_password(&self, password: &ClearPassword) -> anyhow::Result<bool> {
-        let password_hash = PasswordHash::new(self.password.expose_secret_as_string_ref())
+    pub fn verify_password(&mut self, password: &ClearPassword) -> anyhow::Result<bool> {
+        if self.password_verified {
+            return Ok(true);
+        }
+        let password_hash = PasswordHash::new(self.password.expose_secret_as_str())
             .map_err(Error::msg)
             .context("Could not instantiate hash verifier")?;
 
         match Argon2::default().verify_password(password.expose_secret_as_bytes(), &password_hash) {
-            Ok(_) => Ok(true),
+            Ok(_) => {
+                self.password_verified = true;
+                Ok(true)
+            }
             Err(password_hash::Error::Password) => Ok(false),
             Err(e) => Err(e).map_err(Error::msg).context("Could not verify hash"),
         }
     }
 
-    pub fn change_password(
-        // todo should take &mut self
-        self,
+    pub fn update_password(
+        &mut self,
+        password: &ClearPassword,
         passwords: (ClearPassword, ClearPassword),
-    ) -> anyhow::Result<ChangePasswordResult> {
-        if !Self::validate_password(&passwords) {
-            return Ok(ChangePasswordResult::InvalidPassword);
+    ) -> Result<(), UpdatePasswordError> {
+        if !self
+            .verify_password(password)
+            .context("Could not verify password for password update")
+            .map_err(UpdatePasswordError::Error)?
+        {
+            return Err(UpdatePasswordError::CurrentPasswordIncorrect);
         }
 
-        Ok(ChangePasswordResult::Success(Self {
-            id: self.id,
-            username: self.username,
-            password: self.password,
-            new_password: Some(Self::hash_password(passwords.0)?),
-            creation_date: self.creation_date,
-            email: self.email,
-            next_email: self.next_email,
-            password_recoveries: self.password_recoveries,
-        }))
+        self.change_password(passwords).map_err(|e| match e {
+            ChangePasswordError::InvalidPassword => UpdatePasswordError::InvalidPassword,
+            ChangePasswordError::Error(e) => UpdatePasswordError::Error(e),
+        })
+    }
+
+    fn change_password(
+        &mut self,
+        passwords: (ClearPassword, ClearPassword),
+    ) -> Result<(), ChangePasswordError> {
+        if !Self::validate_password(&passwords) {
+            return Err(ChangePasswordError::InvalidPassword);
+        }
+
+        self.new_password = Some(
+            Self::hash_password(passwords.0)
+                .context("Could not change password")
+                .map_err(ChangePasswordError::Error)?,
+        );
+        self.events.insert(Event::PasswordUpdated);
+        Ok(())
     }
 
     // todo move hash-related things into a common stuff
@@ -138,37 +191,34 @@ impl Account {
     }
 
     pub fn recover_password(
-        // todo should take &mut self
-        mut self,
+        &mut self,
         recovery_id: Uuid,
         token: Secret<String>,
         passwords: (ClearPassword, ClearPassword),
-    ) -> anyhow::Result<RecoverPasswordResult> {
+    ) -> Result<(), RecoverPasswordError> {
         self.remove_expired_recoveries();
 
         // todo delete invalid ones anyways
 
         let recovery = match self.password_recoveries.get(&recovery_id) {
-            None => return Ok(RecoverPasswordResult::InvalidRecovery),
+            None => return Err(RecoverPasswordError::InvalidRecovery),
             Some(recovery) => recovery,
         };
 
         if !recovery
             .token_matches(token)
-            .context("Could not verify token")?
+            .context("Could not verify token")
+            .map_err(RecoverPasswordError::Error)?
         {
-            return Ok(RecoverPasswordResult::InvalidRecovery);
+            return Err(RecoverPasswordError::InvalidRecovery);
         }
 
         self.password_recoveries.remove(&recovery.id());
 
-        match self
-            .change_password(passwords)
-            .context("Could not change password")?
-        {
-            ChangePasswordResult::Success(a) => Ok(RecoverPasswordResult::Success(a)),
-            ChangePasswordResult::InvalidPassword => Ok(RecoverPasswordResult::InvalidRecovery),
-        }
+        self.change_password(passwords).map_err(|e| match e {
+            ChangePasswordError::InvalidPassword => RecoverPasswordError::InvalidPassword,
+            ChangePasswordError::Error(e) => RecoverPasswordError::Error(e),
+        })
     }
 
     fn remove_expired_recoveries(&mut self) {
@@ -180,14 +230,18 @@ impl Account {
             .into_values()
             .collect::<Vec<PasswordRecovery>>()
     }
+
+    pub fn events(&self) -> HashSet<Event> {
+        self.events.clone()
+    }
 }
 
 #[derive(Debug)]
 pub struct HashedPassword(Secret<String>);
 
 impl HashedPassword {
-    pub fn expose_secret_as_string_ref(&self) -> &String {
-        self.0.expose_secret()
+    pub fn expose_secret_as_str(&self) -> &str {
+        self.0.expose_secret().as_str()
     }
 }
 
@@ -261,6 +315,25 @@ impl NextEmail {
     }
 }
 
+#[derive(Debug)]
+pub enum CreateAccountError {
+    InvalidPassword,
+    Error(Error),
+}
+
+#[derive(Debug)]
+pub enum UpdatePasswordError {
+    CurrentPasswordIncorrect,
+    InvalidPassword,
+    Error(Error),
+}
+
+pub enum UpdateEmailError {
+    CurrentPasswordIncorrect,
+    Error(Error),
+}
+
+#[derive(Debug)]
 pub enum ValidateEmailError {
     InvalidToken,
 }
@@ -281,14 +354,14 @@ impl Display for EmailError {
 }
 
 #[derive(Debug)]
-pub enum ChangePasswordResult {
-    Success(Account),
+pub enum ChangePasswordError {
     InvalidPassword,
+    Error(Error),
 }
 
 #[derive(Debug)]
-pub enum RecoverPasswordResult {
-    Success(Account),
-    InvalidRecovery,
+pub enum RecoverPasswordError {
     InvalidPassword,
+    InvalidRecovery,
+    Error(Error),
 }

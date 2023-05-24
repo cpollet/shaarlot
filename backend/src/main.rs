@@ -15,6 +15,7 @@ use backend::application::get_url_details::GetUrlDetailsUseCase;
 use backend::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use backend::application::search_bookmarks::SearchBookmarkUseCase;
 use backend::application::update_bookmark::UpdateBookmarkUseCase;
+use backend::application::update_user::UpdateAccountUseCase;
 use backend::application::validate_email::ValidateEmailUseCase;
 use backend::infrastructure::database;
 use backend::infrastructure::database::Configuration;
@@ -234,6 +235,10 @@ async fn main() {
                         http_client,
                     ),
                     create_account: CreateAccountUseCase::new(
+                        account_repository.clone(),
+                        mailer.clone(),
+                    ),
+                    update_account: UpdateAccountUseCase::new(
                         account_repository.clone(),
                         mailer.clone(),
                     ),

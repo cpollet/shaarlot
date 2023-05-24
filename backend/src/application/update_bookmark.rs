@@ -34,6 +34,7 @@ impl UpdateBookmarkUseCase {
         &self,
         command: UpdateBookmarkCommand,
     ) -> anyhow::Result<Option<UpdateResult>> {
+        // todo Result<Bookmark, UpdateBookmarkError>
         let bookmark = self
             .repository
             .find_by_id(Some(command.user_id), command.id)

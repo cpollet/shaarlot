@@ -1,6 +1,6 @@
-use crate::domain::entities::account::{ClearPassword, RecoverPasswordResult};
+use crate::domain::entities::account::{ClearPassword, RecoverPasswordError};
 use crate::domain::repositories::AccountRepository;
-use anyhow::Context;
+use anyhow::{Context, Error};
 use secrecy::Secret;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -11,10 +11,10 @@ pub struct PerformPasswordRecoveryCommand {
     pub passwords: (ClearPassword, ClearPassword),
 }
 
-pub enum PasswordRecoveryResult {
-    Success,
+pub enum PasswordRecoveryError {
     InvalidPassword,
     InvalidRecovery,
+    Error(Error),
 }
 
 #[derive(Clone)]
@@ -30,39 +30,34 @@ impl PerformPasswordRecoveryUseCase {
     pub async fn execute(
         &self,
         command: PerformPasswordRecoveryCommand,
-    ) -> anyhow::Result<PasswordRecoveryResult> {
+    ) -> Result<(), PasswordRecoveryError> {
         let account = self
             .account_repository
             .find_by_recovery_id(command.id)
             .await
-            .context("Could not find account by recovery")?;
+            .context("Could not find account by recovery")
+            .map_err(PasswordRecoveryError::Error)?;
 
-        let account = match account {
+        let mut account = match account {
             Some(account) => account,
             None => {
-                log::debug!("account not found for recovery");
-                return Ok(PasswordRecoveryResult::InvalidRecovery);
+                return Err(PasswordRecoveryError::InvalidRecovery);
             }
         };
 
-        let result = account
+        account
             .recover_password(command.id, command.token, command.passwords)
-            .context("Could not update password")?;
-
-        let account = match result {
-            RecoverPasswordResult::Success(account) => account,
-            RecoverPasswordResult::InvalidRecovery => {
-                return Ok(PasswordRecoveryResult::InvalidRecovery)
-            }
-            RecoverPasswordResult::InvalidPassword => {
-                return Ok(PasswordRecoveryResult::InvalidPassword)
-            }
-        };
+            .map_err(|e| match e {
+                RecoverPasswordError::InvalidPassword => PasswordRecoveryError::InvalidPassword,
+                RecoverPasswordError::InvalidRecovery => PasswordRecoveryError::InvalidRecovery,
+                RecoverPasswordError::Error(e) => PasswordRecoveryError::Error(e),
+            })?;
 
         self.account_repository
             .save(account)
             .await
             .context("Could not save updated password")
-            .map(|_| PasswordRecoveryResult::Success)
+            .map_err(PasswordRecoveryError::Error)
+            .map(|_| ())
     }
 }

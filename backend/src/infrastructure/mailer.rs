@@ -126,7 +126,7 @@ impl Mailer {
         }
     }
 
-    pub fn send_email_updated(&self, new_email: &str, to: Address) {
+    pub fn send_email_updated(&self, to: Address, new_email: Address) {
         self.send(
             Email{
                 from: self.from.clone(),

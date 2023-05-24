@@ -1,6 +1,6 @@
 use crate::application::create_password_recovery::CreatePasswordRecoveryCommand;
 use crate::application::perform_password_recovery::{
-    PasswordRecoveryResult, PerformPasswordRecoveryCommand,
+    PasswordRecoveryError, PerformPasswordRecoveryCommand,
 };
 use crate::domain::entities::account::ClearPassword;
 use crate::AppState;
@@ -44,7 +44,7 @@ pub async fn update_password_recovery(
         return Ok(UpdatePasswordRecoveryResult::NotImplemented);
     }
 
-    let result = state
+    state
         .perform_password_recovery
         .execute(PerformPasswordRecoveryCommand {
             id: Uuid::parse_str(request.id.as_str())
@@ -56,16 +56,13 @@ pub async fn update_password_recovery(
             ),
         })
         .await
-        .map_err(|e| {
-            log::error!("{:?}", e);
-            UpdatePasswordRecoveryResult::ServerError
-        })?;
-
-    match result {
-        PasswordRecoveryResult::InvalidPassword => {
-            Err(UpdatePasswordRecoveryResult::InvalidPassword)
-        }
-        PasswordRecoveryResult::InvalidRecovery => Err(UpdatePasswordRecoveryResult::InvalidToken),
-        PasswordRecoveryResult::Success => Ok(UpdatePasswordRecoveryResult::Success),
-    }
+        .map(|_| UpdatePasswordRecoveryResult::Success)
+        .map_err(|e| match e {
+            PasswordRecoveryError::InvalidPassword => UpdatePasswordRecoveryResult::InvalidPassword,
+            PasswordRecoveryError::InvalidRecovery => UpdatePasswordRecoveryResult::InvalidToken,
+            PasswordRecoveryError::Error(e) => {
+                log::error!("{:?}", e);
+                UpdatePasswordRecoveryResult::ServerError
+            }
+        })
 }

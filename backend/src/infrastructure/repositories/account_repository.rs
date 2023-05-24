@@ -22,7 +22,7 @@ use sea_orm::{ColumnTrait, Condition, NotSet};
 use sea_orm::{DbErr, QueryFilter, TransactionError, TransactionTrait};
 
 use lettre::Address;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
@@ -33,7 +33,7 @@ impl Account {
         match self.id {
             None => AccountActiveModel {
                 username: Set(self.username.to_lowercase()),
-                password: Set(self.password.expose_secret_as_string_ref().to_string()),
+                password: Set(self.password.expose_secret_as_str().to_string()),
                 email: Set(None),
                 email_token: Set(self.next_email.as_ref().map(|e| e.token().to_string())),
                 email_token_generation_date: Set(self
@@ -46,7 +46,11 @@ impl Account {
             Some(id) => AccountActiveModel {
                 id: Unchanged(id),
                 username: Unchanged(self.username),
-                password: NotSet,
+                password: self
+                    .new_password
+                    .map(|h| h.expose_secret_as_str().to_string())
+                    .map(Set)
+                    .unwrap_or(NotSet),
                 creation_date: Unchanged(DateTimeWithTimeZone::from(self.creation_date)),
                 email: Set(self.email.map(|e| e.to_string())),
                 email_token: Set(self.next_email.as_ref().map(|e| e.token().to_string())),
@@ -85,6 +89,8 @@ impl TryFrom<(AccountModel, Vec<PasswordRecoveryModel>)> for Account {
                 .map(|e| Address::from_str(&e).context("Invalid email address"))
                 .transpose()?,
             password_recoveries,
+            password_verified: false,
+            events: HashSet::new(),
         })
     }
 }

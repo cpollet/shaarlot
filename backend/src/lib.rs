@@ -9,6 +9,7 @@ use crate::application::get_url_details::GetUrlDetailsUseCase;
 use crate::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use crate::application::search_bookmarks::SearchBookmarkUseCase;
 use crate::application::update_bookmark::UpdateBookmarkUseCase;
+use crate::application::update_user::UpdateAccountUseCase;
 use crate::application::validate_email::ValidateEmailUseCase;
 use crate::domain::repositories::AccountRepository;
 use crate::infrastructure::mailer::Mailer;
@@ -45,4 +46,5 @@ pub struct AppState {
     pub get_tags: GetTagsUseCase,
     pub get_url_details: GetUrlDetailsUseCase,
     pub create_account: CreateAccountUseCase,
+    pub update_account: UpdateAccountUseCase,
 }

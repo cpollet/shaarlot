@@ -28,6 +28,7 @@ impl DeleteBookmarkUseCase {
         &self,
         command: DeleteBookmarkCommand,
     ) -> anyhow::Result<Option<DeleteResult>> {
+        // todo Result<(), DeleteBookmarkError>
         let bookmark = self
             .repository
             .find_by_id(Some(command.user_id), command.bookmark_id)

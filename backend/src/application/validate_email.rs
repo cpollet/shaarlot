@@ -25,6 +25,7 @@ impl ValidateEmailUseCase {
     }
 
     pub async fn execute(&self, command: ValidateEmailCommand) -> anyhow::Result<ValidationResult> {
+        // todo Result<(), ValidateEmailError>
         let account = self
             .repository
             .find_by_email_token(command.email_token)

@@ -38,7 +38,7 @@ pub async fn create_session(
         .map_err(|_| CreateSessionResult::ServerError)?;
 
     let account = match account {
-        Some(account) => {
+        Some(mut account) => {
             match account.verify_password(&ClearPassword::from(user.password.expose_secret())) {
                 Ok(true) => account,
                 _ => return Ok(CreateSessionResult::InvalidCredentials),
