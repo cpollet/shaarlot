@@ -1,15 +1,11 @@
 use crate::application::create_account::CreateAccountCommand;
 use crate::domain::entities::account::{ClearPassword, CreateAccountError};
 
-use crate::presentation::rest::{UserInfo};
+use crate::presentation::rest::UserInfo;
 use crate::AppState;
-
-
 
 use axum::extract::State;
 use axum::{Extension, Json};
-
-
 
 use lettre::Address;
 use rest_api::users::create::{CreateUserRequest, CreateUserResponse, CreateUserResult};
@@ -20,7 +16,6 @@ use secrecy::{ExposeSecret, Secret};
 use crate::application::update_user::{UpdateAccountCommand, UpdateAccountError};
 use rest_api::RestPassword;
 use std::str::FromStr;
-
 
 pub async fn create_user(
     State(state): State<AppState>,
