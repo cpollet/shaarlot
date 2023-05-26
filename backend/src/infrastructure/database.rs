@@ -1,4 +1,3 @@
-pub mod accounts;
 pub mod bookmarks;
 pub mod bookmarks_tags;
 pub mod pins;
