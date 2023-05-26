@@ -1,9 +1,13 @@
-use crate::domain::entities::password_recovery::{ClearPasswordRecovery, PasswordRecovery};
+
 use crate::domain::repositories::AccountRepository;
 use crate::infrastructure::mailer::Mailer;
 use anyhow::{Context, Error};
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret};
 use std::sync::Arc;
+use argon2::{Argon2, PasswordHasher};
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::SaltString;
+use uuid::Uuid;
 
 pub struct CreatePasswordRecoveryCommand {
     pub username_or_email: String,
@@ -39,20 +43,11 @@ impl CreatePasswordRecoveryUseCase {
             Some(account) => Some(account),
         };
 
-        // fixme: avoid expect()
-        let password_recovery = ClearPasswordRecovery::new(
-            account
-                .as_ref()
-                .map(|a| a.id.expect("must be present"))
-                .unwrap_or_default(),
-        )
-        .context("Could not create password recovery")?;
-
         if let Some(mut account) = account {
-            let id = password_recovery.id();
-            let token = password_recovery.token.clone();
-
-            account.add_password_recovery(PasswordRecovery::Clear(password_recovery));
+            let (id, token) = match account.create_password_recovery()? {
+                None => return Ok(()),
+                Some((id, token)) => (id, token),
+            };
 
             let account = self
                 .account_repository
@@ -67,6 +62,14 @@ impl CreatePasswordRecoveryUseCase {
 
             self.mailer
                 .send_password_recovery(id, token.expose_secret(), email.clone());
+        } else {
+            let token = Uuid::new_v4().to_string();
+            let salt = SaltString::generate(&mut OsRng);
+            // todo move hash-related things into a common stuff (sessions and accounts as well)
+            Argon2::default()
+                .hash_password(token.as_ref(), &salt)
+                .map_err(Error::msg)
+                .context("Could not generate password recovery token")?;
         }
 
         Ok(())

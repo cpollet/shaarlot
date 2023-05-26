@@ -1,4 +1,4 @@
-use crate::domain::entities::password_recovery::{Expire, PasswordRecovery, Verify};
+use crate::domain::entities::password_recovery::{ClearPasswordRecovery, Expire, PasswordRecovery, Verify};
 use anyhow::{Context, Error};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
@@ -13,6 +13,7 @@ use std::fmt::{Display, Formatter};
 use std::mem;
 
 use uuid::Uuid;
+
 
 #[derive(Debug)]
 pub struct Account {
@@ -184,10 +185,24 @@ impl Account {
         Ok(HashedPassword(Secret::new(hashed.to_string())))
     }
 
-    pub fn add_password_recovery(&mut self, password_recovery: PasswordRecovery) {
+    pub fn create_password_recovery(&mut self) -> anyhow::Result<Option<(Uuid, Secret<String>)>> {
         self.remove_expired_recoveries();
+
+        let id = match self.id {
+            None => return Ok(None),
+            Some(id) => id,
+        };
+
+        let password_recovery = ClearPasswordRecovery::new(id)
+            .context("Could not create password recovery")?;
+
+        let id =password_recovery.id;
+        let token = password_recovery.token.clone();
+
         self.password_recoveries
-            .insert(password_recovery.id(), password_recovery);
+            .insert(password_recovery.id(),PasswordRecovery::Clear( password_recovery));
+
+        Ok(Some((id, token)))
     }
 
     pub fn recover_password(

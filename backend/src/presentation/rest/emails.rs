@@ -6,7 +6,6 @@ use uuid::Uuid;
 
 pub async fn update_email(
     State(state): State<AppState>,
-    // todo check uuid deserialization
     Path(email_token): Path<Uuid>,
 ) -> Result<ValidateEmailResult, ValidateEmailResult> {
     if state.demo {
