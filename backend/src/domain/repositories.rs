@@ -6,9 +6,18 @@ use crate::domain::values::tag::{CountedTag, Sort as TagSort};
 use async_trait::async_trait;
 use uuid::Uuid;
 
+#[derive(Debug, Default)]
+pub struct SearchCriteria {
+    pub tags: Vec<String>,
+    pub search: Vec<String>,
+    pub filter: Filter,
+}
+
 #[async_trait]
 pub trait BookmarkRepository: Sync + Send {
     async fn save(&self, bookmark: Bookmark) -> anyhow::Result<Bookmark>;
+
+    async fn import(&self, bookmarks: Vec<Bookmark>) -> anyhow::Result<i32>;
 
     async fn count(&self, user_id: Option<i32>) -> anyhow::Result<u64>;
 

@@ -1,108 +1,36 @@
-use crate::infrastructure::database::{bookmarks, bookmarks_tags, tags};
+use crate::application::import_bookmarks::{ImportBookmarkCommand, ImportBookmarkError, Source};
 use crate::presentation::rest::UserInfo;
 use crate::AppState;
 use axum::extract::State;
 use axum::{Extension, Json};
-use chrono::{DateTime, Utc};
-use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
-use reqwest::header;
 use rest_api::import_shaarli_api::{ShaarliImportApiRequest, ShaarliImportApiResult};
-use sea_orm::{DbErr, TransactionTrait};
-use secrecy::ExposeSecret;
-use serde::Deserialize;
-use sha2::Sha512;
-use std::collections::BTreeMap;
-use std::time::SystemTime;
-
-#[derive(Deserialize, Debug)]
-struct ShaarliBookmark {
-    url: String,
-    title: String,
-    description: String,
-    tags: Vec<String>,
-    private: bool,
-    created: DateTime<Utc>,
-    updated: DateTime<Utc>,
-}
+use secrecy::{ExposeSecret, Secret};
 
 pub async fn shaarli_import_api(
     State(state): State<AppState>,
     Extension(user_info): Extension<UserInfo>,
-    Json(bookmark): Json<ShaarliImportApiRequest>,
+    Json(import_request): Json<ShaarliImportApiRequest>,
 ) -> Result<ShaarliImportApiResult, ShaarliImportApiResult> {
     if state.demo {
         return Ok(ShaarliImportApiResult::NotImplemented);
     }
 
-    let key: Hmac<Sha512> = Hmac::new_from_slice(bookmark.key.expose_secret().0.as_bytes())
-        .map_err(|_| ShaarliImportApiResult::ServerError)?;
-
-    let timestamp = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
-    let mut claims = BTreeMap::new();
-    claims.insert("iat", timestamp.to_string());
-    let token_str = claims
-        .sign_with_key(&key)
-        .map_err(|_| ShaarliImportApiResult::ServerError)?;
-
-    // tracing::info!("{}", &token_str);
-
-    let mut auth_value = header::HeaderValue::from_str(&format!("Bearer {}", token_str))
-        .map_err(|_| ShaarliImportApiResult::ServerError)?;
-    auth_value.set_sensitive(true);
-
-    let bookmarks = state
-        .http_client
-        .get(format!("{}/api/v1/links?limit=all", bookmark.url))
-        .header(header::AUTHORIZATION, auth_value)
-        .send()
-        .await
-        .map_err(|_| ShaarliImportApiResult::ShaarliError)?
-        .json::<Vec<ShaarliBookmark>>()
-        .await
-        .map_err(|_| ShaarliImportApiResult::ShaarliError)?;
-
     state
-        .database
-        .transaction::<_, (), DbErr>(|txn| {
-            Box::pin(async move {
-                for bookmark in bookmarks {
-                    let bookmark_id = bookmarks::Mutation::import_bookmark(
-                        txn,
-                        bookmark.url.clone(),
-                        (!bookmark.title.is_empty()).then_some(bookmark.title),
-                        (!bookmark.description.is_empty()).then_some(bookmark.description),
-                        bookmark.created,
-                        (bookmark.updated != bookmark.created).then_some(bookmark.updated),
-                        user_info.id,
-                        bookmark.private,
-                    )
-                    .await?
-                    .id;
-
-                    let unique_tags = {
-                        let mut tags = bookmark.tags;
-                        tags.sort();
-                        tags.dedup();
-                        tags
-                    };
-                    for tag in unique_tags {
-                        let tag_id = tags::Mutation::create_tag(txn, tag.to_lowercase())
-                            .await?
-                            .id;
-
-                        bookmarks_tags::Mutation::create_link(txn, bookmark_id, tag_id).await?;
-                    }
-                }
-
-                Ok(())
-            })
+        .import_bookmarks
+        .execute(ImportBookmarkCommand {
+            user_id: user_info.id,
+            source: Source::Shaarli {
+                url: import_request.url,
+                password: Secret::new(import_request.key.expose_secret().0.clone()),
+            },
         })
         .await
-        .map_err(|_| ShaarliImportApiResult::ServerError)?;
-
-    Ok(ShaarliImportApiResult::Success)
+        .map_err(|e| {
+            log::error!("{:?}", e);
+            match e {
+                ImportBookmarkError::Error(_) => ShaarliImportApiResult::ServerError,
+                ImportBookmarkError::ShaarliError(_) => ShaarliImportApiResult::ShaarliError,
+            }
+        })
+        .map(|_| ShaarliImportApiResult::Success)
 }

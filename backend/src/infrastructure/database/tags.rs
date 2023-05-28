@@ -1,6 +1,6 @@
 use crate::domain::entities::bookmark::Filter;
 use crate::domain::values::tag::{CountedTag, Sort};
-use crate::infrastructure::database::bookmarks;
+
 use entity::tag::{ActiveModel, Column, Entity, Model};
 use entity::{bookmark, bookmark_tag};
 use migration::JoinType;
@@ -79,7 +79,7 @@ impl Query {
                     .to(bookmark_tag::Column::BookmarkId)
                     .into(),
             )
-            .filter(bookmarks::Query::visible_condition(user_id, Filter::All))
+            .filter(Filter::All.visible_condition(user_id))
             .group_by(Column::Id)
             .group_by(Column::Name);
         select = SortOrder::from(order).add_clause(select);

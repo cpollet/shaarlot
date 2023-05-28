@@ -6,6 +6,7 @@ use crate::application::find_bookmark::FindBookmarkUseCase;
 use crate::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use crate::application::get_tags::GetTagsUseCase;
 use crate::application::get_url_details::GetUrlDetailsUseCase;
+use crate::application::import_bookmarks::ImportBookmarkUseCase;
 use crate::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use crate::application::search_bookmarks::SearchBookmarkUseCase;
 use crate::application::update_bookmark::UpdateBookmarkUseCase;
@@ -47,4 +48,5 @@ pub struct AppState {
     pub get_url_details: GetUrlDetailsUseCase,
     pub create_account: CreateAccountUseCase,
     pub update_account: UpdateAccountUseCase,
+    pub import_bookmarks: ImportBookmarkUseCase,
 }

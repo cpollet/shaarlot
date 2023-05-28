@@ -6,6 +6,7 @@ pub mod find_bookmark;
 pub mod get_bookmark_stats;
 pub mod get_tags;
 pub mod get_url_details;
+pub mod import_bookmarks;
 pub mod perform_password_recovery;
 pub mod search_bookmarks;
 pub mod update_bookmark;

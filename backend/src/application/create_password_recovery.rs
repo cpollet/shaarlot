@@ -1,12 +1,11 @@
-
 use crate::domain::repositories::AccountRepository;
 use crate::infrastructure::mailer::Mailer;
 use anyhow::{Context, Error};
-use secrecy::{ExposeSecret};
-use std::sync::Arc;
-use argon2::{Argon2, PasswordHasher};
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHasher};
+use secrecy::ExposeSecret;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct CreatePasswordRecoveryCommand {

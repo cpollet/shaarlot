@@ -12,6 +12,7 @@ use backend::application::find_bookmark::FindBookmarkUseCase;
 use backend::application::get_bookmark_stats::GetBookmarksStatsUseCase;
 use backend::application::get_tags::GetTagsUseCase;
 use backend::application::get_url_details::GetUrlDetailsUseCase;
+use backend::application::import_bookmarks::ImportBookmarkUseCase;
 use backend::application::perform_password_recovery::PerformPasswordRecoveryUseCase;
 use backend::application::search_bookmarks::SearchBookmarkUseCase;
 use backend::application::update_bookmark::UpdateBookmarkUseCase;
@@ -232,7 +233,7 @@ async fn main() {
                     get_tags: GetTagsUseCase::new(bookmark_repository.clone()),
                     get_url_details: GetUrlDetailsUseCase::new(
                         bookmark_repository.clone(),
-                        http_client,
+                        http_client.clone(),
                     ),
                     create_account: CreateAccountUseCase::new(
                         account_repository.clone(),
@@ -241,6 +242,10 @@ async fn main() {
                     update_account: UpdateAccountUseCase::new(
                         account_repository.clone(),
                         mailer.clone(),
+                    ),
+                    import_bookmarks: ImportBookmarkUseCase::new(
+                        bookmark_repository.clone(),
+                        http_client,
                     ),
                 },
             )
