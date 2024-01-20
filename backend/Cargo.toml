@@ -7,7 +7,7 @@ publish = false
 repository = "https://github.com/cpollet/shaarlot"
 
 [dependencies]
-argon2 = "0.5.0"
+argon2 = "0.5.3"
 async-trait = "0.1.68"
 axum = "0.6.18"
 axum-sessions = "0.5.0"
