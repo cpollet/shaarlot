@@ -17,7 +17,7 @@ common = { path = "../common" }
 entity = { path = "../entity" }
 include_dir = "0.7.3"
 lettre = "0.10.4"
-log = "0.4.17"
+log = "0.4.21"
 migration = { path = "../migration" }
 mime_guess = "2.0.4"
 qrcode-generator = "4.1.8"
