@@ -8,6 +8,6 @@ repository = "https://github.com/cpollet/shaarlot"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-regex = "1.8.1"
+regex = "1.10.4"
 
 [features]
