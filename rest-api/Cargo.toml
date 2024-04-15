@@ -9,7 +9,7 @@ repository = "https://github.com/cpollet/shaarlot"
 
 [dependencies]
 axum = { version = "0.6.18" , optional = true }
-chrono = { version = "0.4.24", features = ["serde"] }
+chrono = { version = "0.4.38", features = ["serde"] }
 http = "0.2.9"
 secrecy = { version = "0.8.0", features = ["serde"] }
 serde = { version = "1.0.163", features = ["derive"] }
