@@ -35,7 +35,7 @@ jobs:
       - name: Build release
         run: cargo make build-release
       - name: Save backend binary
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: backend
           path: target/release/backend
@@ -49,7 +49,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Fetch backend binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: backend
           path: docker/target
